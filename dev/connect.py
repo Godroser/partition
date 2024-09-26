@@ -30,4 +30,11 @@ def connect_db:
   """)
   tables = source_cursor.fetchall()
 
-if 
+if __name__ == "__main__":
+    args = PartitionConfig()
+    print("args111: ", args)
+    args.database = "tpch_demo"
+    # obtain the table info
+    tbls = table_statistics(args)
+
+    print(tbls)
