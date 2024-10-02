@@ -1,0 +1,39 @@
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+env:
+  TIDB_HOST: '127.0.0.1'
+  TIDB_PORT: '4000'
+  TIDB_USER: 'root'
+  TIDB_PASSWORD: ''
+  TIDB_DB_NAME: 'test'
+  CA_PATH: ''
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      tidb:
+        image: wangdi4zm/tind:v7.1.0-standalone
+        ports:
+          - 4000:4000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Wait for tidb to start
+        run: sleep 20
+      - name: Run tests
+        run: |
+          python mysql_connector_example.py > temp
+          diff temp Expected-Output.txt

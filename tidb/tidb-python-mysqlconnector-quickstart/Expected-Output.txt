@@ -1,0 +1,9 @@
+{'id': 'test', 'coins': 1, 'goods': 1}
+number of players: 1920
+{'id': 'test', 'coins': 1, 'goods': 1}
+{'id': 'test0', 'coins': 10000, 'goods': 10000}
+{'id': 'test1', 'coins': 10000, 'goods': 10000}
+buy player 1 coins not enough
+trade success
+{'id': '1', 'coins': 0, 'goods': 2}
+{'id': '2', 'coins': 114614, 'goods': 18}
