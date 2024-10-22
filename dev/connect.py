@@ -186,5 +186,5 @@ if __name__ == "__main__":
     #repartition()
     #repartition_range_to_hash()
     #repartition_hash_to_range()
-    #add_tiflash_replica("players")
+    #add_tiflash_replica()
     #check_replica_status()
