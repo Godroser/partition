@@ -1,25 +1,28 @@
 import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
+from config import Config
 
 import random
 
 
-TIDB_HOST='127.0.0.1'
-TIDB_PORT='4000'
-TIDB_USER='root'
-TIDB_PASSWORD=''
-TIDB_DB_NAME='tpch'
-ca_path = ''
+# TIDB_HOST='127.0.0.1'
+# TIDB_PORT='4000'
+# TIDB_USER='root'
+# TIDB_PASSWORD=''
+# TIDB_DB_NAME='tpch'
+# ca_path = ''
+
 
 
 def get_connection(autocommit: bool = True) -> MySQLConnection:
+    config = Config()
     db_conf = {
-        "host": TIDB_HOST,
-        "port": TIDB_PORT,
-        "user": TIDB_USER,
-        "password": TIDB_PASSWORD,
-        "database": TIDB_DB_NAME,
+        "host": config.TIDB_HOST,
+        "port": config.TIDB_PORT,
+        "user": config.TIDB_USER,
+        "password": config.TIDB_PASSWORD,
+        "database": config.TIDB_DB_NAME,
         "autocommit": autocommit,
         # mysql-connector-python will use C extension by default,
         # to make this example work on all platforms more easily,
@@ -27,10 +30,10 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
         "use_pure": True
     }
 
-    if ca_path:
+    if config.ca_path:
         db_conf["ssl_verify_cert"] = True
         db_conf["ssl_verify_identity"] = True
-        db_conf["ssl_ca"] = ca_path
+        db_conf["ssl_ca"] = config.ca_path
     return mysql.connector.connect(**db_conf)
 
 def create_table_hash() -> None:
@@ -162,8 +165,18 @@ def check_replica_status():
 def db_exec() -> tuple:
     with get_connection(autocommit=True) as connection:
         with connection.cursor() as cur:
-            cur.execute("explain analyze select * from players where id < 20000;")
+            #cur.execute("explain analyze select * from players where id < 20000;")
             
+            #cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'tpch' AND table_name = 'player';")
+
+            config = Config()
+            cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'players';".format(config.TIDB_DB_NAME))
+
+            if len(cur.fetchall()) > 0:
+                print("exist")
+            else:
+                print("no")
+
             # cur.execute(
             #     """
             #     SELECT      TABLE_NAME,     PARTITION_NAME,     PARTITION_ORDINAL_POSITION,     PARTITION_METHOD,     SUBPARTITION_METHOD,     PARTITION_EXPRESSION,     SUBPARTITION_EXPRESSION,     PARTITION_DESCRIPTION FROM      INFORMATION_SCHEMA.PARTITIONS WHERE      TABLE_NAME = 'players';

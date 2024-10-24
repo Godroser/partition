@@ -31,19 +31,19 @@
 
  tikv_servers:
     - host: 10.77.110.144
-      port: 20160
-      status_port: 20180
+      port: 20175
+      status_port: 20190
       config:
         server.labels: { host: "logic-host-1" }
     - host: 10.77.110.144
-      port: 20161
-      status_port: 20181
+      port: 20176
+      status_port: 20191
       config:
         server.labels: { host: "logic-host-2" }
 
     - host: 10.77.110.144
-      port: 20162
-      status_port: 20182
+      port: 20177
+      status_port: 20192
       config:
         server.labels: { host: "logic-host-3" }
 
