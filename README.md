@@ -1,5 +1,5 @@
 <div align= "center">
-    <h1>Grep: A Graph Learning Based Database Partitioning System</h1>
+    <h1>HTAPartition</h1>
 </div>
 
 <p align="center">
