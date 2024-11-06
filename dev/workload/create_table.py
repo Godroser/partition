@@ -1,3 +1,8 @@
+import sys
+import os
+
+sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
+
 import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
@@ -30,240 +35,337 @@ def create_warehouse_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Warehouse';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'warehouse';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Warehouse Exists. Exiting...")
+              print("Table warehouse Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE Warehouse (
-                    W_ID INT PRIMARY KEY,
-                    W_NAME VARCHAR(10),
-                    W_STREET_1 VARCHAR(20),
-                    W_STREET_2 VARCHAR(20),
-                    W_CITY VARCHAR(20),
-                    W_STATE CHAR(2),
-                    W_ZIP CHAR(9),
-                    W_TAX DECIMAL(4,4),
-                    W_YTD DECIMAL(12,2)
-                );
+                CREATE TABLE `warehouse` (
+                `w_id` int(11) NOT NULL,
+                `w_name` varchar(10) DEFAULT NULL,
+                `w_street_1` varchar(20) DEFAULT NULL,
+                `w_street_2` varchar(20) DEFAULT NULL,
+                `w_city` varchar(20) DEFAULT NULL,
+                `w_state` char(2) DEFAULT NULL,
+                `w_zip` char(9) DEFAULT NULL,
+                `w_tax` decimal(4,4) DEFAULT NULL,
+                `w_ytd` decimal(12,2) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("Warehouse Created!")
+            print("Table warehouse Created!")
 
 
-def create_distinct_table():
+def create_district_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Distinct';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'district';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Distinct Exists. Exiting...")
+              print("Table distinct Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE District (
-                    D_ID INT PRIMARY KEY,
-                    D_W_ID INT,
-                    D_NAME VARCHAR(10),
-                    D_STREET_1 VARCHAR(20),
-                    D_STREET_2 VARCHAR(20),
-                    D_CITY VARCHAR(20),
-                    D_STATE CHAR(2),
-                    D_ZIP CHAR(9),
-                    D_TAX DECIMAL(4,4),
-                    D_YTD DECIMAL(12,2),
-                    D_NEXT_O_ID INT,
-                    FOREIGN KEY (D_W_ID) REFERENCES Warehouse(W_ID)
-                );
+                CREATE TABLE `district` (
+                `d_id` int(11) NOT NULL,
+                `d_w_id` int(11) NOT NULL,
+                `d_name` varchar(10) DEFAULT NULL,
+                `d_street_1` varchar(20) DEFAULT NULL,
+                `d_street_2` varchar(20) DEFAULT NULL,
+                `d_city` varchar(20) DEFAULT NULL,
+                `d_state` char(2) DEFAULT NULL,
+                `d_zip` char(9) DEFAULT NULL,
+                `d_tax` decimal(4,4) DEFAULT NULL,
+                `d_ytd` decimal(12,2) DEFAULT NULL,
+                `d_next_o_id` int(11) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("Distinct Created!")
+            print("Table district Created!")
 
+def create_supplier_table():
+  config = Config()
+  with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:         
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'supplier';".format(config.TIDB_DB_NAME))
 
+          if len(cur.fetchall()) > 0:
+              print("Table supplier Exists. Exiting...")
+          else:
+            cur.execute(
+                """
+                CREATE TABLE `supplier` (
+                `S_SUPPKEY` bigint(20) NOT NULL,
+                `S_NAME` char(25) NOT NULL,
+                `S_ADDRESS` varchar(40) NOT NULL,
+                `S_NATIONKEY` bigint(20) NOT NULL,
+                `S_PHONE` char(15) NOT NULL,
+                `S_ACCTBAL` decimal(15,2) NOT NULL,
+                `S_COMMENT` varchar(101) NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+                """
+            )
+            print("Table supplier Created!")
 
 
 def create_customer_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Customer';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'customer';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Customer Exists. Exiting...")
+              print("Table customer Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE Customer (
-                    C_ID INT PRIMARY KEY,
-                    C_D_ID INT,
-                    C_W_ID INT,
-                    C_FIRST VARCHAR(16),
-                    C_MIDDLE CHAR(2),
-                    C_LAST VARCHAR(16),
-                    C_STREET_1 VARCHAR(20),
-                    C_STREET_2 VARCHAR(20),
-                    C_CITY VARCHAR(20),
-                    C_STATE CHAR(2),
-                    C_ZIP CHAR(9),
-                    C_PHONE CHAR(16),
-                    C_SINCE TIMESTAMP,
-                    C_CREDIT CHAR(2),
-                    C_CREDIT_LIM DECIMAL(12,2),
-                    C_DISCOUNT DECIMAL(4,4),
-                    C_BALANCE DECIMAL(12,2),
-                    C_YTD_PAYMENT DECIMAL(12,2),
-                    C_PAYMENT_CNT INT,
-                    C_DELIVERY_CNT INT,
-                    FOREIGN KEY (C_D_ID, C_W_ID) REFERENCES District(D_ID, D_W_ID)
-                );
+                CREATE TABLE `customer` (
+                `c_id` int(11) NOT NULL,
+                `c_d_id` int(11) NOT NULL,
+                `c_w_id` int(11) NOT NULL,
+                `c_first` varchar(16) DEFAULT NULL,
+                `c_middle` char(2) DEFAULT NULL,
+                `c_last` varchar(16) DEFAULT NULL,
+                `c_street_1` varchar(20) DEFAULT NULL,
+                `c_street_2` varchar(20) DEFAULT NULL,
+                `c_city` varchar(20) DEFAULT NULL,
+                `c_state` char(2) DEFAULT NULL,
+                `c_zip` char(9) DEFAULT NULL,
+                `c_phone` char(16) DEFAULT NULL,
+                `c_since` datetime DEFAULT NULL,
+                `c_credit` char(2) DEFAULT NULL,
+                `c_credit_lim` decimal(12,2) DEFAULT NULL,
+                `c_discount` decimal(4,4) DEFAULT NULL,
+                `c_balance` decimal(12,2) DEFAULT NULL,
+                `c_ytd_payment` decimal(12,2) DEFAULT NULL,
+                `c_payment_cnt` int(11) DEFAULT NULL,
+                `c_delivery_cnt` int(11) DEFAULT NULL,
+                `c_data` varchar(500) DEFAULT NULL,
+                KEY `idx_customer` (`c_w_id`,`c_d_id`,`c_last`,`c_first`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("Customer Created!")
+            print("Table customer Created!")
 
 def create_history_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'History';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'history';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("History Exists. Exiting...")
+              print("Table history Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE History (
-                    H_C_ID INT,
-                    H_C_D_ID INT,
-                    H_C_W_ID INT,
-                    H_D_ID INT,
-                    H_W_ID INT,
-                    H_DATE TIMESTAMP,
-                    H_AMOUNT DECIMAL(6,2),
-                    H_DATA VARCHAR(24),
-                    PRIMARY KEY (H_C_ID, H_C_D_ID, H_C_W_ID, H_D_ID, H_W_ID)
-                );
+                CREATE TABLE `history` (
+                `h_c_id` int(11) NOT NULL,
+                `h_c_d_id` int(11) NOT NULL,
+                `h_c_w_id` int(11) NOT NULL,
+                `h_d_id` int(11) NOT NULL,
+                `h_w_id` int(11) NOT NULL,
+                `h_date` datetime DEFAULT NULL,
+                `h_amount` decimal(6,2) DEFAULT NULL,
+                `h_data` varchar(24) DEFAULT NULL,
+                KEY `idx_h_w_id` (`h_w_id`),
+                KEY `idx_h_c_w_id` (`h_c_w_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("History Created!")
+            print("Table history Created!")
 
 
 def create_orders_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Orders';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'orders';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Orders Exists. Exiting...")
+              print("Table orders Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE Orders (
-                    O_ID INT PRIMARY KEY,
-                    O_C_ID INT,
-                    O_D_ID INT,
-                    O_W_ID INT,
-                    O_ENTRY_D TIMESTAMP,
-                    O_CARRIER_ID INT,
-                    O_OL_CNT INT,
-                    O_ALL_LOCAL INT,
-                    FOREIGN KEY (O_C_ID, O_D_ID, O_W_ID) REFERENCES Customer(C_ID, C_D_ID, C_W_ID)
-                );
+                CREATE TABLE `orders` (
+                `o_id` int(11) NOT NULL,
+                `o_d_id` int(11) NOT NULL,
+                `o_w_id` int(11) NOT NULL,
+                `o_c_id` int(11) DEFAULT NULL,
+                `o_entry_d` datetime DEFAULT NULL,
+                `o_carrier_id` int(11) DEFAULT NULL,
+                `o_ol_cnt` int(11) DEFAULT NULL,
+                `o_all_local` int(11) DEFAULT NULL,
+                KEY `idx_order` (`o_w_id`,`o_d_id`,`o_c_id`,`o_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
                 """
             )
-            print("Orders Created!")
+            print("Table orders Created!")
+
+def create_new_order_table():
+  config = Config()
+  with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:         
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'new_order';".format(config.TIDB_DB_NAME))
+
+          if len(cur.fetchall()) > 0:
+              print("Table new_order Exists. Exiting...")
+          else:
+            cur.execute(
+                """
+                CREATE TABLE `new_order` (
+                `no_o_id` int(11) NOT NULL,
+                `no_d_id` int(11) NOT NULL,
+                `no_w_id` int(11) NOT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+                """
+            )
+            print("Table new_order Created!")
+
+
 
 
 def create_orderline_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'OrderLine';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'order_line';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("OrderLine Exists. Exiting...")
+              print("Table order_line Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE OrderLine (
-                    OL_O_ID INT,
-                    OL_D_ID INT,
-                    OL_W_ID INT,
-                    OL_NUMBER INT,
-                    OL_I_ID INT,
-                    OL_SUPPLY_W_ID INT,
-                    OL_DELIVERY_D TIMESTAMP,
-                    OL_QUANTITY DECIMAL(2,0),
-                    OL_AMOUNT DECIMAL(6,2),
-                    OL_DIST_INFO VARCHAR(24),
-                    PRIMARY KEY (OL_O_ID, OL_D_ID, OL_W_ID, OL_NUMBER),
-                    FOREIGN KEY (OL_O_ID, OL_D_ID, OL_W_ID) REFERENCES Orders(O_ID, O_D_ID, O_W_ID)
-                );
+                CREATE TABLE `order_line` (
+                `ol_o_id` int(11) NOT NULL,
+                `ol_d_id` int(11) NOT NULL,
+                `ol_w_id` int(11) NOT NULL,
+                `ol_number` int(11) NOT NULL,
+                `ol_i_id` int(11) NOT NULL,
+                `ol_supply_w_id` int(11) DEFAULT NULL,
+                `ol_delivery_d` datetime DEFAULT NULL,
+                `ol_quantity` int(11) DEFAULT NULL,
+                `ol_amount` decimal(6,2) DEFAULT NULL,
+                `ol_dist_info` char(24) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("OrderLine Created!")
+            print("Table order_line Created!")
 
 
 def create_stock_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Stock';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'stock';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Stock Exists. Exiting...")
+              print("Table stock Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE Stock (
-                    S_I_ID INT,
-                    S_W_ID INT,
-                    S_QUANTITY DECIMAL(4,0),
-                    S_DIST_01 VARCHAR(24),
-                    S_DIST_02 VARCHAR(24),
-                    S_DIST_03 VARCHAR(24),
-                    S_DIST_04 VARCHAR(24),
-                    S_DIST_05 VARCHAR(24),
-                    S_DIST_06 VARCHAR(24),
-                    S_DIST_07 VARCHAR(24),
-                    S_DIST_08 VARCHAR(24),
-                    S_DIST_09 VARCHAR(24),
-                    S_DIST_10 VARCHAR(24),
-                    S_YTD DECIMAL(8,0),
-                    S_ORDER_CNT INT,
-                    S_REMOTE_CNT INT,
-                    S_DATA VARCHAR(50),
-                    PRIMARY KEY (S_I_ID, S_W_ID),
-                    FOREIGN KEY (S_W_ID) REFERENCES Warehouse(W_ID)
-                );
+                CREATE TABLE `stock` (
+                `s_i_id` int(11) NOT NULL,
+                `s_w_id` int(11) NOT NULL,
+                `s_quantity` int(11) DEFAULT NULL,
+                `s_dist_01` char(24) DEFAULT NULL,
+                `s_dist_02` char(24) DEFAULT NULL,
+                `s_dist_03` char(24) DEFAULT NULL,
+                `s_dist_04` char(24) DEFAULT NULL,
+                `s_dist_05` char(24) DEFAULT NULL,
+                `s_dist_06` char(24) DEFAULT NULL,
+                `s_dist_07` char(24) DEFAULT NULL,
+                `s_dist_08` char(24) DEFAULT NULL,
+                `s_dist_09` char(24) DEFAULT NULL,
+                `s_dist_10` char(24) DEFAULT NULL,
+                `s_ytd` int(11) DEFAULT NULL,
+                `s_order_cnt` int(11) DEFAULT NULL,
+                `s_remote_cnt` int(11) DEFAULT NULL,
+                `s_data` varchar(50) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
                 """
             )
-            print("Stock Created!")
+            print("Table stock Created!")
 
 
 def create_item_table():
   config = Config()
   with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:         
-          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'Item';".format(config.TIDB_DB_NAME))
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'item';".format(config.TIDB_DB_NAME))
 
           if len(cur.fetchall()) > 0:
-              print("Item Exists. Exiting...")
+              print("Table item Exists. Exiting...")
           else:
             cur.execute(
                 """
-                CREATE TABLE Item (
-                    I_ID INT PRIMARY KEY,
-                    I_IM_ID INT,
-                    I_NAME VARCHAR(24),
-                    I_PRICE DECIMAL(5,2),
-                    I_DATA VARCHAR(50)
-                );
+                CREATE TABLE `item` (
+                `i_id` int(11) NOT NULL,
+                `i_im_id` int(11) DEFAULT NULL,
+                `i_name` varchar(24) DEFAULT NULL,
+                `i_price` decimal(5,2) DEFAULT NULL,
+                `i_data` varchar(50) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
                 """
             )
-            print("Item Created!")
+            print("Table item Created!")
 
             
+def create_nation_table():
+  config = Config()
+  with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:         
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'nation';".format(config.TIDB_DB_NAME))
+
+          if len(cur.fetchall()) > 0:
+              print("Table nation Exists. Exiting...")
+          else:
+            cur.execute(
+                """
+                CREATE TABLE `nation` (
+                `N_NATIONKEY` bigint(20) NOT NULL,
+                `N_NAME` char(25) NOT NULL,
+                `N_REGIONKEY` bigint(20) NOT NULL,
+                `N_COMMENT` varchar(152) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+                """
+            )
+            print("Table nation Created!")
+
+def create_region_table():
+  config = Config()
+  with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:         
+          cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = 'region';".format(config.TIDB_DB_NAME))
+
+          if len(cur.fetchall()) > 0:
+              print("Table region Exists. Exiting...")
+          else:
+            cur.execute(
+                """
+                CREATE TABLE `region` (
+                `R_REGIONKEY` bigint(20) NOT NULL,
+                `R_NAME` char(25) NOT NULL,
+                `R_COMMENT` varchar(152) DEFAULT NULL
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
+                """
+            )
+            print("Table region Created!")
+
+
+
+if __name__ == "__main__":
+    create_warehouse_table()
+    create_customer_table()
+    create_district_table()
+    create_history_table()
+    create_item_table()
+    create_nation_table()
+    create_new_order_table()
+    create_orderline_table()
+    create_orders_table()
+    create_region_table()
+    create_stock_table()
+    create_supplier_table() 
