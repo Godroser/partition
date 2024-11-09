@@ -4,6 +4,7 @@ from mysql.connector.cursor import MySQLCursor
 from config import Config
 
 import random
+import string
 
 
 # TIDB_HOST='127.0.0.1'
@@ -160,7 +161,17 @@ def check_replica_status():
             )    
             print(cur.fetchall())
 
-
+def select_fecth():
+    with get_connection(autocommit=False) as connection:
+        with connection.cursor() as cur: 
+            cur.execute("""
+                SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = 1 AND s_i_id = 5442);
+            """
+            )    
+            cur.execute("select @s_quantity;")
+            a = cur.fetchall()[0][0]
+            print(a, type(a))
+            print(''.join(random.choices(string.ascii_uppercase, k=24)))
 
 def db_exec() -> tuple:
     with get_connection(autocommit=True) as connection:
@@ -192,7 +203,7 @@ def db_exec() -> tuple:
             #    print(table)
 
 if __name__ == "__main__":
-    db_exec()
+    #db_exec()
     #create_table_range()
     #create_table_hash()
     #insert_table(50000)
@@ -201,3 +212,4 @@ if __name__ == "__main__":
     #repartition_hash_to_range()
     #add_tiflash_replica()
     #check_replica_status()
+    select_fecth()
