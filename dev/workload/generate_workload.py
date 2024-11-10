@@ -89,97 +89,96 @@ class Workload_Genrator:
 
 
     with get_connection(autocommit=False) as connection:
-        with connection.cursor() as cur:
-            cur.execute("start transaction;")
+      with connection.cursor() as cur:
+        cur.execute("start transaction;")
 
-            sql_new_order1 = """
-              SET @d_next_o_id :=
-              SELECT d_next_o_id 
-              FROM district 
-              WHERE d_id = {} AND d_w_id = {};
-            """.format(d_id, w_id)
+        sql_new_order1 = """
+          SET @d_next_o_id :=
+          SELECT d_next_o_id 
+          FROM district 
+          WHERE d_id = {} AND d_w_id = {};
+        """.format(d_id, w_id)
 
-            sql_new_order2=""""
-              UPDATE district 
-              SET d_next_o_id = d_next_o_id + 1 
-              WHERE d_id = {} AND d_w_id = {};
-            """.format(d_id, w_id)
+        sql_new_order2=""""
+          UPDATE district 
+          SET d_next_o_id = d_next_o_id + 1 
+          WHERE d_id = {} AND d_w_id = {};
+        """.format(d_id, w_id)
 
-            sql_new_order3="""
-              INSERT INTO orders (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local)
-              VALUES (@d_next_o_id, {}, {}, {}, NOW(), NULL, {}, 1);
-            """.format(d_id, w_id, c_id, o_ol_cnt)
+        sql_new_order3="""
+          INSERT INTO orders (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local)
+          VALUES (@d_next_o_id, {}, {}, {}, NOW(), NULL, {}, 1);
+        """.format(d_id, w_id, c_id, o_ol_cnt)
 
-            sql_new_order4="""
-              INSERT INTO new_order (no_o_id, no_d_id, no_w_id)
-              VALUES (@d_next_o_id, {}, {});
-            """.format(d_id, w_id)
+        sql_new_order4="""
+          INSERT INTO new_order (no_o_id, no_d_id, no_w_id)
+          VALUES (@d_next_o_id, {}, {});
+        """.format(d_id, w_id)
 
-            cur.execute(sql_new_order1)        
-            cur.execute(sql_new_order2) 
-            cur.execute(sql_new_order3) 
-            cur.execute(sql_new_order4)
+        cur.execute(sql_new_order1)        
+        cur.execute(sql_new_order2) 
+        cur.execute(sql_new_order3) 
+        cur.execute(sql_new_order4)
 
-            for i in range(o_ol_cnt):
-              sql_new_order5 = """
-                # SET @s_quantity, @s_data, @s_ytd, @s_order_cnt, @s_remote_cn:=
-                # SELECT s_quantity, s_data, s_ytd, s_order_cnt, s_remote_cnt
-                # FROM stock
-                # WHERE s_w_id = {} AND s_i_id = {};         
-                SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = {} AND s_i_id = {});
-              """.format(ol_supply_w_id[i], ol_i_id[i])
+        for i in range(o_ol_cnt):
+          sql_new_order5 = """
+            # SET @s_quantity, @s_data, @s_ytd, @s_order_cnt, @s_remote_cn:=
+            # SELECT s_quantity, s_data, s_ytd, s_order_cnt, s_remote_cnt
+            # FROM stock
+            # WHERE s_w_id = {} AND s_i_id = {};         
+            SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = {} AND s_i_id = {});
+          """.format(ol_supply_w_id[i], ol_i_id[i])
 
-              cur.execute(sql_new_order5)
+          cur.execute(sql_new_order5)
 
-              sql_new_order6 = "select @s_quantity;"
+          sql_new_order6 = "select @s_quantity;"
 
-              cur.execute(sql_new_order6)
-              s_quantity = cur.fetchall()[0][0]
-
-
-              if s_quantity >= ol_quantity[i]:
-                s_quantity = s_quantity - ol_quantity[i]
-              else:
-                s_quantity = s_quantity + 100 - ol_quantity[i]
-
-              if random.random() < o_all_local: ## local warehouse
-                sql_new_order7 = """
-                  UPDATE stock
-                  SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1
-                  WHERE s_w_id = {} AND s_i_id = {};
-                """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
-              else:
-                sql_new_order7 = """
-                  UPDATE stock
-                  SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1, s_remote_cnt = s_remote_cnt + 1
-                  WHERE s_w_id = {} AND s_i_id = {};
-                """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
-
-              cur.execute(sql_new_order7)
-
-              sql_new_order8 = """
-                SET @i_price =
-                SELECT i_price
-                FROM item
-                WHERE i_id = {};              
-              """.format(ol_i_id)
-              cur.execute(sql_new_order8)
-              
-              sql_new_order8 = "select @i_price;"
-              i_price = cur.fetchall()[0][0]
+          cur.execute(sql_new_order6)
+          s_quantity = cur.fetchall()[0][0]
 
 
-              sql_new_order9 = """
-              INSERT INTO order_line (ol_o_id, ol_d_id, ol_w_id, ol_number, ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info)
-              VALUES (@d_next_o_id, {}, {}, {}, {}, {}, NULL, {}, {}, {});
-              """.format(d_id, w_id, i+1, ol_i_id[i], ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ''.join(random.choices(string.ascii_uppercase, k=24)))
+          if s_quantity >= ol_quantity[i]:
+            s_quantity = s_quantity - ol_quantity[i]
+          else:
+            s_quantity = s_quantity + 100 - ol_quantity[i]
 
-              cur.execute(sql_new_order9)
+          if random.random() < o_all_local: ## local warehouse
+            sql_new_order7 = """
+              UPDATE stock
+              SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1
+              WHERE s_w_id = {} AND s_i_id = {};
+            """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
+          else:
+            sql_new_order7 = """
+              UPDATE stock
+              SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1, s_remote_cnt = s_remote_cnt + 1
+              WHERE s_w_id = {} AND s_i_id = {};
+            """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
 
-              cur.execute("COMMIT;")
+          cur.execute(sql_new_order7)
+
+          sql_new_order8 = """
+            SET @i_price =
+            SELECT i_price
+            FROM item
+            WHERE i_id = {};              
+          """.format(ol_i_id)
+          cur.execute(sql_new_order8)
+          
+          sql_new_order8 = "select @i_price;"
+          i_price = cur.fetchall()[0][0]
 
 
+          sql_new_order9 = """
+          INSERT INTO order_line (ol_o_id, ol_d_id, ol_w_id, ol_number, ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info)
+          VALUES (@d_next_o_id, {}, {}, {}, {}, {}, NULL, {}, {}, {});
+          """.format(d_id, w_id, i+1, ol_i_id[i], ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ''.join(random.choices(string.ascii_uppercase, k=24)))
 
+          cur.execute(sql_new_order9)
+
+          cur.execute("COMMIT;")
+
+"""
 -- 假设事务输入的参数
 -- w_id: 仓库ID, d_id: 区域ID, c_id: 客户ID
 -- o_ol_cnt: 订单中商品项的数量, o_all_local: 是否全部商品来自本地
@@ -266,38 +265,138 @@ END FOR;
 SET @total_amount = @total_amount * (1 - @c_discount) * (1 + @w_tax + @d_tax);
 
 COMMIT;
-
-
-
 """
--- 获取区域信息
-SELECT d_next_o_id 
-FROM district 
-WHERE d_id = ? AND d_w_id = ?;
 
--- 更新区域的下一个订单 ID
-UPDATE district 
-SET d_next_o_id = d_next_o_id + 1 
-WHERE d_id = ? AND d_w_id = ?;
-
--- 插入订单信息
-INSERT INTO orders (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?);
-
--- 插入订单行信息（循环执行）
-INSERT INTO order_line (ol_o_id, ol_d_id, ol_w_id, ol_number, ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-
--- 减少库存
-UPDATE stock 
-SET s_quantity = s_quantity - ?
-WHERE s_i_id = ? AND s_w_id = ?;
-"""
 
   def generate_payment():
+    wl_param = Workload_Parameter()
+    local_payment_ratio = wl_param.lcoal_payment_ratio
+
+    # Payment
+    c_d_id = random.randint(1, wl_param.max_d_id)
+    c_w_id = random.randint(1, wl_param.max_w_id)
+    c_id = random.randint(1, wl_param.max_c_id)
+
+    if random.random() < local_payment_ratio: ## local payemnt
+      w_id = c_w_id
+      d_id = c_d_id
+    else:
+      while True:
+        w_id = random.randint(1, wl_param.max_w_id)
+        if w_id != c_w_id:
+          break
+      while True:
+        d_id = random.randint(1, wl_param.max_d_id)
+        if d_id != c_d_id:
+          break
+
+
+    payment_amount = random.uniform(1.0, 1000.0)
+    o_ol_cnt = random.randint(1,wl_param.o_ol_cnt)  # order item count
+    ol_i_id = [0] * o_ol_cnt  # item id
+    ol_supply_w_id = [0] * o_ol_cnt  # supply warehouse id
+    ol_quantity = [0] * o_ol_cnt  # item quantity
+    o_all_local = wl_param.local_new_order_ratio
+
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        cur.execute("start transaction;")   
+        
+        sql_payment1 = """
+          UPDATE customer
+          SET c_balance = c_balance - {},
+              c_ytd_payment = c_ytd_payment + {},
+              c_payment_cnt = c_payment_cnt + 1
+          WHERE c_w_id = {}
+            AND c_d_id = {}
+            AND c_id = {};
+        """.format(payment_amount, payment_amount, c_w_id, c_d_id, c_id)
+
+        cur.execute(sql_payment1)
+
+        sql_payment2 = """
+          UPDATE district
+          SET d_ytd = d_ytd + {}
+          WHERE d_w_id = {}
+            AND d_id = {};
+        """.format(payment_amount, w_id, d_id)
+
+        cur.execute(sql_payment2)
+
+        sql_payment3 = """
+          UPDATE warehouse
+          SET w_ytd = w_ytd + {}
+          WHERE w_id = {};
+        """.format(payment_amount, w_id)
+
+        cur.execute(sql_payment3)
+
+        
+        characters = string.ascii_letters + string.digits
+        # random h_data
+        h_data = ''.join(random.choices(characters, k=24))
+
+        sql_payment4 = """
+          INSERT INTO history (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
+          VALUES ({}, {}, {}, {}, {}, NOW(), {}, {});
+        """.format(c_id, c_d_id, c_w_id, d_id, w_id, payment_amount, h_data)
+
+        cur.execute(sql_payment4)
+
+        cur.execute("commit;")
+
+"""
+-- 更新仓库收入
+UPDATE warehouse 
+SET w_ytd = w_ytd + ? 
+WHERE w_id = ?;
+
+-- 更新区域收入
+UPDATE district 
+SET d_ytd = d_ytd + ? 
+WHERE d_id = ? AND d_w_id = ?;
+
+-- 获取客户信息
+SELECT c_id, c_balance, c_ytd_payment, c_payment_cnt, c_credit 
+FROM customer 
+WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?;
+
+-- 更新客户的支付信息
+UPDATE customer 
+SET c_balance = c_balance - ?, 
+    c_ytd_payment = c_ytd_payment + ?, 
+    c_payment_cnt = c_payment_cnt + 1 
+WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?;
+
+-- 插入支付历史记录
+INSERT INTO history (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+"""
+
   
   def generate_order_status():
   
+
+
+
+
+-- 获取客户信息
+SELECT c_id, c_balance, c_first, c_middle, c_last 
+FROM customer 
+WHERE c_w_id = ? AND c_d_id = ? AND c_id = ?;
+
+-- 获取最新订单
+SELECT o_id, o_carrier_id, o_entry_d 
+FROM orders 
+WHERE o_w_id = ? AND o_d_id = ? AND o_c_id = ? 
+ORDER BY o_id DESC 
+LIMIT 1;
+
+-- 获取订单行信息
+SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d 
+FROM order_line 
+WHERE ol_o_id = ? AND ol_d_id = ? AND ol_w_id = ?;
+
   def generate_delivery():
   
   def genearte_stock_level():
