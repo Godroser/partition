@@ -57,6 +57,9 @@ class Workload_Parameter:
     self.max_region_id = 4
     self.max_ol_cnt = 15 # max item cnt in an order
     self.max_ol_quantity = 10 #max item quatity in an order
+    self.max_carrier_id = 10 # max carrier id in delivery txn
+    self.max_stock_cnt = 5 # max stock cnt in Stock-Level txn
+    self.quantity_threshold = 10 # threshold of item quantity in Stock-Level txn
 
     self.local_new_order_ratio = 0.9 #default 0.9
     self.lcoal_payment_ratio = 0.85 #default 0.85
@@ -105,6 +108,7 @@ class Workload_Genrator:
           WHERE d_id = {} AND d_w_id = {};
         """.format(d_id, w_id)
 
+        #####o_all_local ??
         sql_new_order3="""
           INSERT INTO orders (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local)
           VALUES (@d_next_o_id, {}, {}, {}, NOW(), NULL, {}, 1);
@@ -176,7 +180,8 @@ class Workload_Genrator:
 
           cur.execute(sql_new_order9)
 
-          cur.execute("COMMIT;")
+
+        cur.execute("COMMIT;")
 
 """
 -- 假设事务输入的参数
@@ -276,6 +281,7 @@ COMMIT;
     c_d_id = random.randint(1, wl_param.max_d_id)
     c_w_id = random.randint(1, wl_param.max_w_id)
     c_id = random.randint(1, wl_param.max_c_id)
+    payment_amount = random.uniform(1.0, 1000.0)
 
     if random.random() < local_payment_ratio: ## local payemnt
       w_id = c_w_id
@@ -290,13 +296,6 @@ COMMIT;
         if d_id != c_d_id:
           break
 
-
-    payment_amount = random.uniform(1.0, 1000.0)
-    o_ol_cnt = random.randint(1,wl_param.o_ol_cnt)  # order item count
-    ol_i_id = [0] * o_ol_cnt  # item id
-    ol_supply_w_id = [0] * o_ol_cnt  # supply warehouse id
-    ol_quantity = [0] * o_ol_cnt  # item quantity
-    o_all_local = wl_param.local_new_order_ratio
 
     with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur: 
@@ -375,11 +374,55 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
   
   def generate_order_status():
-  
+    wl_param = Workload_Parameter()
+
+    # Order_Status
+    c_d_id = random.randint(1, wl_param.max_d_id)
+    c_w_id = random.randint(1, wl_param.max_w_id)
+    c_id = random.randint(1, wl_param.max_c_id)
 
 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        cur.execute("start transaction;")   
+
+        sql_order_status1 = """
+          SELECT c_id, c_balance, c_first, c_middle, c_last
+          FROM customer
+          WHERE c_w_id = {}
+            AND c_d_id = {}
+            AND c_id = {};
+        """.format(c_w_id, c_d_id, c_id)
+        
+        cur.execute(sql_order_status1)
+
+        sql_order_status2 = """
+          SET @o_id =
+          SELECT o_id
+          FROM orders
+          WHERE o_w_id = {}
+            AND o_d_id = {}
+            AND o_c_id = {}
+          ORDER BY o_id DESC
+          LIMIT 1;
+        """.format(c_w_id, c_d_id, c_id)
+
+        cur.execute(sql_order_status2)
+
+        sql_order_status3 = """
+          SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d
+          FROM order_line
+          WHERE ol_w_id = {}
+            AND ol_d_id = {}
+            AND ol_o_id = @o_id;
+        """.format(c_w_id, c_d_id)
+
+        cur.execute(sql_order_status3)
+
+        cur.execute("commit;")
 
 
+"""
 -- 获取客户信息
 SELECT c_id, c_balance, c_first, c_middle, c_last 
 FROM customer 
@@ -396,12 +439,178 @@ LIMIT 1;
 SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d 
 FROM order_line 
 WHERE ol_o_id = ? AND ol_d_id = ? AND ol_w_id = ?;
+"""
 
   def generate_delivery():
-  
+    wl_param = Workload_Parameter()
+
+    # Delivery
+    d_id = random.randint(1, wl_param.max_d_id)
+    w_id = random.randint(1, wl_param.max_w_id)
+    carrier_id = random.randint(1, wl_param.max_carrier_id) 
+
+
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        cur.execute("start transaction;")   
+
+        sql_delivery1 = """
+          SET @o_id =
+          SELECT o_id 
+          FROM orders 
+          WHERE o_w_id = {} AND o_d_id = {} AND o_carrier_id IS NULL 
+          ORDER BY o_id ASC 
+          LIMIT 1;
+        """.format(w_id, d_id)
+
+        cur.execute(sql_delivery1)
+
+        sql_delivery2 = """
+          UPDATE orders
+          SET o_carrier_id = {}
+          WHERE o_w_id = :warehouse_id
+            AND o_d_id = :district_id
+            AND o_id = :order_id;
+        """.format(carrier_id)
+
+        cur.execute(sql_delivery2)
+
+        sql_delivery3 = """
+          UPDATE order_line
+          SET ol_delivery_d = NOW()
+          WHERE ol_w_id = {}
+            AND ol_d_id = {}
+            AND ol_o_id = @o_id;
+        """.format(w_id, d_id)
+
+        cur.execute(sql_delivery3)
+
+        sql_delivery4 = """
+          SET @total_amount =
+          SELECT SUM(ol_amount) AS total_order_amount
+          FROM order_line
+          WHERE ol_w_id = w_id
+            AND ol_d_id = d_id
+            AND ol_o_id = @o_id;
+        """.format(w_id, d_id)
+
+        cur.execute(sql_delivery4)
+
+        sql_delivery5 = """
+          UPDATE customer
+          SET c_balance = c_balance + @total_amount
+          WHERE c_w_id = {}
+            AND c_d_id = {}
+            AND c_id = (
+              SELECT o_c_id
+              FROM orders
+              WHERE o_w_id = {}
+                AND o_d_id = {}
+                AND o_id = @o_id);
+        """.format(w_id, d_id, w_id, d_id)
+
+        cur.execute(sql_delivery5)
+
+        cur.execute("commit;")
+
+"""
+-- 查找待发货的订单
+SELECT o_id 
+FROM orders 
+WHERE o_w_id = ? AND o_d_id = ? AND o_carrier_id IS NULL 
+ORDER BY o_id ASC 
+LIMIT 1;
+
+-- 更新订单的发货人
+UPDATE orders 
+SET o_carrier_id = ? 
+WHERE o_id = ? AND o_d_id = ? AND o_w_id = ?;
+
+-- 更新订单行的发货日期
+UPDATE order_line 
+SET ol_delivery_d = ? 
+WHERE ol_o_id = ? AND ol_d_id = ? AND ol_w_id = ?;
+
+-- 更新客户的余额和支付次数
+UPDATE customer 
+SET c_balance = c_balance + ?, 
+    c_delivery_cnt = c_delivery_cnt + 1 
+WHERE c_id = ? AND c_w_id = ? AND c_d_id = ?;
+"""
+
+
   def genearte_stock_level():
+    wl_param = Workload_Parameter()
 
+    # Stock-level
+    stock_cnt = random.randint(1, wl_param.max_stock_cnt)
+    d_id = random.randint(1, wl_param.max_d_id)
+    w_id = random.randint(1, wl_param.max_w_id)
+    quantity_threshold = wl_param.quantity_threshold
 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        cur.execute("start transaction;")     
+
+        sql_stock_level1 = """
+          SELECT o_id
+          FROM orders
+          WHERE o_w_id = {}
+            AND o_d_id = {}
+          ORDER BY o_id DESC
+          LIMIT {};
+        """.format(w_id, d_id, stock_cnt)
+
+        cur.execute(sql_stock_level1)
+        
+        o_ids = cur.fetchall()
+        o_id = [0] * len(o_ids)
+        for i in range(len(o_ids)):
+          o_id[i] = o_ids[i][0] 
+
+        sql_stock_level2 = """
+          SELECT DISTINCT ol_i_id 
+          FROM order_line 
+          WHERE ol_w_id = {}  
+            AND ol_d_id = {} AND ol_o_id IN {};
+        """.format(w_id, d_id, tuple(o_id))
+
+        cur.execute(sql_stock_level2)
+        i_ids = cur.fetchall()
+        i_id = [0] * len(i_ids)
+        for i in range(len(i_ids)):
+          i_id[i] = i_ids[i][0]
+
+        sql_stock_level3 = """
+          SELECT COUNT(*)
+          FROM stock
+          WHERE s_w_id = {}
+            AND s_i_id IN {}
+            AND s_quantity < {};
+        """.format(w_id, i_id, quantity_threshold)
+
+        cur.execute(sql_stock_level3)
+
+        cur.execute("commit;")
+
+"""
+-- 获取最近的订单 ID 范围
+SELECT o_id 
+FROM orders 
+WHERE o_w_id = ? AND o_d_id = ? 
+ORDER BY o_id DESC 
+LIMIT ?;
+
+-- 获取低库存的库存项
+SELECT COUNT(DISTINCT s_i_id) 
+FROM order_line, stock 
+WHERE ol_w_id = ? 
+  AND ol_d_id = ? 
+  AND ol_o_id BETWEEN ? AND ? 
+  AND s_w_id = ? 
+  AND s_i_id = ol_i_id 
+  AND s_quantity < ?;
+"""
 
   def generate_tp():
     # Default

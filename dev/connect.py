@@ -164,14 +164,27 @@ def check_replica_status():
 def select_fecth():
     with get_connection(autocommit=False) as connection:
         with connection.cursor() as cur: 
-            cur.execute("""
-                SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = 1 AND s_i_id = 5442);
-            """
-            )    
-            cur.execute("select @s_quantity;")
-            a = cur.fetchall()[0][0]
-            print(a, type(a))
-            print(''.join(random.choices(string.ascii_uppercase, k=24)))
+            # cur.execute("""
+            #     SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = 1 AND s_i_id = 5442);
+            # """
+            # )    
+            # cur.execute("select @s_quantity;")
+            # a = cur.fetchall()[0][0]
+            # print(a, type(a))
+            # print(''.join(random.choices(string.ascii_uppercase, k=24)))
+
+
+            cur.execute("SELECT o_id FROM orders WHERE o_w_id = 1   AND o_d_id = 1 ORDER BY o_id DESC LIMIT 3")
+            o_ids = cur.fetchall()
+            print(o_ids)
+            o_id = [0] * len(o_ids)
+            for i in range(len(o_ids)):
+                o_id[i] = o_ids[i][0] 
+            print(o_id)
+
+            print("SELECT DISTINCT ol_i_id FROM order_line WHERE ol_w_id = 1  AND ol_d_id = 1 AND ol_o_id IN {};".format(tuple(o_id)))
+            cur.execute("SELECT DISTINCT ol_i_id FROM order_line WHERE ol_w_id = 1  AND ol_d_id = 1 AND ol_o_id IN {};".format(tuple(o_id)))
+            print(cur.fetchall())
 
 def db_exec() -> tuple:
     with get_connection(autocommit=True) as connection:
