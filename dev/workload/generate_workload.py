@@ -2,6 +2,7 @@ import random
 import string
 import sys
 import os
+import time
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -61,7 +62,7 @@ class Workload_Parameter:
     self.max_ol_cnt = 15 # max item cnt in an order
     self.max_ol_quantity = 10 #max item quatity in an order
     self.max_carrier_id = 10 # max carrier id in delivery txn
-    self.max_stock_cnt = 5 # max stock cnt in Stock-Level txn
+    self.max_stock_cnt = 5 # max order cnt in Stock-Level txn
     self.quantity_threshold = 10 # threshold of item quantity in Stock-Level txn
 
     self.local_new_order_ratio = 0.9 #default 0.9
@@ -219,7 +220,7 @@ class TP_Workload_Genrator:
 
 
         cur.execute("COMMIT;")
-        print("New-Order complete! Warehouse {}, District {}, Customer {}".format(w_id, d_id, c_id))
+        print("New-Order complete! Warehouse {}, District {}, Customer {}".format(w_id, d_id, c_id), end=' ')
 
 # """
 # -- 假设事务输入的参数
@@ -311,7 +312,7 @@ class TP_Workload_Genrator:
 # """
 
 
-  def generate_payment():
+  def generate_payment(self):
     wl_param = Workload_Parameter()
     local_payment_ratio = wl_param.lcoal_payment_ratio
 
@@ -348,7 +349,7 @@ class TP_Workload_Genrator:
             AND c_d_id = {}
             AND c_id = {};
         """.format(payment_amount, payment_amount, c_w_id, c_d_id, c_id)
-
+        #print(sql_payment1)
         cur.execute(sql_payment1)
 
         sql_payment2 = """
@@ -357,7 +358,7 @@ class TP_Workload_Genrator:
           WHERE d_w_id = {}
             AND d_id = {};
         """.format(payment_amount, w_id, d_id)
-
+        #print(sql_payment2)
         cur.execute(sql_payment2)
 
         sql_payment3 = """
@@ -365,7 +366,7 @@ class TP_Workload_Genrator:
           SET w_ytd = w_ytd + {}
           WHERE w_id = {};
         """.format(payment_amount, w_id)
-
+        #print(sql_payment3)
         cur.execute(sql_payment3)
 
         
@@ -375,12 +376,14 @@ class TP_Workload_Genrator:
 
         sql_payment4 = """
           INSERT INTO history (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
-          VALUES ({}, {}, {}, {}, {}, NOW(), {}, {});
+          VALUES ({}, {}, {}, {}, {}, NOW(), {}, '{}');
         """.format(c_id, c_d_id, c_w_id, d_id, w_id, payment_amount, h_data)
-
+        #print(sql_payment4)
         cur.execute(sql_payment4)
 
         cur.execute("commit;")
+        print("Payment Done! Warehouse {}, District {}, Customer {}".format(w_id, d_id, c_id), end=' ')
+
 
 # """
 # -- 更新仓库收入
@@ -411,7 +414,7 @@ class TP_Workload_Genrator:
 # """
 
   
-  def generate_order_status():
+  def generate_order_status(self):
     wl_param = Workload_Parameter()
 
     # Order_Status
@@ -431,21 +434,23 @@ class TP_Workload_Genrator:
             AND c_d_id = {}
             AND c_id = {};
         """.format(c_w_id, c_d_id, c_id)
-        
+        #print(sql_order_status1)
         cur.execute(sql_order_status1)
+        cur.fetchall()
 
         sql_order_status2 = """
           SET @o_id =
-          SELECT o_id
+          (SELECT o_id
           FROM orders
           WHERE o_w_id = {}
             AND o_d_id = {}
             AND o_c_id = {}
           ORDER BY o_id DESC
-          LIMIT 1;
+          LIMIT 1);
         """.format(c_w_id, c_d_id, c_id)
-
+        #print(sql_order_status2)
         cur.execute(sql_order_status2)
+        cur.fetchall()
 
         sql_order_status3 = """
           SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d
@@ -454,10 +459,12 @@ class TP_Workload_Genrator:
             AND ol_d_id = {}
             AND ol_o_id = @o_id;
         """.format(c_w_id, c_d_id)
-
+        #print(sql_order_status3)
         cur.execute(sql_order_status3)
+        cur.fetchall()
 
         cur.execute("commit;")
+        print("Order Status Done! Warehouse {}, District {}, Customer {}".format(c_w_id, c_d_id, c_id), end=' ')
 
 
 # """
@@ -479,7 +486,7 @@ class TP_Workload_Genrator:
 # WHERE ol_o_id = ? AND ol_d_id = ? AND ol_w_id = ?;
 # """
 
-  def generate_delivery():
+  def generate_delivery(self):
     wl_param = Workload_Parameter()
 
     # Delivery
@@ -494,23 +501,24 @@ class TP_Workload_Genrator:
 
         sql_delivery1 = """
           SET @o_id =
-          SELECT o_id 
+          (SELECT o_id 
           FROM orders 
           WHERE o_w_id = {} AND o_d_id = {} AND o_carrier_id IS NULL 
           ORDER BY o_id ASC 
-          LIMIT 1;
+          LIMIT 1);
         """.format(w_id, d_id)
-
+        #print(sql_delivery1)
         cur.execute(sql_delivery1)
+        
 
         sql_delivery2 = """
           UPDATE orders
           SET o_carrier_id = {}
-          WHERE o_w_id = :warehouse_id
-            AND o_d_id = :district_id
-            AND o_id = :order_id;
-        """.format(carrier_id)
-
+          WHERE o_w_id = {}
+            AND o_d_id = {}
+            AND o_id = @o_id;
+        """.format(w_id, d_id, carrier_id)
+        #print(sql_delivery2)
         cur.execute(sql_delivery2)
 
         sql_delivery3 = """
@@ -520,18 +528,18 @@ class TP_Workload_Genrator:
             AND ol_d_id = {}
             AND ol_o_id = @o_id;
         """.format(w_id, d_id)
-
+        #print(sql_delivery3)
         cur.execute(sql_delivery3)
 
         sql_delivery4 = """
           SET @total_amount =
-          SELECT SUM(ol_amount) AS total_order_amount
+          (SELECT SUM(ol_amount) AS total_order_amount
           FROM order_line
-          WHERE ol_w_id = w_id
-            AND ol_d_id = d_id
-            AND ol_o_id = @o_id;
+          WHERE ol_w_id = {}
+            AND ol_d_id = {}
+            AND ol_o_id = @o_id);
         """.format(w_id, d_id)
-
+        #print(sql_delivery4)
         cur.execute(sql_delivery4)
 
         sql_delivery5 = """
@@ -546,10 +554,12 @@ class TP_Workload_Genrator:
                 AND o_d_id = {}
                 AND o_id = @o_id);
         """.format(w_id, d_id, w_id, d_id)
-
+        #print(sql_delivery5)
         cur.execute(sql_delivery5)
 
         cur.execute("commit;")
+        print("Delivery Done! Warehouse {}, District {}, Carrier {}".format(w_id, d_id, carrier_id), end=' ')
+
 
 # """
 # -- 查找待发货的订单
@@ -577,7 +587,7 @@ class TP_Workload_Genrator:
 # """
 
 
-  def genearte_stock_level():
+  def generate_stock_level(self):
     wl_param = Workload_Parameter()
 
     # Stock-level
@@ -598,38 +608,47 @@ class TP_Workload_Genrator:
           ORDER BY o_id DESC
           LIMIT {};
         """.format(w_id, d_id, stock_cnt)
-
+        #print(sql_stock_level1)
         cur.execute(sql_stock_level1)
+
         
         o_ids = cur.fetchall()
         o_id = [0] * len(o_ids)
+        
         for i in range(len(o_ids)):
           o_id[i] = o_ids[i][0] 
+        ol_o_id =  ', '.join(str(item) for item in o_id)
+        #print(ol_o_id)
 
         sql_stock_level2 = """
           SELECT DISTINCT ol_i_id 
           FROM order_line 
           WHERE ol_w_id = {}  
-            AND ol_d_id = {} AND ol_o_id IN {};
-        """.format(w_id, d_id, tuple(o_id))
-
+            AND ol_d_id = {} AND ol_o_id IN ({});
+        """.format(w_id, d_id, ol_o_id)
+        #print(sql_stock_level2)
         cur.execute(sql_stock_level2)
+        
+        
         i_ids = cur.fetchall()
         i_id = [0] * len(i_ids)
         for i in range(len(i_ids)):
           i_id[i] = i_ids[i][0]
+        s_i_id =  ', '.join(str(item) for item in i_id)
 
         sql_stock_level3 = """
           SELECT COUNT(*)
           FROM stock
           WHERE s_w_id = {}
-            AND s_i_id IN {}
+            AND s_i_id IN ({})
             AND s_quantity < {};
-        """.format(w_id, i_id, quantity_threshold)
-
+        """.format(w_id, s_i_id, quantity_threshold)
+        #print(sql_stock_level3)
         cur.execute(sql_stock_level3)
+        cur.fetchall()
 
         cur.execute("commit;")
+        print("Stock Level Done! Warehouse {}, District {}, Stock Count {}".format(w_id, d_id, stock_cnt), end=' ')
 
   # """
   # -- 获取最近的订单 ID 范围
@@ -650,22 +669,35 @@ class TP_Workload_Genrator:
   #   AND s_quantity < ?;
   # """
 
-def generate_tp():
+def generate_tp(max_txn_cnt):
   wl_param = Workload_Parameter()
-  tp_wl_generator = TP_Workload_Genrator()
+  tp_wl_generator = TP_Workload_Genrator(1, 4, 1)
+
+  txn_cnt = 0
   
-  seed = random.random()
-  if seed <= wl_param.new_order_ratio:
-    tp_wl_generator.generate_new_order()
-  elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio:
-    tp_wl_generator.generate_payment()
-  elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio + wl_param.order_status_ratio:
-    tp_wl_generator.generate_order_status()
-  elif seed <= 1 - wl_param.delivery_ratio:
-    tp_wl_generator.generate_delivery()
-  else:
-    tp_wl_generator.generate_stock_level()
+  while True:
+    seed = random.random()
+    print("Txn {}:".format(txn_cnt), end='')
+    start_time = time.time()
+
+    if seed <= wl_param.new_order_ratio:
+      tp_wl_generator.generate_new_order()
+    elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio:
+      tp_wl_generator.generate_payment()
+    elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio + wl_param.order_status_ratio:
+      tp_wl_generator.generate_order_status()
+    elif seed <= 1 - wl_param.delivery_ratio:
+      tp_wl_generator.generate_delivery()
+    else:
+      tp_wl_generator.generate_stock_level()
     
+    end_time = time.time()
+    delay = end_time - start_time
+    print(f"Execution delay: {delay:.6f} seconds")
+    
+    txn_cnt += 1
+    if txn_cnt >= max_txn_cnt:
+      break
 
 
 
@@ -681,4 +713,9 @@ if __name__ == '__main__':
   wl_param = Workload_Parameter()
   tp_wl_generator = TP_Workload_Genrator(1, 4, 1)
 
-  tp_wl_generator.generate_new_order()
+  #tp_wl_generator.generate_new_order()
+  #tp_wl_generator.generate_payment()
+  #tp_wl_generator.generate_order_status()
+  #tp_wl_generator.generate_delivery()
+  #tp_wl_generator.generate_stock_level()
+  generate_tp(10)
