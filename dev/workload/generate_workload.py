@@ -59,7 +59,7 @@ class Workload_Parameter:
     self.max_nation = 24
     self.max_supplier_id = 10000
     self.max_region_id = 4
-    self.max_ol_cnt = 15 # max item cnt in an order
+    self.max_ol_cnt = 10 # max item cnt in an order
     self.max_ol_quantity = 10 #max item quatity in an order
     self.max_carrier_id = 10 # max carrier id in delivery txn
     self.max_stock_cnt = 5 # max order cnt in Stock-Level txn
@@ -74,6 +74,10 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
+    self.sql_file_path = 'workload.sql'
+    self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
+    self.sql_date_max = '2025-10-23 17:00:00'
+    self.sql_date_mid = '2024-10-25 17:00:00'
     # Default
     # New-Order: 45%
     # Payment: 43%
@@ -82,12 +86,35 @@ class Workload_Parameter:
     # Stock-Level: 4% 
 
 
+class Workload_Statistics:
+  def __init__(self):
+    self.neworder_cnt = 0
+    self.neworder_lat = 0.0
+    self.neworder_lat_sum = 0.0    
+    self.payment_cnt = 0
+    self.payment_lat = 0.0
+    self.payment_lat_sum = 0.0
+    self.orderstatus_cnt = 0
+    self.orderstatus_lat = 0.0
+    self.orderstatus_lat_sum = 0.0    
+    self.delivery_cnt = 0
+    self.delivery_lat = 0.0
+    self.delivery_lat_sum = 0.0    
+    self.stocklevel_cnt = 0
+    self.stocklevel_lat = 0.0
+    self.stocklevel_lat_sum = 0.0    
+
+    self.query_cnt = [0] * 22
+    self.query_lat = [0.0] * 22
+    self.query_lat_sum = [0.0] * 22
+
+wl_stats = Workload_Statistics()
+
 
 class TP_Workload_Genrator:
-  def __init__(self, ratio, warehouse_number, total_number_txn):
-    self.ratio = ratio  #tp-ap ratio
-    self.warehouse_number = warehouse_number  
-    self.total_number_txn = total_number_txn  #total number of transaction/query
+  def __init__(self, warehouse_number):
+    #self.ratio = ratio  #tp-ap ratio
+    self.warehouse_number = warehouse_number
 
 
   def generate_new_order(self):
@@ -339,6 +366,16 @@ class TP_Workload_Genrator:
     with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur: 
         cur.execute("start transaction;")   
+
+        sql_payment0 = """
+          SELECT c_id, c_balance, c_ytd_payment, c_payment_cnt
+          FROM customer
+          WHERE c_w_id = {}
+            AND c_d_id = {}
+          ORDER BY c_first;
+        """.format(c_w_id, c_d_id)
+        cur.execute(sql_payment0)
+        cur.fetchall()
         
         sql_payment1 = """
           UPDATE customer
@@ -671,7 +708,7 @@ class TP_Workload_Genrator:
 
 def generate_tp(max_txn_cnt):
   wl_param = Workload_Parameter()
-  tp_wl_generator = TP_Workload_Genrator(1, 4, 1)
+  tp_wl_generator = TP_Workload_Genrator(wl_param.max_w_id)
 
   txn_cnt = 0
   
@@ -682,18 +719,46 @@ def generate_tp(max_txn_cnt):
 
     if seed <= wl_param.new_order_ratio:
       tp_wl_generator.generate_new_order()
+      wl_stats.neworder_cnt += 1
+
+      end_time = time.time()
+      delay = end_time - start_time
+      print(f"Execution delay: {delay:.6f} seconds")    
+      wl_stats.neworder_lat_sum += delay  
     elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio:
       tp_wl_generator.generate_payment()
+      wl_stats.payment_cnt += 1
+
+      end_time = time.time()
+      delay = end_time - start_time
+      print(f"Execution delay: {delay:.6f} seconds") 
+      wl_stats.payment_lat_sum += delay      
     elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio + wl_param.order_status_ratio:
       tp_wl_generator.generate_order_status()
+      wl_stats.orderstatus_cnt += 1
+
+      end_time = time.time()
+      delay = end_time - start_time
+      print(f"Execution delay: {delay:.6f} seconds") 
+      wl_stats.orderstatus_lat_sum += delay      
     elif seed <= 1 - wl_param.delivery_ratio:
       tp_wl_generator.generate_delivery()
+      wl_stats.delivery_cnt += 1
+
+      end_time = time.time()
+      delay = end_time - start_time
+      print(f"Execution delay: {delay:.6f} seconds") 
+      wl_stats.delivery_lat_sum += delay      
     else:
       tp_wl_generator.generate_stock_level()
+      wl_stats.stocklevel_cnt += 1
+
+      end_time = time.time()
+      delay = end_time - start_time
+      print(f"Execution delay: {delay:.6f} seconds") 
+      wl_stats.stocklevel_lat_sum += delay      
     
-    end_time = time.time()
-    delay = end_time - start_time
-    print(f"Execution delay: {delay:.6f} seconds")
+
     
     txn_cnt += 1
     if txn_cnt >= max_txn_cnt:
@@ -702,20 +767,120 @@ def generate_tp(max_txn_cnt):
 
 
 
-  def generate_ap():
-    pass
 
-  def generate_workload():
-    pass
+def generate_ap(max_qry_cnt):
+  wl_param = Workload_Parameter()
+  qry_cnt = 0
+  
+  with open(wl_param.sql_file_path, 'r') as file:
+      sql_script = file.read()
+      sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
+
+  sqls[0] = sqls[0].format(wl_param.sql_date_min)
+  sqls[1] = sqls[1].format(wl_param.sql_date_min)
+  sqls[2] = sqls[2].format(wl_param.sql_date_min)
+  sqls[3] = sqls[3].format(wl_param.sql_date_min, wl_param.sql_date_max)
+  sqls[4] = sqls[4].format(wl_param.sql_date_min)
+  sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  
+  sqls[9] = sqls[9].format(wl_param.sql_date_min)
+  
+  sqls[11] = sqls[11].format(wl_param.sql_date_max)
+
+  sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[14] = sqls[14].format(wl_param.sql_date_mid)
+  
+  sqls[19] = sqls[20].format(wl_param.sql_date_min)
+
+  while True:  
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        sql_no = random.randint(1, 22)
+        wl_stats.query_cnt[sql_no-1] += 1
+        
+        start_time = time.time()
+        cur.execute(sqls[sql_no-1])
+        print("Query {}".format(sql_no), end=' ')
+        
+        
+        end_time = time.time()
+        cur.fetchall()
+        delay = end_time - start_time
+        print(f"Execution delay: {delay:.6f} seconds")   
+        wl_stats.query_lat_sum[sql_no-1] += delay
+        
+
+    qry_cnt += 1
+    if qry_cnt >= max_qry_cnt:
+      break
+    
+      
+## max_txn_cnt : max cnt of txn and qry; ratio[0,1]: tp ratio
+def generate_workload(max_txn_cnt, ratio):
+  txn_cnt = 0
+  
+  while True:
+    seed = random.random()
+    if seed <= ratio:
+      generate_tp(1)
+    else:
+      generate_ap(1)
+    txn_cnt += 1
+    if txn_cnt >= max_txn_cnt:
+      break
+  if wl_stats.neworder_cnt == 0:
+    wl_stats.neworder_lat = 0
+  else:
+    wl_stats.neworder_lat = wl_stats.neworder_lat_sum / wl_stats.neworder_cnt
+
+  if wl_stats.payment_cnt == 0:
+    wl_stats.payment_lat = 0  
+  else:
+    wl_stats.payment_lat = wl_stats.payment_lat_sum / wl_stats.payment_cnt
+  
+  if wl_stats.orderstatus_cnt == 0:
+    wl_stats.orderstatus_lat = 0
+  else:
+    wl_stats.orderstatus_lat = wl_stats.orderstatus_lat_sum / wl_stats.orderstatus_cnt
+  
+  if wl_stats.delivery_cnt == 0:
+    wl_stats.delivery_lat = 0
+  else:
+    wl_stats.delivery_lat = wl_stats.delivery_lat_sum / wl_stats.delivery_cnt
+  
+  if wl_stats.stocklevel_cnt == 0:
+    wl_stats.stocklevel_lat = 0
+  else:
+    wl_stats.stocklevel_lat = wl_stats.stocklevel_lat_sum / wl_stats.stocklevel_cnt
+  
+  print("\n")
+  print("Summary:")
+  print("Txn New Order cnt:{}, latency (avg):{:.6f}s".format(wl_stats.neworder_cnt, wl_stats.neworder_lat))
+  print("Txn Payment cnt:{}, latency (avg):{:.6f}s".format(wl_stats.payment_cnt, wl_stats.payment_lat))
+  print("Txn Order Status cnt:{}, latency (avg):{:.6f}s".format(wl_stats.orderstatus_cnt, wl_stats.orderstatus_lat))
+  print("Txn Delivery cnt:{}, latency (avg):{:.6f}s".format(wl_stats.delivery_cnt, wl_stats.delivery_lat))
+  print("Txn Stock Level cnt:{}, latency (avg):{:.6f}s".format(wl_stats.stocklevel_cnt, wl_stats.stocklevel_lat))
+  
+  for i in range(22):
+    if wl_stats.query_cnt[i] == 0:
+      wl_stats.query_lat[i] = 0
+    else:
+      wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
+    print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
+  
 
 
 if __name__ == '__main__':
-  wl_param = Workload_Parameter()
-  tp_wl_generator = TP_Workload_Genrator(1, 4, 1)
+  #wl_param = Workload_Parameter()
+  #tp_wl_generator = TP_Workload_Genrator(4)
 
   #tp_wl_generator.generate_new_order()
   #tp_wl_generator.generate_payment()
   #tp_wl_generator.generate_order_status()
   #tp_wl_generator.generate_delivery()
   #tp_wl_generator.generate_stock_level()
-  generate_tp(10)
+  #generate_tp(10)
+  #generate_ap(1)
+  generate_workload(30, 0.5)
