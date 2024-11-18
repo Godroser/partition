@@ -1,0 +1,136 @@
+节点v的表示: [column的数据类型, distinct value占的比例 * 100,在predicate中出现的频率, 在aggregate操作中出现的频率, 在DML语句中出现的频率]
+
+Table: customer
+  c_id = [0, 2.500000, 1]
+  c_d_id = [0, 0.008333, 1]
+  c_w_id = [0, 0.003333, 1]
+  c_first = [3, 100.000000]
+  c_middle = [3, 0.000833]
+  c_last = [3, 0.833333]
+  c_street_1 = [3, 100.000000]
+  c_street_2 = [3, 100.000000]
+  c_city = [3, 100.000000]
+  c_state = [3, 0.563333, 1, ]
+  c_zip = [3, 8.333333]
+  c_phone = [3, 100.000000]
+  c_since = [2, 0.000833]
+  c_credit = [3, 0.001667]
+  c_credit_lim = [1, 0.000833]
+  c_discount = [1, 4.167500]
+  c_balance = [1, 12.519167]
+  c_ytd_payment = [1, 6.261667]
+  c_payment_cnt = [0, 0.004167]
+  c_delivery_cnt = [0, 0.001667]
+  c_data = [3, 100.000000]
+
+Table: district
+  d_id = [0, 25.000000]
+  d_w_id = [0, 10.000000]
+  d_name = [3, 100.000000]
+  d_street_1 = [3, 100.000000]
+  d_street_2 = [3, 100.000000]
+  d_city = [3, 100.000000]
+  d_state = [3, 97.500000]
+  d_zip = [3, 97.500000]
+  d_tax = [1, 100.000000]
+  d_ytd = [1, 100.000000]
+  d_next_o_id = [0, 70.000000]
+
+Table: history
+  h_c_id = [0, 2.338288]
+  h_c_d_id = [0, 0.007794]
+  h_c_w_id = [0, 0.003118]
+  h_d_id = [0, 0.007794]
+  h_w_id = [0, 0.003118]
+  h_date = [2, 1.061583]
+  h_amount = [1, 6.423277]
+  h_data = [3, 93.562693]
+
+Table: item
+  i_id = [0, 100.000000, 1, 1]
+  i_im_id = [0, 9.999000]
+  i_name = [3, 100.000000]
+  i_price = [1, 9.901000]
+  i_data = [3, 100.000000]
+
+Table: nation
+  N_NATIONKEY = [0, 100.000000, 2]
+  N_NAME = [3, 100.000000, , 1]
+  N_REGIONKEY = [0, 20.000000, 2]
+  N_COMMENT = [3, 100.000000]
+
+Table: new_order
+  no_o_id = [0, 2.644912, 1]
+  no_d_id = [0, 0.027239, 1]
+  no_w_id = [0, 0.010896, 1]
+
+Table: order_line
+  ol_o_id = [0, 0.253082, 1, 1]
+  ol_d_id = [0, 0.000777, 1, 1]
+  ol_w_id = [0, 0.000311, 1, 1]
+  ol_number = [0, 0.001165, , 2]
+  ol_i_id = [0, 7.768010]
+  ol_supply_w_id = [0, 0.000311]
+  ol_delivery_d = [2, 0.067909, 1]
+  ol_quantity = [0, 0.000777]
+  ol_amount = [1, 26.022290]
+  ol_dist_info = [3, 99.704971]
+
+Table: orders
+  o_id = [0, 2.531233, 2]
+  o_d_id = [0, 0.007769, 3]
+  o_w_id = [0, 0.003108, 3]
+  o_c_id = [0, 2.330785, 1]
+  o_entry_d = [2, 1.052738, 1, 2]
+  o_carrier_id = [0, 0.010870]
+  o_ol_cnt = [0, 0.008546]
+  o_all_local = [0, 0.001554]
+
+Table: region
+  R_REGIONKEY = [0, 100.000000, 2]
+  R_NAME = [3, 100.000000, 2]
+  R_COMMENT = [3, 100.000000]
+
+Table: revenue1
+  supplier_no = [0, 100.000000]
+  total_revenue = [1, 99.220000]
+
+Table: stock
+  s_i_id = [0, 25.000000, 2, 1]
+  s_w_id = [0, 0.001000, 2]
+  s_quantity = [0, 0.022750, 1, 1]
+  s_dist_01 = [3, 100.000000]
+  s_dist_02 = [3, 100.000000]
+  s_dist_03 = [3, 100.000000]
+  s_dist_04 = [3, 100.000000]
+  s_dist_05 = [3, 100.000000]
+  s_dist_06 = [3, 100.000000]
+  s_dist_07 = [3, 100.000000]
+  s_dist_08 = [3, 100.000000]
+  s_dist_09 = [3, 100.000000]
+  s_dist_10 = [3, 100.000000]
+  s_ytd = [0, 0.021500]
+  s_order_cnt = [0, 0.004500]
+  s_remote_cnt = [0, 0.000750]
+  s_data = [3, 100.000000]
+
+Table: supplier
+  S_SUPPKEY = [0, 100.000000, 2]
+  S_NAME = [3, 100.000000, , 1]
+  S_ADDRESS = [3, 100.000000]
+  S_NATIONKEY = [0, 0.250000, 2]
+  S_PHONE = [3, 100.000000]
+  S_ACCTBAL = [1, 99.550000]
+  S_COMMENT = [3, 100.000000]
+
+Table: warehouse
+  w_id = [0, 100.000000]
+  w_name = [3, 100.000000]
+  w_street_1 = [3, 100.000000]
+  w_street_2 = [3, 100.000000]
+  w_city = [3, 100.000000]
+  w_state = [3, 100.000000]
+  w_zip = [3, 100.000000]
+  w_tax = [1, 100.000000]
+  w_ytd = [1, 100.000000]
+

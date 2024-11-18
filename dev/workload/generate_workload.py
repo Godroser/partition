@@ -777,7 +777,6 @@ def generate_ap(max_qry_cnt):
       sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
 
   sqls[0] = sqls[0].format(wl_param.sql_date_min)
-  sqls[1] = sqls[1].format(wl_param.sql_date_min)
   sqls[2] = sqls[2].format(wl_param.sql_date_min)
   sqls[3] = sqls[3].format(wl_param.sql_date_min, wl_param.sql_date_max)
   sqls[4] = sqls[4].format(wl_param.sql_date_min)
@@ -793,6 +792,11 @@ def generate_ap(max_qry_cnt):
   sqls[14] = sqls[14].format(wl_param.sql_date_mid)
   
   sqls[19] = sqls[20].format(wl_param.sql_date_min)
+
+
+  # with open('workloadd.sql', 'w', encoding='utf-8') as file:
+  #   for sql in sqls:
+  #     file.write(sql + '\n')     
 
   while True:  
     with get_connection(autocommit=False) as connection:
@@ -883,4 +887,4 @@ if __name__ == '__main__':
   #tp_wl_generator.generate_stock_level()
   #generate_tp(10)
   #generate_ap(1)
-  generate_workload(30, 0.5)
+  generate_workload(200, 0.5)
