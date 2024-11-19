@@ -1,0 +1,175 @@
+ol_number: 1 (aggregation)
+ol_quantity: 5 (predicates: 3, aggregation: 2)
+ol_amount: 10 (predicates: 5, aggregation: 5)
+ol_o_id: 5 (predicates: 3, aggregation: 2)
+ol_w_id: 9 (predicates: 6, aggregation: 3)
+ol_d_id: 7 (predicates: 4, aggregation: 3)
+o_entry_d: 6 (predicates: 3, aggregation: 3)
+su.s_suppkey: 4 (predicates: 2, aggregation: 2)
+su.s_name: 3 (predicates: 2, aggregation: 1)
+n.n_name: 4 (predicates: 3, aggregation: 1)
+i.i_id: 5 (predicates: 3, aggregation: 2)
+i.i_name: 2 (predicates: 1, aggregation: 1)
+i.i_price: 2 (aggregation)
+i.i_data: 4 (predicates: 3, aggregation: 1)
+c_state: 3 (predicates: 2, aggregation: 1)
+c_id: 5 (predicates: 3, aggregation: 2)
+c_last: 2 (aggregation)
+c_city: 1 (aggregation)
+c_phone: 2 (aggregation)
+n.s_nationkey: 6 (predicates: 4, aggregation: 2)
+s_i_id: 4 (predicates: 3, aggregation: 1)
+s_w_id: 4 (predicates: 3, aggregation: 1)
+s_suppkey: 3 (predicates: 2, aggregation: 1)
+s_nationkey: 3 (predicates: 2, aggregation: 1)
+o_ol_cnt: 3 (aggregation)
+o_carrier_id: 3 (predicates: 2, aggregation: 1)
+o_o_id: 2 (predicates: 2)
+o_w_id: 3 (predicates: 3)
+o_d_id: 2 (predicates: 2)
+o_entry_d: 4 (predicates: 3, aggregation: 1)
+s.s_name: 3 (aggregation)
+c_balance: 2 (predicates: 1, aggregation: 1)
+
+数据类型, int:0, delemal:1, datetime:2, char varchar:3
+distinct value占的比例
+predicate出现次数
+聚合出现次数
+
+Table: customer
+  c_id = [0, 2.500000, 3, 2]
+  c_d_id = [0, 0.008333, 0, 0]
+  c_w_id = [0, 0.003333, 0, 0]
+  c_first = [3, 100.000000, 0, 0]
+  c_middle = [3, 0.000833, 0, 0]
+  c_last = [3, 0.833333, 0, 2]
+  c_street_1 = [3, 100.000000, 0, 0]
+  c_street_2 = [3, 100.000000, 0, 0]
+  c_city = [3, 100.000000, 0, 1]
+  c_state = [3, 0.563333, 2, 1]
+  c_zip = [3, 8.333333, 0, 0]
+  c_phone = [3, 100.000000, 0, 2]
+  c_since = [2, 0.000833, 0, 0]
+  c_credit = [3, 0.001667, 0, 0]
+  c_credit_lim = [1, 0.000833, 0, 0]
+  c_discount = [1, 4.167500, 0, 0]
+  c_balance = [1, 12.519167, 1, 1]
+  c_ytd_payment = [1, 6.261667, 0, 0]
+  c_payment_cnt = [0, 0.004167, 0, 0]
+  c_delivery_cnt = [0, 0.001667, 0, 0]
+  c_data = [3, 100.000000, 0, 0]
+
+Table: district
+  d_id = [0, 25.000000, 0, 0]
+  d_w_id = [0, 10.000000, 0, 0]
+  d_name = [3, 100.000000, 0, 0]
+  d_street_1 = [3, 100.000000, 0, 0]
+  d_street_2 = [3, 100.000000, 0, 0]
+  d_city = [3, 100.000000, 0, 0]
+  d_state = [3, 97.500000, 0, 0]
+  d_zip = [3, 97.500000, 0, 0]
+  d_tax = [1, 100.000000, 0, 0]
+  d_ytd = [1, 100.000000, 0, 0]
+  d_next_o_id = [0, 70.000000, 0, 0]
+
+Table: history
+  h_c_id = [0, 2.338288, 0, 0]
+  h_c_d_id = [0, 0.007794, 0, 0]
+  h_c_w_id = [0, 0.003118, 0, 0]
+  h_d_id = [0, 0.007794, 0, 0]
+  h_w_id = [0, 0.003118, 0, 0]
+  h_date = [2, 1.061583, 0, 0]
+  h_amount = [1, 6.423277, 0, 0]
+  h_data = [3, 93.562693, 0, 0]
+
+Table: item
+  i_id = [0, 100.000000, 3, 2]
+  i_im_id = [0, 9.999000, 0, 0]
+  i_name = [3, 100.000000, 1, 1]
+  i_price = [1, 9.901000, 0, 2]
+  i_data = [3, 100.000000, 3, 1]
+
+Table: nation
+  N_NATIONKEY = [0, 100.000000, 0, 0]
+  N_NAME = [3, 100.000000, 3, 1]
+  N_REGIONKEY = [0, 20.000000, 0, 0]
+  N_COMMENT = [3, 100.000000, 0, 0]
+
+Table: new_order
+  no_o_id = [0, 2.644912, 0, 0]
+  no_d_id = [0, 0.027239, 0, 0]
+  no_w_id = [0, 0.010896, 0, 0]
+
+Table: order_line
+  ol_o_id = [0, 0.253082, 3, 2]
+  ol_d_id = [0, 0.000777, 4, 3]
+  ol_w_id = [0, 0.000311, 6, 3]
+  ol_number = [0, 0.001165, 0, 1]
+  ol_i_id = [0, 7.768010, 0, 0]
+  ol_supply_w_id = [0, 0.000311, 0, 0]
+  ol_delivery_d = [2, 0.067909, 0, 0]
+  ol_quantity = [0, 0.000777, 3, 2]
+  ol_amount = [1, 26.022290, 5, 5]
+  ol_dist_info = [3, 99.704971, 0, 0]
+
+Table: orders
+  o_id = [0, 2.531233, 2, 0]
+  o_d_id = [0, 0.007769, 2, 0]
+  o_w_id = [0, 0.003108, 3, 0]
+  o_c_id = [0, 2.330785, 0, 0]
+  o_entry_d = [2, 1.052738, 6, 4]
+  o_carrier_id = [0, 0.010870, 2, 1]
+  o_ol_cnt = [0, 0.008546, 0, 3]
+  o_all_local = [0, 0.001554, 0, 0]
+
+Table: region
+  R_REGIONKEY = [0, 100.000000, 0, 0]
+  R_NAME = [3, 100.000000, 0, 0]
+  R_COMMENT = [3, 100.000000, 0, 0]
+
+Table: revenue1
+  supplier_no = [0, 100.000000, 0, 0]
+  total_revenue = [1, 99.220000, 0, 0]
+
+Table: stock
+  s_i_id = [0, 25.000000, 3, 1]
+  s_w_id = [0, 0.001000, 3, 1]
+  s_quantity = [0, 0.022750, 0, 0]
+  s_dist_01 = [3, 100.000000, 0, 0]
+  s_dist_02 = [3, 100.000000, 0, 0]
+  s_dist_03 = [3, 100.000000, 0, 0]
+  s_dist_04 = [3, 100.000000, 0, 0]
+  s_dist_05 = [3, 100.000000, 0, 0]
+  s_dist_06 = [3, 100.000000, 0, 0]
+  s_dist_07 = [3, 100.000000, 0, 0]
+  s_dist_08 = [3, 100.000000, 0, 0]
+  s_dist_09 = [3, 100.000000, 0, 0]
+  s_dist_10 = [3, 100.000000, 0, 0]
+  s_ytd = [0, 0.021500, 0, 0]
+  s_order_cnt = [0, 0.004500, 0, 0]
+  s_remote_cnt = [0, 0.000750, 0, 0]
+  s_data = [3, 100.000000, 0, 0]
+
+Table: supplier
+  S_SUPPKEY = [0, 100.000000, 4, 3]
+  S_NAME = [3, 100.000000, 2, 4]
+  S_ADDRESS = [3, 100.000000, 0, 0]
+  S_NATIONKEY = [0, 0.250000, 6, 3]
+  S_PHONE = [3, 100.000000, 0, 0]
+  S_ACCTBAL = [1, 99.550000, 0, 0]
+  S_COMMENT = [3, 100.000000, 0, 0]
+
+Table: warehouse
+  w_id = [0, 100.000000, 0, 0]
+  w_name = [3, 100.000000, 0, 0]
+  w_street_1 = [3, 100.000000, 0, 0]
+  w_street_2 = [3, 100.000000, 0, 0]
+  w_city = [3, 100.000000, 0, 0]
+  w_state = [3, 100.000000, 0, 0]
+  w_zip = [3, 100.000000, 0, 0]
+  w_tax = [1, 100.000000, 0, 0]
+  w_ytd = [1, 100.000000, 0, 0]
+
+边：
+[40,95,47,75,95,47,0,2,1,51,50,49,54,53,52,62,64,63,57,56,45,45,95,40,76,0,47,58,46,56,54,52]
+[75,45,70,92,45,70,65,64,63,64,63,62,64,63,62,52,54,53,76,75,95,9,45,75,57,65,70,66,9,75,76,62]
