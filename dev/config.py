@@ -12,5 +12,5 @@ class Config:
       self.TIDB_PORT='4000'
       self.TIDB_USER='root'
       self.TIDB_PASSWORD=''
-      self.TIDB_DB_NAME='tpcc'
+      self.TIDB_DB_NAME='ch'
       self.ca_path = ''

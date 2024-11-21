@@ -672,17 +672,21 @@ class TP_Workload_Genrator:
         for i in range(len(i_ids)):
           i_id[i] = i_ids[i][0]
         s_i_id =  ', '.join(str(item) for item in i_id)
-
-        sql_stock_level3 = """
-          SELECT COUNT(*)
-          FROM stock
-          WHERE s_w_id = {}
-            AND s_i_id IN ({})
-            AND s_quantity < {};
-        """.format(w_id, s_i_id, quantity_threshold)
-        #print(sql_stock_level3)
-        cur.execute(sql_stock_level3)
-        cur.fetchall()
+        #print(type(s_i_id))
+        
+        if s_i_id == '':
+          pass
+        else:
+          sql_stock_level3 = """
+            SELECT COUNT(*)
+            FROM stock
+            WHERE s_w_id = {}
+              AND s_i_id IN ({})
+              AND s_quantity < {};
+          """.format(w_id, s_i_id, quantity_threshold)
+          #print(sql_stock_level3)
+          cur.execute(sql_stock_level3)
+          cur.fetchall()
 
         cur.execute("commit;")
         print("Stock Level Done! Warehouse {}, District {}, Stock Count {}".format(w_id, d_id, stock_cnt), end=' ')
