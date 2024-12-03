@@ -293,7 +293,7 @@ if __name__ == "__main__":
     print("Example node embeddings:", z)  # 打印前5个节点的嵌入
     print("Example edge predictions:", pred[:5])  # 打印前5条边的预测概率
     
-    output_dir = "Output/"
+    output_dir = "Output/test/"
     save_final_output(model, data, output_dir)
 
     # result = get_basic_embedding()

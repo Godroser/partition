@@ -3,6 +3,7 @@ import string
 import sys
 import os
 import time
+from datetime import datetime
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -10,6 +11,8 @@ import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
 from config import Config
+from collector import replica_progresss_collector
+from collector import sync_metrics_collector
 
 def get_connection(autocommit: bool = True) -> MySQLConnection:
   config = Config()
@@ -716,6 +719,8 @@ def generate_tp(max_txn_cnt):
 
   txn_cnt = 0
   
+  start_sync_time, start_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
+
   while True:
     seed = random.random()
     print("Txn {}:".format(txn_cnt), end='')
@@ -768,6 +773,27 @@ def generate_tp(max_txn_cnt):
     if txn_cnt >= max_txn_cnt:
       break
 
+  ## GET SYNC TIME AND SYNC_COUNT
+  # start_sync_time, start_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
+
+  # 定义日期时间格式
+  time_format = '%Y-%m-%d %H:%M:%S'
+
+  end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
+  time.sleep(3)  ##not sure the imte interval
+  while True:
+    end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
+    if end_count_tmp == end_count:
+      break
+    else:
+      end_count = end_count_tmp
+  start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
+  end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
+  print(start_sync_time)
+  print(end_sync_time)
+  sync_time = datetime.strptime(end_sync_time, time_format) - datetime.strptime(start_sync_time, time_format)
+  print("Sync LATENCY: ", sync_time)
+  print("Sync DATA COUNT: ", int(end_count) - int(start_count))
 
 
 
@@ -828,7 +854,9 @@ def generate_ap(max_qry_cnt):
 ## max_txn_cnt : max cnt of txn and qry; ratio[0,1]: tp ratio
 def generate_workload(max_txn_cnt, ratio):
   txn_cnt = 0
-  
+  ## GET SYNC TIME AND SYNC_COUNT
+  start_sync_time, start_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
+
   while True:
     seed = random.random()
     if seed <= ratio:
@@ -838,6 +866,29 @@ def generate_workload(max_txn_cnt, ratio):
     txn_cnt += 1
     if txn_cnt >= max_txn_cnt:
       break
+
+
+  ## GET SYNC TIME AND SYNC_COUNT
+
+  # 定义日期时间格式
+  time_format = '%Y-%m-%d %H:%M:%S'
+
+  end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
+  time.sleep(3)
+  while True:
+    end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
+    if end_count_tmp == end_count:
+      break
+    else:
+      end_count = end_count_tmp
+  start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
+  end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
+  sync_time = datetime.strptime(end_sync_time, time_format) - datetime.strptime(start_sync_time, time_format)
+
+
+  #check_replica_status('order_line')
+
+  #Statistics
   if wl_stats.neworder_cnt == 0:
     wl_stats.neworder_lat = 0
   else:
@@ -878,6 +929,8 @@ def generate_workload(max_txn_cnt, ratio):
       wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
     print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
   
+  print("Sync LATENCY: ", sync_time)
+  print("Sync DATA COUNT: ", int(end_count) - int(start_count))
 
 
 if __name__ == '__main__':
@@ -889,6 +942,7 @@ if __name__ == '__main__':
   #tp_wl_generator.generate_order_status()
   #tp_wl_generator.generate_delivery()
   #tp_wl_generator.generate_stock_level()
-  #generate_tp(10)
+  
+  generate_tp(10)
   #generate_ap(1)
-  generate_workload(200, 0.5)
+  #generate_workload(100, 0.5)

@@ -69,14 +69,14 @@ def create_table_range():
                 ) 
                 
                 PARTITION BY RANGE(id) (
-                    PARTITION p0 VALUES LESS THAN (500),
-                    PARTITION p1 VALUES LESS THAN (1000),
-                    PARTITION p2 VALUES LESS THAN (1500),
-                    PARTITION p3 VALUES LESS THAN (2000),
-                    PARTITION p4 VALUES LESS THAN (2500),
-                    PARTITION p5 VALUES LESS THAN (3000),
-                    PARTITION p6 VALUES LESS THAN (4000),
-                    PARTITION p7 VALUES LESS THAN (5000)    
+                    PARTITION p0 VALUES LESS THAN (2000),
+                    PARTITION p1 VALUES LESS THAN (4000),
+                    PARTITION p2 VALUES LESS THAN (6000),
+                    PARTITION p3 VALUES LESS THAN (8000),
+                    PARTITION p4 VALUES LESS THAN (12000),
+                    PARTITION p5 VALUES LESS THAN (14000),
+                    PARTITION p6 VALUES LESS THAN (16000),
+                    PARTITION p7 VALUES LESS THAN (MAXVALUE)    
                 );
 
                 """
@@ -217,12 +217,12 @@ def db_exec() -> tuple:
 
 if __name__ == "__main__":
     #db_exec()
-    #create_table_range()
+    create_table_range()
     #create_table_hash()
-    #insert_table(50000)
+    insert_table(50000)
     #repartition()
     #repartition_range_to_hash()
     #repartition_hash_to_range()
-    #add_tiflash_replica()
-    #check_replica_status()
-    select_fecth()
+    add_tiflash_replica()
+    check_replica_status()
+    #select_fecth()

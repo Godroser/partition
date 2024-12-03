@@ -76,6 +76,10 @@ def load_data(table):
   print("Table {} data loaded!".format(table))
 
 
+def repartition_table_and_load_data(table, sql):
+  repartition_table(table, sql)
+  load_data(table)
+
 
 
 if __name__ == "__main__":
@@ -103,13 +107,7 @@ if __name__ == "__main__":
     `c_delivery_cnt` int(11) DEFAULT NULL,
     `c_data` varchar(500) DEFAULT NULL,
     KEY `idx_customer` (`c_w_id`,`c_d_id`,`c_last`,`c_first`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(c_d_id, c_w_id, c_payment_cnt)
-    (PARTITION `c_p0` VALUES LESS THAN (3, 2,2) ,
-    PARTITION `c_p1` VALUES LESS THAN (5, 3, 3),
-    PARTITION `c_p2` VALUES LESS THAN (7, 4, 4),
-    PARTITION `c_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE));
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   """
 
   sql_district = """
@@ -125,13 +123,7 @@ if __name__ == "__main__":
     `d_tax` decimal(4,4) DEFAULT NULL,
     `d_ytd` decimal(12,2) DEFAULT NULL,
     `d_next_o_id` int(11) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(d_id, d_w_id, d_next_o_id)
-    (PARTITION `d_p0` VALUES LESS THAN (3, 2, 3128),
-    PARTITION `d_p1` VALUES LESS THAN (5, 3, 3140),
-    PARTITION `d_p2` VALUES LESS THAN (7, 4, 3152),
-    PARTITION `d_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE));
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   """
 
   sql_history = """
@@ -146,13 +138,7 @@ if __name__ == "__main__":
     `h_data` varchar(24) DEFAULT NULL,
     KEY `idx_h_w_id` (`h_w_id`),
     KEY `idx_h_c_w_id` (`h_c_w_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date)
-    (PARTITION `h_p0` VALUES LESS THAN (750, 3, 2, 3, 2, '2024-10-24 18:00:00'),
-    PARTITION `h_p1` VALUES LESS THAN (1500, 5, 3, 5, 3, '2024-10-26 18:00:00'),
-    PARTITION `h_p2` VALUES LESS THAN (2250, 7, 4, 7, 4, '2024-11-10 18:00:00'),
-    PARTITION `h_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE, MAXVALUE, MAXVALUE, MAXVALUE));
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   """
 
   sql_item = """
@@ -162,13 +148,13 @@ if __name__ == "__main__":
     `i_name` varchar(24) DEFAULT NULL,
     `i_price` decimal(5,2) DEFAULT NULL,
     `i_data` varchar(50) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin 
 
-    PARTITION BY RANGE COLUMNS(i_im_id)
-    (PARTITION `i_p0` VALUES LESS THAN (2500),
-    PARTITION `i_p1` VALUES LESS THAN (5000),
-    PARTITION `i_p2` VALUES LESS THAN (7500),
-    PARTITION `i_p3` VALUES LESS THAN (MAXVALUE));    
+    PARTITION BY RANGE COLUMNS(i_id)
+    (PARTITION `i_p0` VALUES LESS THAN (25000),
+    PARTITION `i_p1` VALUES LESS THAN (50000),
+    PARTITION `i_p2` VALUES LESS THAN (75000),
+    PARTITION `i_p3` VALUES LESS THAN (MAXVALUE));     
   """
 
   sql_nation = """
@@ -183,7 +169,7 @@ if __name__ == "__main__":
     (PARTITION `n_p0` VALUES LESS THAN (6),
     PARTITION `n_p1` VALUES LESS THAN (12),
     PARTITION `n_p2` VALUES LESS THAN (18),
-    PARTITION `n_p3` VALUES LESS THAN (MAXVALUE)); 
+    PARTITION `n_p3` VALUES LESS THAN (MAXVALUE));        
   """
 
   sql_new_order = """
@@ -192,12 +178,6 @@ if __name__ == "__main__":
     `no_d_id` int(11) NOT NULL,
     `no_w_id` int(11) NOT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(no_o_id, no_d_id, no_w_id)
-    (PARTITION `no_p0` VALUES LESS THAN (2450, 3, 2),
-    PARTITION `no_p1` VALUES LESS THAN (2700, 5, 3),
-    PARTITION `no_p2` VALUES LESS THAN (2950, 7, 4),
-    PARTITION `no_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE));
   """
 
   sql_order_line = """
@@ -212,13 +192,7 @@ if __name__ == "__main__":
     `ol_quantity` int(11) DEFAULT NULL,
     `ol_amount` decimal(6,2) DEFAULT NULL,
     `ol_dist_info` char(24) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(ol_number, ol_i_id, ol_delivery_d)
-    (PARTITION `ol_p0` VALUES LESS THAN (4, 25000, '2024-10-24 18:00:00'),
-    PARTITION `ol_p1` VALUES LESS THAN (8, 50000, '2024-10-26 18:00:00'),
-    PARTITION `ol_p2` VALUES LESS THAN (12, 75000, '2024-11-10 18:00:00'),
-    PARTITION `ol_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE));
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin     
   """
 
   sql_orders = """
@@ -233,12 +207,6 @@ if __name__ == "__main__":
     `o_all_local` int(11) DEFAULT NULL,
     KEY `idx_order` (`o_w_id`,`o_d_id`,`o_c_id`,`o_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(o_entry_d)
-    (PARTITION `o_p0` VALUES LESS THAN ('2024-10-24 18:00:00'),
-    PARTITION `o_p1` VALUES LESS THAN ('2024-10-26 18:00:00'),
-    PARTITION `o_p2` VALUES LESS THAN ('2024-11-10 18:00:00'),
-    PARTITION `o_p3` VALUES LESS THAN (MAXVALUE));
   """
 
   sql_region = """
@@ -247,12 +215,6 @@ if __name__ == "__main__":
     `R_NAME` char(25) NOT NULL,
     `R_COMMENT` varchar(152) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
-
-    PARTITION BY RANGE COLUMNS(R_REGIONKEY)
-    (PARTITION `r_p0` VALUES LESS THAN (1),
-    PARTITION `r_p1` VALUES LESS THAN (2),
-    PARTITION `r_p2` VALUES LESS THAN (3),
-    PARTITION `r_p3` VALUES LESS THAN (MAXVALUE));
   """
 
   sql_stock = """
@@ -276,16 +238,29 @@ if __name__ == "__main__":
     `s_data` varchar(50) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 
-    PARTITION BY RANGE COLUMNS(s_quantity, s_ytd, s_order_cnt)
-    (PARTITION `st_p0` VALUES LESS THAN (25, 24, 5),
-    PARTITION `st_p1` VALUES LESS THAN (50, 48, 10),
-    PARTITION `st_p2` VALUES LESS THAN (75, 72, 15),
-    PARTITION `st_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE, MAXVALUE));
+    PARTITION BY RANGE COLUMNS(s_i_id)
+    (PARTITION `st_p0` VALUES LESS THAN (25000),
+    PARTITION `st_p1` VALUES LESS THAN (50000),
+    PARTITION `st_p2` VALUES LESS THAN (75000),
+    PARTITION `st_p3` VALUES LESS THAN (MAXVALUE)); 
   """
 
   sql_supplier = """
+    CREATE TABLE `supplier` (
+    `S_SUPPKEY` bigint(20) NOT NULL,
+    `S_NAME` char(25) NOT NULL,
+    `S_ADDRESS` varchar(40) NOT NULL,
+    `S_NATIONKEY` bigint(20) NOT NULL,
+    `S_PHONE` char(15) NOT NULL,
+    `S_ACCTBAL` decimal(15,2) NOT NULL,
+    `S_COMMENT` varchar(101) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
 
+    PARTITION BY RANGE COLUMNS(S_SUPPKEY, S_NATIONKEY)
+    (PARTITION `s_p0` VALUES LESS THAN (2500, 6),
+    PARTITION `s_p1` VALUES LESS THAN (5000, 12),
+    PARTITION `s_p2` VALUES LESS THAN (7500, 18),
+    PARTITION `s_p3` VALUES LESS THAN (MAXVALUE, MAXVALUE));     
   """
 
-  repartition_table('customer', sql_customer)
-  load_data("customer")
+  repartition_table_and_load_data('warehouse', sql_)
