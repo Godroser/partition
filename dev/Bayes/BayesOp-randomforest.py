@@ -6,6 +6,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
 
+import matplotlib.pyplot as plt
+from sklearn.tree import plot_tree
+
+
 # 1. 创建多元回归数据集
 # 假设我们有5个特征，每个特征取值范围是 0, 1, 2, 3, 4
 n_samples = 100
@@ -29,9 +33,10 @@ search_space = {
 opt = BayesSearchCV(
     estimator=RandomForestRegressor(random_state=42),
     search_spaces=search_space,
-    n_iter=50,          # 进行50次优化迭代
+    n_iter=20,          # 进行50次优化迭代
     cv=3,               # 3折交叉验证
-    random_state=42
+    random_state=42,
+    verbose=1
 )
 
 # 5. 拟合贝叶斯优化模型
@@ -42,5 +47,17 @@ print(f"Best parameters found: {opt.best_params_}")
 
 # 7. 在测试集上进行预测并评估
 y_pred = opt.predict(X_test)
+print(y_pred)
+print(y_test)
 mse = mean_squared_error(y_test, y_pred)
 print(f"Mean Squared Error on test set: {mse:.4f}")
+
+
+for idx, tree in enumerate(opt.best_estimator_.estimators_):
+    plt.figure(figsize=(15, 10))
+    plot_tree(tree, filled=True, feature_names=[f'Feature {i}' for i in range(X_train.shape[1])], class_names=['Target'], rounded=True)
+    plt.title(f"Tree {idx + 1}")
+    # 保存图形到文件
+    plt.savefig('decision_treeP{}.png'.format(idx), format='png')  # 保存为PNG文件
+
+
