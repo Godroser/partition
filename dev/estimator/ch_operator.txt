@@ -1,0 +1,398 @@
+Sort_6
+└─Projection_8
+  └─HashAgg_14
+    └─TableReader_15
+      └─HashAgg_9
+        └─Selection_13
+          └─TableFullScan_12
+
+Sort_45
+└─Projection_47
+  └─Projection_48
+    └─HashJoin_49
+      ├─Selection_73(Build)
+      │ └─HashAgg_74
+      │   └─HashJoin_77
+      │     ├─HashJoin_79(Build)
+      │     │ ├─HashJoin_81(Build)
+      │     │ │ ├─TableReader_84(Build)
+      │     │ │ │ └─Selection_83
+      │     │ │ │   └─TableFullScan_82
+      │     │ │ └─TableReader_86(Probe)
+      │     │ │   └─TableFullScan_85
+      │     │ └─TableReader_88(Probe)
+      │     │   └─TableFullScan_87
+      │     └─Projection_89(Probe)
+      │       └─TableReader_91
+      │         └─TableFullScan_90
+      └─HashJoin_52(Probe)
+        ├─HashJoin_54(Build)
+        │ ├─HashJoin_56(Build)
+        │ │ ├─TableReader_59(Build)
+        │ │ │ └─Selection_58
+        │ │ │   └─TableFullScan_57
+        │ │ └─TableReader_61(Probe)
+        │ │   └─TableFullScan_60
+        │ └─TableReader_63(Probe)
+        │   └─TableFullScan_62
+        └─Projection_64(Probe)
+          └─HashJoin_66
+            ├─TableReader_69(Build)
+            │ └─Selection_68
+            │   └─TableFullScan_67
+            └─TableReader_72(Probe)
+              └─Selection_71
+                └─TableFullScan_70
+
+Sort_17
+└─Projection_19
+  └─HashAgg_20
+    └─HashJoin_22
+      ├─TableReader_66(Build)
+      │ └─TableFullScan_65
+      └─HashJoin_24(Probe)
+        ├─TableReader_64(Build)
+        │ └─TableFullScan_63
+        └─HashJoin_56(Probe)
+          ├─TableReader_59(Build)
+          │ └─Selection_58
+          │   └─TableFullScan_57
+          └─TableReader_62(Probe)
+            └─Selection_61
+              └─TableFullScan_60
+
+Sort_10
+└─Projection_12
+  └─HashAgg_13
+    └─HashJoin_28
+      ├─TableReader_34(Build)
+      │ └─Selection_33
+      │   └─TableFullScan_32
+      └─TableReader_31(Probe)
+        └─Selection_30
+          └─TableFullScan_29
+
+Sort_28
+└─Projection_30
+  └─HashAgg_31
+    └─Projection_32
+      └─HashJoin_34
+        ├─HashJoin_36(Build)
+        │ ├─TableReader_39(Build)
+        │ │ └─Selection_38
+        │ │   └─TableFullScan_37
+        │ └─TableReader_41(Probe)
+        │   └─TableFullScan_40
+        └─Projection_42(Probe)
+          └─Projection_43
+            └─HashJoin_45
+              ├─TableReader_47(Build)
+              │ └─TableFullScan_46
+              └─Projection_48(Probe)
+                └─HashJoin_49
+                  ├─TableReader_90(Build)
+                  │ └─TableFullScan_89
+                  └─HashJoin_51(Probe)
+                    ├─TableReader_88(Build)
+                    │ └─TableFullScan_87
+                    └─HashJoin_81(Probe)
+                      ├─TableReader_83(Build)
+                      │ └─TableFullScan_82
+                      └─TableReader_86(Probe)
+                        └─Selection_85
+                          └─TableFullScan_84
+
+HashAgg_13
+└─TableReader_14
+  └─HashAgg_6
+    └─Selection_12
+      └─TableFullScan_11
+
+Sort_36
+└─Projection_38
+  └─HashAgg_39
+    └─Projection_113
+      └─HashJoin_42
+        ├─TableReader_45(Build)
+        │ └─Selection_44
+        │   └─TableFullScan_43
+        └─Projection_46(Probe)
+          └─Projection_47
+            └─HashJoin_49
+              ├─HashJoin_51(Build)
+              │ ├─TableReader_54(Build)
+              │ │ └─Selection_53
+              │ │   └─TableFullScan_52
+              │ └─TableReader_56(Probe)
+              │   └─TableFullScan_55
+              └─Projection_57(Probe)
+                └─Projection_58
+                  └─HashJoin_59
+                    ├─TableReader_112(Build)
+                    │ └─TableFullScan_111
+                    └─HashJoin_62(Probe)
+                      ├─IndexHashJoin_69(Build)
+                      │ ├─TableReader_105(Build)
+                      │ │ └─Selection_104
+                      │ │   └─TableFullScan_103
+                      │ └─IndexLookUp_66(Probe)
+                      │   ├─IndexRangeScan_64(Build)
+                      │   └─TableRowIDScan_65(Probe)
+                      └─TableReader_110(Probe)
+                        └─Selection_109
+                          └─TableFullScan_108
+
+Sort_39
+└─Projection_41
+  └─HashAgg_42
+    └─Projection_112
+      └─HashJoin_44
+        ├─TableReader_111(Build)
+        │ └─TableFullScan_110
+        └─HashJoin_47(Probe)
+          ├─HashJoin_49(Build)
+          │ ├─TableReader_52(Build)
+          │ │ └─Selection_51
+          │ │   └─TableFullScan_50
+          │ └─TableReader_54(Probe)
+          │   └─TableFullScan_53
+          └─Projection_55(Probe)
+            └─Projection_56
+              └─HashJoin_69
+                ├─TableReader_109(Build)
+                │ └─TableFullScan_108
+                └─HashJoin_85(Probe)
+                  ├─HashJoin_87(Build)
+                  │ ├─HashJoin_88(Build)
+                  │ │ ├─TableReader_100(Build)
+                  │ │ │ └─TableFullScan_99
+                  │ │ └─HashJoin_91(Probe)
+                  │ │   ├─TableReader_94(Build)
+                  │ │   │ └─Selection_93
+                  │ │   │   └─TableFullScan_92
+                  │ │   └─Projection_95(Probe)
+                  │ │     └─TableReader_98
+                  │ │       └─Selection_97
+                  │ │         └─TableFullScan_96
+                  │ └─Projection_101(Probe)
+                  │   └─TableReader_104
+                  │     └─Selection_103
+                  │       └─TableFullScan_102
+                  └─TableReader_107(Probe)
+                    └─Selection_106
+                      └─TableFullScan_105
+
+Sort_26
+└─Projection_28
+  └─HashAgg_29
+    └─Projection_68
+      └─Projection_30
+        └─HashJoin_32
+          ├─HashJoin_44(Build)
+          │ ├─TableReader_59(Build)
+          │ │ └─TableFullScan_58
+          │ └─HashJoin_47(Probe)
+          │   ├─HashJoin_49(Build)
+          │   │ ├─TableReader_51(Build)
+          │   │ │ └─TableFullScan_50
+          │   │ └─TableReader_53(Probe)
+          │   │   └─TableFullScan_52
+          │   └─Projection_54(Probe)
+          │     └─TableReader_57
+          │       └─Selection_56
+          │         └─TableFullScan_55
+          └─Projection_60(Probe)
+            └─HashJoin_62
+              ├─TableReader_65(Build)
+              │ └─Selection_64
+              │   └─TableFullScan_63
+              └─TableReader_67(Probe)
+                └─TableFullScan_66
+
+Sort_17
+└─Projection_19
+  └─HashAgg_20
+    └─Projection_21
+      └─HashJoin_23
+        ├─TableReader_25(Build)
+        │ └─TableFullScan_24
+        └─Projection_26(Probe)
+          └─HashJoin_27
+            ├─TableReader_65(Build)
+            │ └─Selection_64
+            │   └─TableFullScan_63
+            └─HashJoin_56(Probe)
+              ├─TableReader_62(Build)
+              │ └─Selection_61
+              │   └─TableFullScan_60
+              └─TableReader_59(Probe)
+                └─TableFullScan_58
+
+Projection_55
+└─Sort_56
+  └─Selection_58
+    └─HashAgg_59
+      └─Projection_74
+        └─HashJoin_62
+          ├─HashJoin_64(Build)
+          │ ├─TableReader_67(Build)
+          │ │ └─Selection_66
+          │ │   └─TableFullScan_65
+          │ └─TableReader_69(Probe)
+          │   └─TableFullScan_68
+          └─Projection_70(Probe)
+            └─TableReader_72
+              └─TableFullScan_71
+
+Sort_9
+└─Projection_11
+  └─HashAgg_12
+    └─Projection_35
+      └─HashJoin_27
+        ├─TableReader_33(Build)
+        │ └─Selection_32
+        │   └─TableFullScan_31
+        └─TableReader_30(Probe)
+          └─Selection_29
+            └─TableFullScan_28
+
+Sort_10
+└─Projection_12
+  └─HashAgg_13
+    └─HashAgg_14
+      └─HashJoin_31
+        ├─TableReader_37(Build)
+        │ └─Selection_36
+        │   └─TableFullScan_35
+        └─TableReader_34(Probe)
+          └─TableFullScan_33
+
+Projection_9
+└─HashAgg_10
+  └─Projection_21
+    └─HashJoin_13
+      ├─TableReader_16(Build)
+      │ └─Selection_15
+      │   └─TableFullScan_14
+      └─TableReader_18(Probe)
+        └─TableFullScan_17
+
+Sort_42
+└─HashJoin_45
+  ├─Selection_53(Build)
+  │ └─MaxOneRow_54
+  │   └─StreamAgg_56
+  │     └─TopN_71
+  │       └─Selection_64
+  │         └─CTEFullScan_65
+  └─HashJoin_48(Probe)
+    ├─TableReader_50(Build)
+    │ └─TableFullScan_49
+    └─Selection_51(Probe)
+      └─CTEFullScan_52
+
+CTE_0
+└─Projection_29(Seed Part)
+  └─Selection_30
+    └─HashAgg_31
+      └─Projection_39
+        └─HashJoin_33
+          ├─TableReader_36(Build)
+          │ └─Selection_35
+          │   └─TableFullScan_34
+          └─TableReader_38(Probe)
+            └─TableFullScan_37
+
+Sort_16
+└─Projection_18
+  └─HashAgg_19
+    └─Projection_34
+      └─HashJoin_20
+        ├─TableReader_32(Build)
+        │ └─Selection_31
+        │   └─TableFullScan_30
+        └─Projection_21(Probe)
+          └─Projection_22
+            └─HashJoin_24
+              ├─TableReader_27(Build)
+              │ └─Selection_26
+              │   └─TableFullScan_25
+              └─TableReader_29(Probe)
+                └─TableFullScan_28
+
+Projection_16
+└─HashAgg_17
+  └─HashJoin_19
+    ├─HashAgg_23(Build)
+    │ └─Projection_33
+    │   └─Projection_24
+    │     └─HashJoin_26
+    │       ├─TableReader_28(Build)
+    │       │ └─TableFullScan_27
+    │       └─TableReader_30(Probe)
+    │         └─TableFullScan_29
+    └─TableReader_22(Probe)
+      └─TableFullScan_21
+
+Projection_14
+└─Sort_15
+  └─Selection_17
+    └─HashAgg_18
+      └─HashJoin_19
+        ├─TableReader_54(Build)
+        │ └─TableFullScan_53
+        └─HashJoin_47(Probe)
+          ├─TableReader_49(Build)
+          │ └─TableFullScan_48
+          └─TableReader_52(Probe)
+            └─Selection_51
+              └─TableFullScan_50
+
+HashAgg_11
+└─HashJoin_15
+  ├─TableReader_18(Build)
+  │ └─Selection_17
+  │   └─TableFullScan_16
+  └─TableReader_21(Probe)
+    └─Selection_20
+      └─TableFullScan_19
+
+Sort_28
+└─Projection_30
+  └─HashAgg_31
+    └─HashJoin_32
+      ├─TableReader_57(Build)
+      │ └─TableFullScan_56
+      └─HashJoin_35(Probe)
+        ├─HashJoin_37(Build)
+        │ ├─HashJoin_39(Build)
+        │ │ ├─HashJoin_41(Build)
+        │ │ │ ├─TableReader_44(Build)
+        │ │ │ │ └─Selection_43
+        │ │ │ │   └─TableFullScan_42
+        │ │ │ └─TableReader_46(Probe)
+        │ │ │   └─TableFullScan_45
+        │ │ └─Projection_47(Probe)
+        │ │   └─TableReader_49
+        │ │     └─TableFullScan_48
+        │ └─TableReader_52(Probe)
+        │   └─Selection_51
+        │     └─TableFullScan_50
+        └─TableReader_55(Probe)
+          └─Selection_54
+            └─TableFullScan_53
+
+Projection_37
+└─Projection_59
+  └─Sort_38
+    └─Projection_60
+      └─Projection_39
+        └─HashAgg_40
+          └─Projection_58
+            └─IndexHashJoin_45
+              ├─TableReader_53(Build)
+              │ └─Selection_52
+              │   └─TableFullScan_51
+              └─IndexReader_42(Probe)
+                └─IndexRangeScan_41
+                
