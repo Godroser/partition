@@ -288,4 +288,4 @@ if __name__ == "__main__":
   """
 
   repartition_table('customer', sql_customer)
-  load_data("customer")
+  load_data('customer')

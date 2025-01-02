@@ -3,11 +3,14 @@
            replica_progresss_collector是收集replica同步状态的
            sync_metrics_collector是根据普罗米修斯接口统计replica数据同步量的
 /estimator 评估模型相关的代码
+           get_ch_operator.py 获取ch各个查询的物理执行计划    
+           operator.py 存储query的operator, 以及代价计算       
+/estimator01 评估模型相关的代码 (已废弃)
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试
 /Output 存放了使用VGAE的训练结果
 /tools     repartition.py 指定每个表分区键的自动重分区
-           repartition3.py 指定每个表分区键(另一组)的自动重分区
+           repartition3.py 指定每个表分区键(另一组)的自动重分区,这个用来建表导数据更好
            summary_latency_list.py 对ch-benchmark跑出来的延迟结果一键统计
 /workload  create_table.py 自动建表
            generate_workload.py CH-benchmark的负载测试脚本

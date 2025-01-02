@@ -1,9 +1,13 @@
+import math
+
 class TreeNode:
     def __init__(self, content):
         self.content = content
         self.children = []
         self.cost_formula = None  # 执行代价公式，可以根据名称来定义
         self.cost = None  # 代价值       
+        self.engine = None # tidb or tikv or tiflash
+
 
     def add_child(self, child_node):
         self.children.append(child_node)
@@ -20,6 +24,236 @@ class TreeNode:
 
     def __repr__(self):
         return f"TreeNode(content={self.content})"
+    
+
+class Global_Params:
+    def __init__(self, ):
+        # 全局参数，例如扫描代价因子、哈希连接因子等
+        self.tidb_temp_table_factor = 0.0  # TiDBTemp
+        self.tikv_scan_factor = 40.7  # TiKVScan
+        self.tikv_desc_scan_factor = 61.05  # TiKVDescScan
+        self.tiflash_scan_factor = 11.6  # TiFlashScan
+        self.tidb_cpu_factor = 49.9  # TiDBCPU
+        self.tikv_cpu_factor = 49.9  # TiKVCPU
+        self.tiflash_cpu_factor = 2.4  # TiFlashCPU
+        self.tidb_kv_net_factor = 3.96  # TiDB2KVNet
+        self.tidb_flash_net_factor = 2.2  # TiDB2FlashNet
+        self.tiflash_mpp_net_factor = 1.0  # TiFlashMPPNet
+        self.tidb_mem_factor = 0.2  # TiDBMem
+        self.tikv_mem_factor = 0.2  # TiKVMem
+        self.tiflash_mem_factor = 0.05  # TiFlashMem
+        self.tidb_disk_factor = 200.0  # TiDBDisk
+        self.tidb_request_factor = 6000000.0  # TiDBRequest   
+        self.memQuota = 1024*1024  #memory quota 1GB
+
+class TableScan(TreeNode):
+    def __init__(self, content, rows, rowSize):
+        super().__init__(content)
+        self.rows = rows # cardinality of rows
+        self.rowSize = rowSize
+
+    def calculate_cost(self):
+        if self.engine == "Tikv":
+            scanFactor = Global_Params.tikv_scan_factor
+        elif self.engine == "Tiflash":
+            scanFactor = Global_Params.tiflash_scan_factor
+        else:
+            scanFactor = 0    
+        cost = self.rows * math.log2(self.rowSize) * scanFactor + (10000 * math.log2(self.rowSize) * scanFactor)
+        return cost
+
+class TableReader(TreeNode):
+    def __init__(self, content, rows, rowSize):
+        super().__init__(content)
+        self.rows = rows
+        self.rowSize = rowSize
+
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            netFactor = Global_Params.tidb_net_factor
+            concurrency = 4
+        elif self.engine == "Tikv":
+            netFactor = Global_Params.tidb_net_factor
+            concurrency = 4
+        elif self.engine == "Tiflash":
+            netFactor = Global_Params.tiflash_net_factor
+            concurrency = 4
+        else:
+            netFactor = 0   
+            concurrency = 1    
+        cost = self.rows * self.rowSize * netFactor / concurrency
+        return cost
+    
+class HashAgg(TreeNode):
+    def __init__(self, content, rows, aggFuncs, numFuncs, buildRows, buildRowSize, nKeys, probeRows):
+        super().__init__(content)
+        self.rows = rows
+        self.aggFunc = aggFuncs
+        self.numFUncs = numFuncs
+        self.buildRows = buildRows
+        self.buildRowSize = buildRowSize
+        self.nKeys = nKeys
+        self.probeRows = probeRows      
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+            memFactor = Global_Params.tidb_mem_factor
+            concurrency = 4
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+            memFactor = Global_Params.tikv_mem_factor
+            concurrency = 4
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+            memFactor = Global_Params.tiflash_mem_factor
+            concurrency = 4
+        else:
+            cpuFactor = 0
+            memFactor = 0 
+            concurrency = 1       
+        cost = 10*3*cpuFactor + (self.rows * self.aggFuncs * cpuFactor + self.rows * self.numFuncs * cpuFactor + self.buildRows * self.nKeys * cpuFactor + self.buildRows * self.buildRowSize * memFactor + self.buildRows*cpuFactor + self.probeRows*self.nKeys*cpuFactor + self.probeRows*cpuFactor) / concurrency
+        return cost
+    
+class Sort(TreeNode):
+    def __init__(self, content, rows, rowSize, sortitems, numFuncs):
+        super().__init__(content)
+        self.rows = rows
+        self.rowSize = rowSize
+        self.sortitems = sortitems
+        self.numFuncs = numFuncs
+
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+            memFactor = Global_Params.tidb_mem_factor
+            diskFactor = Global_Params.tidb_disk_factor
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+            memFactor = Global_Params.tikv_mem_factor
+            diskFactor = Global_Params.tikv_disk_factor
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+            memFactor = Global_Params.tiflash_mem_factor
+            diskFactor = Global_Params.tiflash_disk_factor
+        else:
+            cpuFactor = 0
+            memFactor = 0 
+            diskFactor = 0      
+        cost = self.rows * math.log2(self.rows) * len(self.sortitems) * cpuFactor
+        if self.rows * self.rowSize > Global_Params.mem_quota:   ##memory quota exceeded
+            cost += Global_Params.memQuota*memFactor + self.rows * self.rowSize * diskFactor
+        else:
+            cost += self.rows * self.rowSize * memFactor
+        return cost
+    
+class MergeJoin(TreeNode):
+    def __init__(self, content, leftRows, leftRowSize, rightRows, rightRowSize, numFuncs):
+        super().__init__(content)
+        self.leftRows = leftRows
+        self.leftRowSize = leftRowSize
+        self.rightRows = rightRows
+        self.rightRowsSize = rightRowSize
+        self.numFuncs = numFuncs
+    
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+            memFactor = Global_Params.tidb_mem_factor
+            diskFactor = Global_Params.tidb_disk_factor
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+            memFactor = Global_Params.tikv_mem_factor
+            diskFactor = Global_Params.tikv_disk_factor
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+            memFactor = Global_Params.tiflash_mem_factor
+            diskFactor = Global_Params.tiflash_disk_factor
+        else:
+            cpuFactor = 0
+            memFactor = 0 
+            diskFactor = 0          
+        cost = self.leftRows * self.leftRowSize * cpuFactor + self.rightRows * self.rightRowSize * cpuFactor + self.leftrows * self.numFuncs * cpuFactor + self.rightrows * self.numFuncs * cpuFactor
+        return cost
+
+class HashJoin(TreeNode):
+    def __init__(self, content, buildRows, buildFilters, buildRowSize, nKeys, probeRows, probeFilters, probeRowSize):
+        super().__init__(content)
+        self.buildRows = buildRows
+        self.buildFilters = buildFilters
+        self.buildRowSize = buildRowSize
+        self.nKeys = nKeys
+        self.probeRows = probeRows
+        self.probeFilters = probeFilters
+        self.probeRowSize = probeRowSize
+
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+            memFactor = Global_Params.tidb_mem_factor
+            concurrency = 5
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+            memFactor = Global_Params.tikv_mem_factor
+            concurrency = 5
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+            memFactor = Global_Params.tiflash_mem_factor
+            concurrency = 3
+        else:
+            cpuFactor = 0
+            memFactor = 0
+            concurrency = 1
+        cost = (self.buildRows * self.buildFilters * cpuFactor + self.buildRows*self.nKeys*self.cpuFactor + self.buildRows*self.buildRowSize*memFactor + self.buildRows*cpuFactor + self.probeRows * self.probeFilters * cpuFactor + self.probeRows*self.nKeys*cpuFactor + self.probeRows*self.probeRowSize*memFactor + self.probeRows*cpuFactor) / concurrency
+        if self.engine == "Tiflash":
+            return cost
+        else:
+            return cost + 10*3*cpuFactor   ## startup cost
+ 
+class Selection(TreeNode):
+    def __init__(self, content, rows, numFuncs):
+        super().__init__(content)
+        self.rows = rows
+        self.numFuncs = numFuncs
+
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+        else:
+            cpuFactor = 0
+
+        cost = self.rows * cpuFactor * self.numFuncs
+        return cost
+    
+class Projection(TreeNode):
+    def __init__(self, content, rows, numFuncs):
+        super().__init__(content)
+        self.rows = rows
+        self.numFuncs = numFuncs
+
+    def calculate_cost(self):
+        if self.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+            memFactor = Global_Params.tidb_mem_factor
+            concurrency = 4
+        elif self.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+            memFactor = Global_Params.tikv_mem_factor
+            concurrency = 4
+        elif self.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+            memFactor = Global_Params.tiflash_mem_factor
+            concurrency = 4
+        else:
+            cpuFactor = 0
+            memFactor = 0 
+            concurrency = 1         
+        cost = self.row * cpuFactor * self.numFuncs / concurrency
+        return cost
+
 
 
 def parse_query_tree(file_path):
@@ -69,13 +303,28 @@ def print_tree(node, indent=0):
     for child in node.children:
         print_tree(child, indent + 1)
 
+    
 # 定义不同算子的代价公式
 def default_cost_formula(node):
     # 默认代价公式，可以根据算子名称或其他参数来定义
     if "TableFullScan" in node.content:
-        return 10  # 假设全表扫描的代价为10
+        if node.engine == "Tikv":
+            scanFactor = Global_Params.tikv_scan_factor
+        elif node.engine == "Tiflash":
+            scanFactor = Global_Params.tiflash_scan_factor
+        else:
+            scanFactor = 0
+        return node.rows * math.log2(node.rowSize) * scanFactor + (10000 * math.log2(node.rowSize) * scanFactor)
     elif "HashJoin" in node.content:
-        return 20  # 假设哈希连接的代价为20
+        if node.engine == "Tidb":
+            cpuFactor = Global_Params.tidb_cpu_factor
+        elif node.engine == "Tikv":
+            cpuFactor = Global_Params.tikv_cpu_factor
+        elif node.engine == "Tiflash":
+            cpuFactor = Global_Params.tiflash_cpu_factor
+        else:
+            cpuFactor = 0
+        return (buildRows * buildFilters * cpuFactor + buildRows*nKeys*cpuFactor + buildRows*buildRowSize*memFactor + buildRows*cpuFactor + probeRows * probeFilters * cpuFactor + probeRows*nKeys*cpuFactor + buildRows*buildRowSize*memFactor + buildRows*cpuFactor) / concurrency
     elif "Selection" in node.content:
         return 5  # 假设选择算子的代价为5
     elif "Projection" in node.content:
@@ -104,7 +353,7 @@ if __name__ == "__main__":
     file_path = "ch_operator.txt"
     query_trees = parse_query_tree(file_path)
 
-    # Print each tree for verification
+    # # Print each tree for verification
     # for i, root in enumerate(query_trees):
     #     print(f"Query Tree {i + 1}:")
     #     print_tree(root)
