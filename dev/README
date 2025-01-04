@@ -5,6 +5,10 @@
 /estimator 评估模型相关的代码
            get_ch_operator.py 获取ch各个查询的物理执行计划    
            operator.py 存储query的operator, 以及代价计算       
+           ch_operators_cost.py 记录ch的sql的代价系数
+           treeparser.py 解析物理执行树,找到所有的tablescan算子及其父算子,输出指定算子
+           test1.py 相当于treeparser.py的进阶版,是首先对物理执行树进行解析,替换表别名,找到所有的tablescan算子及其父算子,输出指定参数代码,用于定义ch_operators_params.py的params类
+           test2.py 替换物理执行树的表别名
 /estimator01 评估模型相关的代码 (已废弃)
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试
