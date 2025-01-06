@@ -1,25 +1,36 @@
-import re
+import sys
+import os
 
-def replace_alias_with_table_name(explain_output, table_alias_map):
-    for alias, table_name in table_alias_map.items():
-        explain_output = re.sub(r'\b' + re.escape(alias) + r'\b', table_name, explain_output)
-    return explain_output
+sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
-# 示例：表的别名映射
-table_alias_map = {
-    'o': 'orders',
-    'ol': 'order_line',
-    'st': 'stock',
-    'c': 'customer',
-    's': 'supplier',
-    'n1': 'nation',
-    'n2': 'nation',   
-}
+import mysql.connector
+from mysql.connector import MySQLConnection
+from mysql.connector.cursor import MySQLCursor
+from config import Config
 
-# 示例：EXPLAIN 输出内容
-explain_output = """
-"""
+def get_connection(autocommit: bool = True) -> MySQLConnection:
+    config = Config()
+    db_conf = {
+        "host": config.TIDB_HOST,
+        "port": config.TIDB_PORT,
+        "user": config.TIDB_USER,
+        "password": config.TIDB_PASSWORD,
+        "database": config.TIDB_DB_NAME,
+        "autocommit": autocommit,
+        # mysql-connector-python will use C extension by default,
+        # to make this example work on all platforms more easily,
+        # we choose to use pure python implementation.
+        "use_pure": True
+    }
 
-# 替换别名为原表名
-updated_explain_output = replace_alias_with_table_name(explain_output, table_alias_map)
-print(updated_explain_output)
+    if config.ca_path:
+        db_conf["ssl_verify_cert"] = True
+        db_conf["ssl_verify_identity"] = True
+        db_conf["ssl_ca"] = config.ca_path
+    return mysql.connector.connect(**db_conf)
+
+if __name__ == "__main__":
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM history;")
+        print(cur.fetchall()[0][0])

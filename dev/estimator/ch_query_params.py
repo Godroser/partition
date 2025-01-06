@@ -1,14 +1,4 @@
-# class params():
-#     def __init__(self):
-#       self.rows = 100
-#       self.rowSize = 10
-#       self.dict_tablescan = {'rows': rows, 'rowSize': rowSize}
-#       self.dict_selection = {'rows': , 'numFuncs': 1}
-#       self.dict_hashagg = {'rows': 100, 'rowSize': 10, 'sortitems': 1, 'numFuncs': , 'buildRows': , 'buildRowSize': , 'nKeys': , 'probeRows':}
-#       self.dict_tablereader = {'rows': , 'rowSize': }
-#       self.dict_hashagg1 = {'rows': 100, 'rowSize': 10, 'sortitems': 1, 'numFuncs': , 'buildRows': , 'buildRowSize': , 'nKeys': , 'probeRows':}
-#       self.dict_projection = {'rows': , 'numFuncs': }
-#       self.dict_sort = {'rows': , 'rowSize': , 'sortitems': , 'numFuncs': }
+
 
 
 class Q1params():
@@ -18,14 +8,6 @@ class Q1params():
     self.rowSize_tablescan_orderline = 65
     self.rows_selection_orderline = 885150 
 
-    # # 只计算受分区影响的算子代价
-    # self.dict_tablescan = {'rows': self.rows_tablescan, 'rowSize': self.rowSize_tablescan}
-    # self.dict_selection = {'rows': self.rows_selection, 'numFuncs': 1}
-    # self.dict_hashagg = {'rows': 30, 'rowSize': 65, 'aggFuncs': 1, 'numFuncs': 1, 'buildRows': 30, 'buildRowSize': 65, 'nKeys': 1, 'probeRows':}
-    # self.dict_tablereader = {'rows': , 'rowSize': }
-    # self.dict_hashagg1 = {'rows': 100, 'rowSize': 10, 'sortitems': 1, 'numFuncs': , 'buildRows': , 'buildRowSize': , 'nKeys': , 'probeRows':}
-    # self.dict_projection = {'rows': , 'numFuncs': }
-    # self.dict_sort = {'rows': , 'rowSize': , 'sortitems': , 'numFuncs': }
 
 class Q2params():
   def __init__(self):
