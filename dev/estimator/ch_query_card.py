@@ -45,6 +45,9 @@ class Qcard():
         # 检查keys是否命中分区键
         # 如果是,根据filter operators values从partition_meta类获取基数
         # 初始化需要扫描的分区范围
+        if self.keys[key_idx] != partition_meta.keys[0]:
+            return None
+                
         start_partition = 0
         end_partition = len(partition_meta.partition_range) - 1
 
@@ -57,20 +60,20 @@ class Qcard():
             if operator == 'gt' or operator == 'ge':
                 # 大于或大于等于
                 for i in range(start_partition, end_partition + 1):
-                    if partition_meta.partition_range[i][key_idx] > value:
+                    if partition_meta.partition_range[i][0] > value:
                         start_partition = i
                         break
             elif operator == 'lt' or operator == 'le':
                 # 小于或小于等于
                 for i in range(end_partition, start_partition, -1):
                     print(i)
-                    if partition_meta.partition_range[i][key_idx] < value:
+                    if partition_meta.partition_range[i][0] < value:
                         end_partition = i
                         break
             elif operator == 'eq':
                 # 等于
                 for i in range(start_partition, end_partition + 1):
-                    if partition_meta.partition_range[i][key_idx] > value:
+                    if partition_meta.partition_range[i][0] > value:
                         start_partition = i
                         end_partition = i
                         break
@@ -294,7 +297,7 @@ class Q8card(Qcard):
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd   
         self.keys = ['i_id', 'ol_i_id', 's_i_id', 'o_entry_d']  # filter keys
-        self.tables = ['item', 'order_line', 'stocks', 'orders'] # filter tables
+        self.tables = ['item', 'order_line', 'stock', 'orders'] # filter tables
         self.values = [1000, 1000, 1000, '2024-10-23 17:00:00'] # filter values
         self.operators = ['lt', 'lt', 'lt', 'ge'] # filter operators '>'  
 
