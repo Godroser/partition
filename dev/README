@@ -11,6 +11,7 @@
            ##根据ch_query_params.py的params类生成operators.py文件里前半部分参考chatgpt的聊天'ch_query_cost.py代码前半部分生成，前半部分的输入作为后半部分的输出，参考chatgpt的聊天'ch_query_cost.py代码后半部分生成'
            ch_query_params.py 记录ch的sql的cost的相关系数
            test2.py 替换物理执行树的表别名
+           ch_partition_meta.py 记录每个表的分区元数据类,包括表的分区键和分区范围
 /estimator01 评估模型相关的代码 (已废弃)
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试
