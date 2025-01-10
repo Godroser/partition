@@ -1,8 +1,10 @@
 from operators import *
 from ch_query_params import *
+from ch_partition_meta import *
+from ch_query_card import *
 
-def calculate_q1(engine):
-    q1params = Q1params()
+def calculate_q1(engine, q1params):
+    #q1params = Q1params()
     content = '1'
     rows_tablescan = q1params.rows_tablescan_orderline
     rowSize_tablescan = q1params.rowSize_tablescan_orderline
@@ -17,8 +19,8 @@ def calculate_q1(engine):
     cost = tablescan.calculate_cost() + selection.calculate_cost()
     return cost
 
-def calculate_q2(engine):
-    q2params = Q2params()
+def calculate_q2(engine, q2params):
+    #q2params = Q2params()
     content = '1'
     rows_tablescan_region = q2params.rows_tablescan_region
     rowsize_region = q2params.rowsize_tablescan_region
@@ -62,8 +64,8 @@ def calculate_q2(engine):
 
     return cost
 
-def calculate_q3(engine):
-    q3params = Q3params()
+def calculate_q3(engine, q3params):
+    #q3params = Q3params()
     content = '1'
     rows_tablescan_orderline = q3params.rows_tablescan_orderline
     rowsize_tablescan_orderline = q3params.rowsize_tablescan_orderline
@@ -101,8 +103,8 @@ def calculate_q3(engine):
     cost = tablescan_orderline.calculate_cost() + selection_orderline.calculate_cost() + tablescan_neworder.calculate_cost() + selection_neworder.calculate_cost() + tablescan_customer.calculate_cost() + selection_customer.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost()
     return cost
     
-def calculate_q4(engine):
-    q4params = Q4params()
+def calculate_q4(engine, q4params):
+    #q4params = Q4params()
     content = '1'
     rows_tablescan_orders = q4params.rows_tablescan_orders
     rowsize_tablescan_orders = q4params.rowsize_tablescan_orders
@@ -125,9 +127,9 @@ def calculate_q4(engine):
 
     return cost
 
-def calculate_q5(engine):
+def calculate_q5(engine, q5params):
     cost = 0
-    q5params = Q5params()
+    #q5params = Q5params()
     content = '1'    
     rows_tablescan_region = q5params.rows_tablescan_region
     rowsize_tablescan_region = q5params.rowsize_tablescan_region
@@ -189,8 +191,8 @@ def calculate_q5(engine):
     cost = tablescan_region.calculate_cost() + selection_region.calculate_cost() + tablescan_nation.calculate_cost() + selection_nation.calculate_cost() + tablescan_supplier.calculate_cost() + selection_supplier.calculate_cost() + tablescan_stock.calculate_cost() + selection_stock.calculate_cost() + tablescan_orderline.calculate_cost() + selection_orderline.calculate_cost() + tablescan_customer.calculate_cost() + selection_customer.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost()
     return cost
 
-def calculate_q6(engine):
-    q6params = Q6params()
+def calculate_q6(engine, q6params):
+    #q6params = Q6params()
     content = '1'
     rows_tablescan_order_line = q6params.rows_tablescan_order_line
     rowsize_tablescan_order_line = q6params.rowsize_tablescan_order_line
@@ -204,9 +206,9 @@ def calculate_q6(engine):
     cost = tablescan_orderline.calculate_cost() + selection_orderline.calculate_cost()
     return cost
 
-def calculate_q7(engine):
+def calculate_q7(engine, q7params):
     cost = 0
-    q7params = Q7params()
+    #q7params = Q7params()
     content = '1'
 
     rows_tablescan_nation = q7params.rows_tablescan_nation
@@ -254,9 +256,9 @@ def calculate_q7(engine):
     cost = tablescan_nation.calculate_cost()*2 + selection_nation.calculate_cost()*2 + tablescan_supplier.calculate_cost() + tablereader_supplier.calculate_cost() + tablescan_stock.calculate_cost() + tablereader_stock.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost() + tablescan_order_line.calculate_cost() + selection_order_line.calculate_cost()
     return cost
 
-def calculate_q8(engine):
+def calculate_q8(engine, q8params):
     cost = 0
-    q8params = Q8params()
+    #q8params = Q8params()
     content = '1'
 
     rows_tablescan_nation = q8params.rows_tablescan_nation
@@ -328,9 +330,9 @@ def calculate_q8(engine):
     cost = tablescan_nation.calculate_cost()*2 + tablereader_nation.calculate_cost()*2 + tablescan_region.calculate_cost() + selection_region.calculate_cost() + tablescan_customer.calculate_cost() + tablescan_supplier.calculate_cost() + tablereader_supplier.calculate_cost() + tablescan_item.calculate_cost() + selection_item.calculate_cost() + tablescan_order_line.calculate_cost() + selection_order_line.calculate_cost() + tablescan_stock.calculate_cost() + selection_stock.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost()
     return cost
 
-def calculate_q9(engine):
+def calculate_q9(engine, q9params):
     cost = 0
-    q9params = Q9params()
+    #q9params = Q9params()
     content = '1'
 
     rows_tablescan_orders = q9params.rows_tablescan_orders
@@ -392,9 +394,9 @@ def calculate_q9(engine):
 
     return cost
 
-def calculate_q10(engine):
+def calculate_q10(engine, q10params):
     cost = 0
-    q10params = Q10params()
+    #q10params = Q10params()
     content = '1'
 
     rows_tablescan_nation = q10params.rows_tablescan_nation
@@ -438,9 +440,9 @@ def calculate_q10(engine):
 
     return cost
 
-def calculate_q11(engine):
+def calculate_q11(engine, q11params):
     cost = 0
-    q11params = Q11params()
+    #q11params = Q11params()
     content = '1'
 
     rows_tablescan_nation = q11params.rows_tablescan_nation
@@ -474,9 +476,9 @@ def calculate_q11(engine):
 
     return cost
 
-def calculate_q12(engine):
+def calculate_q12(engine, q12params):
     cost = 0
-    q12params = Q12params()
+    #q12params = Q12params()
     content = '1'   
 
     rows_tablescan_orders = q12params.rows_tablescan_orders
@@ -502,9 +504,9 @@ def calculate_q12(engine):
 
     return cost
 
-def calculate_q13(engine):
+def calculate_q13(engine, q13params):
     cost = 0
-    q13params = Q13params()
+    #q13params = Q13params()
     content = '1' 
 
     rows_tablescan_orders = q13params.rows_tablescan_orders
@@ -529,9 +531,9 @@ def calculate_q13(engine):
 
     return cost
 
-def calculate_q14(engine):
+def calculate_q14(engine, q14params):
     cost = 0
-    q14params = Q14params()
+    #q14params = Q14params()
     content = '1'
 
     rows_tablescan_order_line = q14params.rows_tablescan_order_line
@@ -556,9 +558,9 @@ def calculate_q14(engine):
 
     return cost
 
-def calculate_q15(engine):
+def calculate_q15(engine, q15params):
     cost = 0
-    q15params = Q15params()
+    #q15params = Q15params()
     content = '1' 
     
     rows_tablescan_supplier = q15params.rows_tablescan_supplier
@@ -592,9 +594,9 @@ def calculate_q15(engine):
 
     return cost
 
-def calculate_q16(engine):
+def calculate_q16(engine, q16params):
     cost = 0
-    q16params = Q16params()
+    #q16params = Q16params()
     content = '1'       
 
     rows_tablescan_supplier = q16params.rows_tablescan_supplier
@@ -629,9 +631,9 @@ def calculate_q16(engine):
 
     return cost
 
-def calculate_q17(engine):
+def calculate_q17(engine, q17params):
     cost = 0
-    q17params = Q17params()
+    #q17params = Q17params()
     content = '1'    
 
     rows_tablescan_supplier = q17params.rows_tablescan_supplier
@@ -680,9 +682,9 @@ def calculate_q17(engine):
 
     return cost
 
-def calculate_q18(engine):
+def calculate_q18(engine, q18params):
     cost = 0
-    q18params = Q18params()
+    #q18params = Q18params()
     content = '1'    
 
     rows_tablescan_order_line = q18params.rows_tablescan_order_line
@@ -716,9 +718,9 @@ def calculate_q18(engine):
 
     return cost
 
-def calculate_q19(engine):
+def calculate_q19(engine, q19params):
     cost = 0
-    q19params = Q19params()
+    #q19params = Q19params()
     content = '1'  
 
     rows_tablescan_item = q19params.rows_tablescan_item
@@ -744,9 +746,9 @@ def calculate_q19(engine):
 
     return cost
 
-def calculate_q20(engine):
+def calculate_q20(engine, q20params):
     cost = 0
-    q20params = Q20params()
+    #q20params = Q20params()
     content = '1'  
 
     rows_tablescan_order_line = q20params.rows_tablescan_order_line
@@ -814,9 +816,9 @@ def calculate_q20(engine):
 
     return cost
 
-def calculate_q21(engine):
+def calculate_q21(engine, q21params):
     cost = 0
-    q21params = Q21params()
+    #q21params = Q21params()
     content = '1'    
 
     rows_tablescan_order_line = q21params.rows_tablescan_order_line
@@ -873,9 +875,9 @@ def calculate_q21(engine):
 
     return cost
 
-def calculate_q22(engine):
+def calculate_q22(engine, q22params):
     cost = 0
-    q22params = Q22params()
+    #q22params = Q22params()
     content = '1'  
 
     rows_tablescan_customer = q22params.rows_tablescan_customer
@@ -891,29 +893,170 @@ def calculate_q22(engine):
 
     return cost
 
+def get_qcard():
+    # get Qcard
+    qcard = []
+    q1card = Q1card()
+    q1card.init()
+    q1card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q1card)
+    q2card = Q2card()
+    q2card.init()
+    q2card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q2card)    
+    q3card = Q3card()
+    q3card.init()
+    q3card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q3card) 
+    q4card = Q4card()
+    q4card.init()
+    q4card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q4card) 
+    q5card = Q5card()
+    q5card.init()
+    q5card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q5card) 
+    q6card = Q6card()
+    q6card.init()
+    q6card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q6card) 
+    q7card = Q7card()
+    q7card.init()
+    q7card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q7card) 
+    q8card = Q8card()
+    q8card.init()
+    q8card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q8card) 
+    q9card = Q9card()
+    q9card.init()
+    q9card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q9card) 
+    q10card = Q10card()
+    q10card.init()
+    q10card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q10card) 
+    q11card = Q11card()
+    q11card.init()
+    q11card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q11card) 
+    q12card = Q12card()
+    q12card.init()
+    q12card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q12card) 
+    q13card = Q13card()
+    q13card.init()
+    q13card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q13card) 
+    q14card = Q14card()
+    q14card.init()
+    q14card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q14card) 
+    q15card = Q15card()
+    q15card.init()
+    q15card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q15card) 
+    q16card = Q16card()
+    q16card.init()
+    q16card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q16card) 
+    q17card = Q17card()
+    q17card.init()
+    q17card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q17card) 
+    q18card = Q18card()
+    q18card.init()
+    q18card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q18card) 
+    q19card = Q19card()
+    q19card.init()
+    q19card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q19card) 
+    q20card = Q20card()
+    q20card.init()
+    q20card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q20card) 
+    q21card = Q21card()
+    q21card.init()
+    q21card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q21card) 
+    q22card = Q22card()
+    q22card.init()
+    q22card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard.append(q22card) 
+    return qcard
 
+def update_qparams_with_qcard(qcard_list):
+    qparams_list = []
+    
+    for i, qcard in enumerate(qcard_list, start=1):
+        qparams_class_name = f"Q{i}params"
+        qparams = globals()[qparams_class_name]()
+        
+        # Copy attributes from qcard to qparams
+        for attr in dir(qcard):
+            if not attr.startswith('__') and not callable(getattr(qcard, attr)):
+                setattr(qparams, attr, getattr(qcard, attr))
+        
+        qparams_list.append(qparams)
+    
+    return qparams_list    
 
 if __name__ == "__main__":
-  engine = 'Tiflash'
-  print(calculate_q1(engine))
-  print(calculate_q2(engine))
-  print(calculate_q3(engine))
-  print(calculate_q4(engine))
-  print(calculate_q5(engine))
-  print(calculate_q6(engine))
-  print(calculate_q7(engine))
-  print(calculate_q8(engine))  
-  print(calculate_q9(engine))
-  print(calculate_q10(engine))
-  print(calculate_q11(engine))
-  print(calculate_q12(engine))
-  print(calculate_q13(engine))
-  print(calculate_q14(engine))
-  print(calculate_q15(engine))
-  print(calculate_q16(engine))    
-  print(calculate_q17(engine))
-  print(calculate_q18(engine))
-  print(calculate_q19(engine))
-  print(calculate_q20(engine))
-  print(calculate_q21(engine))
-  print(calculate_q22(engine))
+    # update table metadata
+    customer_meta = Customer_Meta()
+    district_meta = District_Meta()
+    history_meta = History_Meta()
+    item_meta = Item_Meta()
+    nation_meta = Nation_Meta()
+    new_order_meta = New_Order_Meta()
+    order_line_meta = Order_Line_Meta()
+    orders_meta = Orders_Meta()
+    region_meta = Region_Meta()
+    stock_meta = Stock_Meta()
+    supplier_meta = Supplier_Meta()
+    warehouse_meta = Warehouse_Meta()    
+
+    ranges =  [['2024-10-24 17:00:00'], ['2024-10-25 19:00:00'], ['2024-10-28 17:00:00'], ['2024-11-02 15:15:05']]
+    keys = ['ol_delivery_d']
+    order_line_meta.update_partition_metadata(keys, ranges)  
+
+    ranges = [[25000], [50000], [75000], [math.inf]]
+    keys = ['i_id']
+    item_meta.update_partition_metadata(keys, ranges) 
+
+    ranges = [[25000], [50000], [75000], [math.inf]]
+    keys = ['s_i_id']
+    stock_meta.update_partition_metadata(keys, ranges)        
+
+    # get Qcard
+    qcard_list = get_qcard()
+
+    # update Qparams
+    qparams_list = update_qparams_with_qcard(qcard_list)
+
+    # calculate query cost
+    engine = 'Tiflash'
+    
+    print(calculate_q1(engine, qparams_list[0]))
+    print(calculate_q2(engine, qparams_list[1]))
+    print(calculate_q3(engine, qparams_list[2]))
+    print(calculate_q4(engine, qparams_list[3]))
+    print(calculate_q5(engine, qparams_list[4]))
+    print(calculate_q6(engine, qparams_list[5]))
+    print(calculate_q7(engine, qparams_list[6]))
+    print(calculate_q8(engine, qparams_list[7]))
+    print(calculate_q9(engine, qparams_list[8]))  
+    print(calculate_q10(engine, qparams_list[9]))
+    print(calculate_q11(engine, qparams_list[10]))
+    print(calculate_q12(engine, qparams_list[11]))
+    print(calculate_q13(engine, qparams_list[12]))
+    print(calculate_q14(engine, qparams_list[13]))
+    print(calculate_q15(engine, qparams_list[14]))
+    print(calculate_q16(engine, qparams_list[15]))
+    print(calculate_q17(engine, qparams_list[16]))    
+    print(calculate_q18(engine, qparams_list[17]))
+    print(calculate_q19(engine, qparams_list[18]))
+    print(calculate_q20(engine, qparams_list[19]))
+    print(calculate_q21(engine, qparams_list[20]))
+    print(calculate_q22(engine, qparams_list[21]))

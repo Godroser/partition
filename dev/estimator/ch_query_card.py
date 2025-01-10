@@ -42,11 +42,16 @@ class Qcard():
     # get the card of the key_idx-th operator
     # update the row_tablescan params
     def get_operator_card(self, partition_meta, key_idx):
+        # 检查表是否有分区
+        if len(partition_meta.keys) == 0:
+            return 0, 0
+        
         # 检查keys是否命中分区键
         # 如果是,根据filter operators values从partition_meta类获取基数
         # 初始化需要扫描的分区范围
+        print("key_idx: ", key_idx)
         if self.keys[key_idx] != partition_meta.keys[0]:
-            return None
+            return 0, 0
                 
         start_partition = 0
         end_partition = len(partition_meta.partition_range) - 1
@@ -121,7 +126,7 @@ class Qcard():
         
         return scanned_partitions, scanned_partition_cnt
 
-    def get_query_card(self):    
+    def get_query_card(self, customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta):    
         table_dict = {
             'customer' : customer_meta,
             'district' : district_meta,
@@ -142,7 +147,7 @@ class Qcard():
             # 调用 get_operator_card 函数
             partition_meta = table_dict.get(partition_meta_name)
             #print(partition_meta)
-
+            print("Partition keys: ", partition_meta.keys)
             scanned_partitions, scanned_partition_cnt = self.get_operator_card(partition_meta, table_idx)
             print("Scanned partitions:", scanned_partitions)
             print("Scanned tuples count:", scanned_partition_cnt)               
@@ -176,6 +181,10 @@ class Q2card(Qcard):
         self.rows_tablescan_item = 100000 #tbd
         self.rowsize_tablescan_item = 87
         self.rows_selection_item = 100000 #tbd
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []         
 
 class Q3card(Qcard):
     def init(self):
@@ -316,7 +325,11 @@ class Q9card(Qcard):
         self.rowsize_tablescan_item = 87
         self.rows_selection_item = 100000 ##tbd
         self.rows_tablescan_stock = 400000 ##tbd
-        self.rowsize_tablescan_stock = 314          
+        self.rowsize_tablescan_stock = 314       
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []             
 
 class Q10card(Qcard):
     def init(self):
@@ -343,7 +356,11 @@ class Q11card(Qcard):
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
         self.rows_tablescan_stock = 400000 ##tbd
-        self.rowsize_tablescan_stock = 314    
+        self.rowsize_tablescan_stock = 314  
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []            
 
 class Q12card(Qcard):
     def init(self):        
@@ -382,7 +399,7 @@ class Q14card(Qcard):
         self.values = ['2024-10-23 17:00:00'] # filter values
         self.operators = ['ge'] # filter operators '>'             
 
-class Q15card():
+class Q15card(Qcard):
     def init(self):
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
@@ -396,7 +413,7 @@ class Q15card():
         self.values = ['2024-10-23 17:00:00'] # filter values
         self.operators = ['ge'] # filter operators '>'        
 
-class Q16card():
+class Q16card(Qcard):
     def init(self):
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
@@ -406,8 +423,12 @@ class Q16card():
         self.rows_selection_item = 100000 ##tbd
         self.rows_tablescan_stock = 400000 ##tbd
         self.rowsize_tablescan_stock = 314    
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []          
 
-class Q17card():
+class Q17card(Qcard):
     def init(self):
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
@@ -423,8 +444,12 @@ class Q17card():
         self.rowsize_tablescan_order_line = 65
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65 
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []          
 
-class Q18card():
+class Q18card(Qcard):
     def init(self):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
@@ -433,8 +458,12 @@ class Q18card():
         self.rows_tablescan_orders = 125038 ##tbd
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd    
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []          
 
-class Q19card():
+class Q19card(Qcard):
     def init(self):
         self.rows_tablescan_item = 100000 ##tbd
         self.rowsize_tablescan_item = 87
@@ -447,7 +476,7 @@ class Q19card():
         self.values = [1] # filter values
         self.operators = ['ge'] # filter operators '>'        
 
-class Q20card():   
+class Q20card(Qcard):   
     def init(self):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
@@ -468,7 +497,7 @@ class Q20card():
         self.values = ['2024-12-23 12:00:00'] # filter values
         self.operators = ['gt'] # filter operators '>'        
 
-class Q21card():
+class Q21card(Qcard):
     def init(self):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
@@ -485,8 +514,12 @@ class Q21card():
         self.rows_tablescan_orders = 125038 ##tbd
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd 
+        self.keys = []
+        self.values = []
+        self.tables = []
+        self.operators = []          
 
-class Q22card():
+class Q22card(Qcard):
     def init(self):
         self.rows_tablescan_customer = 120000 ##tbd
         self.rowsize_tablescan_customer = 671
@@ -545,4 +578,4 @@ if __name__ == "__main__":
 
     q8card = Q8card()
     q8card.init()
-    q8card.get_query_card()
+    q8card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
