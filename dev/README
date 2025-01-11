@@ -5,7 +5,7 @@
 /estimator 评估模型相关的代码
            get_ch_plan.py 获取ch各个查询的物理执行计划    
            operators.py 定义通用的几个operator类
-           ch_query_cost.py 定义几个query的代价计算
+           ch_query_cost.py 定义几个query的代价计算. 性能评估模型的测试代码在这里
            treeparser.py 解析物理执行树,找到所有的tablescan算子及其父算子,输出指定算子
            test1.py 相当于treeparser.py的进阶版,是首先对物理执行树进行解析,替换表别名,找到所有的tablescan算子及其父算子,输出指定参数代码,用于定义ch_query_params.py的params类
            ##根据ch_query_params.py的params类生成operators.py文件里前半部分参考chatgpt的聊天'ch_query_cost.py代码前半部分生成，前半部分的输入作为后半部分的输出，参考chatgpt的聊天'ch_query_cost.py代码后半部分生成'

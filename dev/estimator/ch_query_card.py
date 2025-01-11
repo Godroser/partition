@@ -49,7 +49,7 @@ class Qcard():
         # 检查keys是否命中分区键
         # 如果是,根据filter operators values从partition_meta类获取基数
         # 初始化需要扫描的分区范围
-        print("key_idx: ", key_idx)
+        #print("key_idx: ", key_idx)
         if self.keys[key_idx] != partition_meta.keys[0]:
             return 0, 0
                 
@@ -71,7 +71,7 @@ class Qcard():
             elif operator == 'lt' or operator == 'le':
                 # 小于或小于等于
                 for i in range(end_partition, start_partition, -1):
-                    print(i)
+                    #print(i)
                     if partition_meta.partition_range[i][0] < value:
                         end_partition = i
                         break
