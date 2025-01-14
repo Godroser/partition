@@ -67,13 +67,13 @@ class Node:
         # 判断节点是否已经完全扩展. 即是否所有可能的动作都已经尝试过
         return len(self.children) == len(self.state.get_possible_actions())
 
-    def best_child(self, c_param=1):
+    def best_child(self, c_param=5):
         # 使用UCB1策略选择最佳子节点
         if not self.children:
             print(self.state.tables)
             raise ValueError("No children to select from")
         choices_weights = [
-            (child.reward / child.visits) + c_param * math.sqrt((2 * math.log(self.visits) / child.visits))
+            (child.reward / child.visits) + c_param * math.sqrt((math.log(self.visits) / child.visits))
             for child in self.children
         ]
         return self.children[choices_weights.index(max(choices_weights))]
@@ -107,7 +107,7 @@ def calculate_reward(tables):
         if 'col2' in table['partition_keys']:
             reward += 5
         if 'col3' in table['partition_keys']:
-            reward += -2
+            reward += 0
         if 'col1' in table['replica_partition_keys']:
             reward += 0
         if 'col2' in table['replica_partition_keys']:
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     root = Node(initial_state)
 
     start_time = time.time()
-    best_node, best_reward = monte_carlo_tree_search(root, iterations=40000)
+    best_node, best_reward = monte_carlo_tree_search(root, iterations=20000)
     mcts_time = time.time() - start_time
 
     start_time = time.time()

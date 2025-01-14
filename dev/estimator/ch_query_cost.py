@@ -893,6 +893,7 @@ def calculate_q22(engine, q22params):
 
     return cost
 
+# 根据分区metadata, 获取每一个quert的查询基数
 def get_qcard():
     # get Qcard
     qcard = []
