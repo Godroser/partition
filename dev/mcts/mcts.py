@@ -4,6 +4,7 @@ import copy
 from fpdf import FPDF
 import time
 
+
 class State:
     def __init__(self, tables, action=None):
         self.tables = tables # 记录每个表的分区键和副本情况

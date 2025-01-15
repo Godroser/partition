@@ -1,7 +1,12 @@
-from operators import *
-from ch_query_params import *
-from ch_partition_meta import *
-from ch_query_card import *
+import os
+import sys
+
+sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
+
+from estimator.operators import *
+from estimator.ch_query_params import *
+from estimator.ch_partition_meta import *
+from estimator.ch_query_card import *
 
 def calculate_q1(engine, q1params):
     #q1params = Q1params()
@@ -894,138 +899,138 @@ def calculate_q22(engine, q22params):
     return cost
 
 # 根据分区metadata, 获取每一个quert的查询基数
-def get_qcard():
+def get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta):
     # get Qcard
     qcard = []
     q1card = Q1card()
     q1card.init()
-    print("Query 1")
+    # print("Query 1")
     q1card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q1card)
 
     q2card = Q2card()
     q2card.init()
-    print("Query 2")
+    # print("Query 2")
     q2card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q2card)
 
     q3card = Q3card()
     q3card.init()
-    print("Query 3")
+    # print("Query 3")
     q3card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q3card)
 
     q4card = Q4card()
     q4card.init()
-    print("Query 4")
+    # print("Query 4")
     q4card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q4card)
 
     q5card = Q5card()
     q5card.init()
-    print("Query 5")
+    # print("Query 5")
     q5card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q5card)
 
     q6card = Q6card()
     q6card.init()
-    print("Query 6")
+    # print("Query 6")
     q6card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q6card)
 
     q7card = Q7card()
     q7card.init()
-    print("Query 7")
+    # print("Query 7")
     q7card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q7card)
 
     q8card = Q8card()
     q8card.init()
-    print("Query 8")
+    # print("Query 8")
     q8card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q8card)
 
     q9card = Q9card()
     q9card.init()
-    print("Query 9")
+    # print("Query 9")
     q9card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q9card)
 
     q10card = Q10card()
     q10card.init()
-    print("Query 10")
+    # print("Query 10")
     q10card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q10card)
 
     q11card = Q11card()
     q11card.init()
-    print("Query 11")
+    # print("Query 11")
     q11card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q11card)
 
     q12card = Q12card()
     q12card.init()
-    print("Query 12")
+    # print("Query 12")
     q12card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q12card)
 
     q13card = Q13card()
     q13card.init()
-    print("Query 13")
+    # print("Query 13")
     q13card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q13card)
 
     q14card = Q14card()
     q14card.init()
-    print("Query 14")
+    # print("Query 14")
     q14card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q14card)
 
     q15card = Q15card()
     q15card.init()
-    print("Query 15")
+    # print("Query 15")
     q15card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q15card)
 
     q16card = Q16card()
     q16card.init()
-    print("Query 16")
+    # print("Query 16")
     q16card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q16card)
 
     q17card = Q17card()
     q17card.init()
-    print("Query 17")
+    # print("Query 17")
     q17card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q17card)
 
     q18card = Q18card()
     q18card.init()
-    print("Query 18")
+    # print("Query 18")
     q18card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q18card)
 
     q19card = Q19card()
     q19card.init()
-    print("Query 19")
+    # print("Query 19")
     q19card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q19card)
 
     q20card = Q20card()
     q20card.init()
-    print("Query 20")
+    # print("Query 20")
     q20card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q20card)
 
     q21card = Q21card()
     q21card.init()
-    print("Query 21")
+    # print("Query 21")
     q21card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q21card)
 
     q22card = Q22card()
     q22card.init()
-    print("Query 22")
+    # print("Query 22")
     q22card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     qcard.append(q22card)
 
@@ -1062,20 +1067,20 @@ if __name__ == "__main__":
     supplier_meta = Supplier_Meta()
     warehouse_meta = Warehouse_Meta()    
 
-    ranges =  [['2024-10-24 17:00:00'], ['2024-10-25 19:00:00'], ['2024-10-28 17:00:00'], ['2024-11-02 15:15:05']]
-    keys = ['ol_delivery_d']
+    ranges =  [['2024-10-24 17:00:00', '2024-10-25 19:00:00', '2024-10-28 17:00:00', '2024-11-02 15:15:05'], [800, 1600, 2400, math.inf]]
+    keys = ['ol_delivery_d', 'ol_o_id']
     order_line_meta.update_partition_metadata(keys, ranges)  
 
-    ranges = [[25000], [50000], [75000], [math.inf]]
-    keys = ['i_id']
-    item_meta.update_partition_metadata(keys, ranges) 
+    # ranges = [[25000], [50000], [75000], [math.inf]]
+    # keys = ['i_id']
+    # item_meta.update_partition_metadata(keys, ranges) 
 
-    ranges = [[25000], [50000], [75000], [math.inf]]
-    keys = ['s_i_id']
-    stock_meta.update_partition_metadata(keys, ranges)        
+    # ranges = [[25000], [50000], [75000], [math.inf]]
+    # keys = ['s_i_id']
+    # stock_meta.update_partition_metadata(keys, ranges)        
 
     # get Qcard
-    qcard_list = get_qcard()
+    qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
 
     # update Qparams
     qparams_list = update_qparams_with_qcard(qcard_list)

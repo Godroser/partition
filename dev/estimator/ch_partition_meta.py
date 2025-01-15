@@ -1,6 +1,7 @@
 import math
 import sys
 import os
+from datetime import datetime, timedelta
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -50,6 +51,8 @@ class Customer_Meta:
     for i in range(len(ranges)):
       self.partition_range[i] = ranges[i]
     
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
     with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:    
         cur.execute("SELECT count(*) FROM customer;") 
@@ -60,8 +63,8 @@ class Customer_Meta:
           conditions = []
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
-            value = ranges[i][key_idx]
-            if isinstance(value, str):
+            value = ranges[key_idx][i]
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -368,27 +371,34 @@ class Order_Line_Meta:
     self.keys = [] # partition keys
     self.count = 120000 # count(*) 
     # each partition tuple cnt
-    self.partition_cnt = [0]*4
+    self.partition_cnt = []
     # each partition range end value
-    self.partition_range = [0]*4
+    self.partition_range = []
 
   def update_partition_metadata(self, keys, ranges):
+    self.partition_cnt = [0,0,0,0] # []
     for i in range(len(keys)):
       self.keys.append(keys[i])
     for i in range(len(ranges)):
-      self.partition_range[i] = ranges[i]
+      self.partition_range.append(ranges[i]) # [[],[]]
+      #print("self.partition_cnt: ", self.partition_cnt)
+      #print("self.partition_range.append(ranges[i]): ", self.partition_range)
     
+    # 针对keys ranges列表,遍历每一个元素
     with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur:    
         cur.execute("SELECT count(*) FROM order_line;") 
-        self.count = cur.fetchall()[0][0]        
-        self.partition_cnt[len(ranges)-1] = self.count
-        for i in range(len(ranges)-1):        
+        self.count = cur.fetchall()[0][0]  
+        print("check self.partition_cnt: ", self.partition_cnt)     
+        print(ranges) 
+        print(keys)
+        self.partition_cnt[len(ranges[0])-1] = self.count # 初始化最后一个分区的计数
+        for i in range(len(ranges[0])-1): # 默认ranges[x]的长度相同, 遍历每一个分区,默认4个分区
           # 构建 WHERE 条件，支持多个列
           conditions = []
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
-            value = ranges[i][key_idx]
+            value = ranges[key_idx][i]
             if isinstance(value, str):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
@@ -411,7 +421,9 @@ class Order_Line_Meta:
             self.partition_cnt[i] = result - self.partition_cnt[i-1] - self.partition_cnt[i-2]
 
           # 更新最后一个 partition 的计数
-          self.partition_cnt[len(ranges)-1] -= self.partition_cnt[i]
+          print("111", ranges)
+          print(self.partition_cnt)
+          self.partition_cnt[len(ranges[0])-1] -= self.partition_cnt[i]
 
 class Orders_Meta:
   def __init__(self):

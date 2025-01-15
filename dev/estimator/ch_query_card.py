@@ -1,4 +1,4 @@
-from ch_partition_meta import *
+from estimator.ch_partition_meta import *
 
 ## 每个query只有selection算子会受到过滤条件和分区元数据的影响
 ## 因此每个Qcard类只需要找到selection算子，再通过get_query_card方法计算基数
@@ -54,7 +54,7 @@ class Qcard():
             return 0, 0
                 
         start_partition = 0
-        end_partition = len(partition_meta.partition_range) - 1
+        end_partition = len(partition_meta.partition_range[key_idx]) - 1
 
         # 根据第key_idx个的operator 和 value 确定需要扫描的分区
         for op_idx, operator in enumerate(self.operators):
@@ -65,20 +65,25 @@ class Qcard():
             if operator == 'gt' or operator == 'ge':
                 # 大于或大于等于
                 for i in range(start_partition, end_partition + 1):
-                    if partition_meta.partition_range[i][0] > value:
+                    #print("debug partition_meta.partition_range[i][0]: ", partition_meta.partition_range[key_idx][i])
+                    #print("debug value: ", value)
+                    if partition_meta.partition_range[key_idx][i] > value:
                         start_partition = i
                         break
             elif operator == 'lt' or operator == 'le':
                 # 小于或小于等于
+                print("check: ",end_partition, start_partition)
+
                 for i in range(end_partition, start_partition, -1):
-                    #print(i)
-                    if partition_meta.partition_range[i][0] < value:
+                    print(i)
+                    print("check: ",partition_meta.partition_range)
+                    if partition_meta.partition_range[key_idx][i] < value:
                         end_partition = i
                         break
             elif operator == 'eq':
                 # 等于
                 for i in range(start_partition, end_partition + 1):
-                    if partition_meta.partition_range[i][0] > value:
+                    if partition_meta.partition_range[key_idx][i] > value:
                         start_partition = i
                         end_partition = i
                         break
@@ -88,6 +93,7 @@ class Qcard():
         scanned_partition_cnt = 0
         for i in range(start_partition, end_partition + 1):
             scanned_partitions.append(i)
+            #print("check artition_meta.partition_cnt[i]: ", partition_meta.partition_cnt[i])
             scanned_partition_cnt += partition_meta.partition_cnt[i]
 
         # params_dict = {
@@ -143,14 +149,14 @@ class Qcard():
         }        
         for table_idx, table_name in enumerate(self.tables):
             partition_meta_name = table_name
-            print("Table: ", partition_meta_name)
+            # print("Table: ", partition_meta_name)
             # 调用 get_operator_card 函数
             partition_meta = table_dict.get(partition_meta_name)
             #print(partition_meta)
-            print("Partition keys: ", partition_meta.keys)
+            # print("Partition keys: ", partition_meta.keys)
             scanned_partitions, scanned_partition_cnt = self.get_operator_card(partition_meta, table_idx)
-            print("Scanned partitions:", scanned_partitions)
-            print("Scanned tuples count:", scanned_partition_cnt)               
+            # print("Scanned partitions:", scanned_partitions)
+            # print("Scanned tuples count:", scanned_partition_cnt)               
             
 
 class Q1card(Qcard):
