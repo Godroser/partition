@@ -6,6 +6,7 @@ import copy
 import random
 import json
 from datetime import datetime, timedelta
+from multiprocessing import Pool, cpu_count
 
 #sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -133,6 +134,7 @@ def calculate_reward(candidates):
     reward += calculate_q21(engine, qparams_list[20])
     reward += calculate_q22(engine, qparams_list[21]) 
 
+    #print("reward: ", reward)
     return reward    
 
 def simulate(state, depth, max_depth=10):
@@ -145,34 +147,109 @@ def simulate(state, depth, max_depth=10):
         action = random.choice(possible_actions)
         state_simu = state_simu.take_action(action)
         depth += 1      
-    return calculate_reward(state.tables)
+    return calculate_reward(state_simu.tables) ######todo
 
-def monte_carlo_tree_search(root, iterations=1000, max_depth=10):
-    for i in range(iterations):
+def monte_carlo_tree_search(root, iterations, max_depth):
+    for _ in range(iterations):
         node = root
         # 选择. 对于完全扩展的节点，选择最佳子节点，直到达到最大深度
         while node.is_fully_expanded() and node.depth < max_depth:
-            # print("node fully expanded:", node.depth)
-            # 判断节点是否是叶结点
-            if len(node.state.get_possible_actions()) == 0:
+            if not node.state.get_possible_actions():
                 break
             node = node.best_child()
-        if len(node.state.get_possible_actions()) == 0:
-            continue          
+        if not node.state.get_possible_actions():
+            continue
 
         # 扩展
         if node.depth < max_depth:
             node = node.expand()
-        
+
         # 模拟
-        #print("node partition keys: ", node.state.tables[0]['partition_keys'])
         reward = simulate(node.state, node.depth, max_depth)
-        #print("node partition keys: ", node.state.tables[0]['partition_keys'])
-        
+        print(reward)
+
         # 反向传播
         while node is not None:
             node.update(reward)
-            node = node.parent        
+            node = node.parent
+
+def expand_root(root, max_depth):
+    # 扩展根节点
+    actions = root.state.get_possible_actions()
+    child_nodes = []
+    while not root.is_fully_expanded():
+        for action in actions:
+            if action not in [child.state.action for child in root.children]:
+                new_state = root.state.take_action(action)
+                child_node = Node(new_state, root, root.depth + 1)  # 更新子节点的深度
+                root.children.append(child_node)
+                print("take action:", action)
+                print("append child to node depth:", root.depth)
+                child_nodes.append(child_node)   
+
+    # 计算reward
+    for child_node in child_nodes:
+        reward = simulate(child_node.state, child_node.depth, max_depth)
+    
+        # 反向传播
+        while child_node is not None:
+            child_node.update(reward)
+            child_node = child_node.parent    
+    return child_nodes
+
+def worker_process(root, iterations, max_depth):
+    local_root = copy.deepcopy(root)
+    for _ in range(iterations):
+        node = local_root
+        # 选择. 对于完全扩展的节点，选择最佳子节点，直到达到最大深度
+        while node.is_fully_expanded() and node.depth < max_depth:
+            if not node.state.get_possible_actions():
+                break
+            node = node.best_child()
+        if not node.state.get_possible_actions():
+            continue
+
+        # 扩展
+        if node.depth < max_depth:
+            node = node.expand()
+
+        # 模拟
+        reward = simulate(node.state, node.depth, max_depth)
+
+        # 反向传播
+        while node is not None:
+            node.update(reward)
+            node = node.parent
+
+    return local_root
+
+def parallel_monte_carlo_tree_search(root, iterations, max_depth, num_processes):
+    #扩展根节点全部的一层子节点
+    nodes = expand_root(root, max_depth) # [node in root.children]
+
+    if num_processes is None:
+        num_processes = cpu_count()
+
+    iterations_per_process = iterations // num_processes
+    #iterations_per_process = iterations
+    nodes_per_process = len(nodes) // num_processes
+    node_chunks = [nodes[i:i + nodes_per_process] for i in range(0, len(nodes), nodes_per_process)]
+
+    with Pool(processes=num_processes) as pool:
+        # results = pool.starmap(worker_process, [(root, iterations_per_process, max_depth)] * num_processes)
+        pool.starmap(worker_process, [(node, iterations_per_process, max_depth) for node in nodes])
+
+    # # 合并结果
+    # for result in results:
+    #     for child in result.children:
+    #         if child not in root.children:
+    #             root.children.append(child)
+    #         else:
+    #             existing_child = root.children[root.children.index(child)]
+    #             existing_child.visits += child.visits
+    #             existing_child.reward += child.reward
+
+    return root
 
 if __name__ == "__main__":
     # 1. 初始化表参数
@@ -223,9 +300,12 @@ if __name__ == "__main__":
     initial_state = State(tables)
     root = Node(initial_state)        
 
-    # 4. 进行mcts搜索
+    # 4. 进行并行化的mcts搜索
+    print('cpu_count: ', cpu_count())
+
     start_time = time.time()
-    monte_carlo_tree_search(root, iterations=100000)
+    #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
+    monte_carlo_tree_search(root, iterations=10000, max_depth=10)
     mcts_time = time.time() - start_time
 
     start_time = time.time()
@@ -291,4 +371,4 @@ if __name__ == "__main__":
     # print(calculate_q19(engine, qparams_list[18]))
     # print(calculate_q20(engine, qparams_list[19]))
     # print(calculate_q21(engine, qparams_list[20]))
-    # print(calculate_q22(engine, qparams_list[21]))    
+    # print(calculate_q22(engine, qparams_list[21]))

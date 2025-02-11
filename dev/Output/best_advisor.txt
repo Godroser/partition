@@ -33,7 +33,9 @@
             "c_delivery_cnt"
         ],
         "partition_keys": [],
-        "replicas": [],
+        "replicas": [
+            "c_d_id"
+        ],
         "replica_partition_keys": []
     },
     {
@@ -104,13 +106,13 @@
     {
         "name": "nation",
         "columns": [
-            "n_id",
+            "n_nationkey",
             "n_name",
             "n_regionkey",
             "n_comment"
         ],
         "partitionable_columns": [
-            "n_id",
+            "n_nationkey",
             "n_regionkey"
         ],
         "partition_keys": [],
@@ -228,9 +230,7 @@
             "s_order_cnt",
             "s_remote_cnt"
         ],
-        "partition_keys": [
-            "s_w_id"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },

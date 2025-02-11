@@ -8,28 +8,28 @@ sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
-from config import Config
+from config import *
 
-def get_connection(autocommit: bool = True) -> MySQLConnection:
-    config = Config()
-    db_conf = {
-        "host": config.TIDB_HOST,
-        "port": config.TIDB_PORT,
-        "user": config.TIDB_USER,
-        "password": config.TIDB_PASSWORD,
-        "database": config.TIDB_DB_NAME,
-        "autocommit": autocommit,
-        # mysql-connector-python will use C extension by default,
-        # to make this example work on all platforms more easily,
-        # we choose to use pure python implementation.
-        "use_pure": True
-    }
+# def get_connection(autocommit: bool = True) -> MySQLConnection:
+#     config = Config()
+#     db_conf = {
+#         "host": config.TIDB_HOST,
+#         "port": config.TIDB_PORT,
+#         "user": config.TIDB_USER,
+#         "password": config.TIDB_PASSWORD,
+#         "database": config.TIDB_DB_NAME,
+#         "autocommit": autocommit,
+#         # mysql-connector-python will use C extension by default,
+#         # to make this example work on all platforms more easily,
+#         # we choose to use pure python implementation.
+#         "use_pure": True
+#     }
 
-    if config.ca_path:
-        db_conf["ssl_verify_cert"] = True
-        db_conf["ssl_verify_identity"] = True
-        db_conf["ssl_ca"] = config.ca_path
-    return mysql.connector.connect(**db_conf)
+#     if config.ca_path:
+#         db_conf["ssl_verify_cert"] = True
+#         db_conf["ssl_verify_identity"] = True
+#         db_conf["ssl_ca"] = config.ca_path
+#     return mysql.connector.connect(**db_conf)
 
 ##根据sql本身的物理执行计划,找到tablescan算子对应的表,然后在现有分区配置下估计tablescan需要扫描到的数据量,最后修改ch_query_params里的Qparams类的变量
 
@@ -115,7 +115,7 @@ class District_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -166,12 +166,12 @@ class History_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
           # 拼接 SQL 查询
-          query = "SELECT count(*) FROM customer WHERE " + " AND ".join(conditions) + ";"
+          query = "SELECT count(*) FROM history WHERE " + " AND ".join(conditions) + ";"
           #print(f"Executing query: {query}")
           
           # 执行查询
@@ -239,7 +239,7 @@ class Item_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -290,7 +290,7 @@ class Nation_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -341,7 +341,7 @@ class New_Order_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -399,7 +399,7 @@ class Order_Line_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[key_idx][i]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -452,7 +452,7 @@ class Orders_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
           # 拼接 SQL 查询
@@ -502,7 +502,7 @@ class Region_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -553,7 +553,7 @@ class Stock_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -604,7 +604,7 @@ class Supplier_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 
@@ -655,7 +655,7 @@ class Warehouse_Meta:
           for key_idx, key in enumerate(keys):
             # 构建条件，支持多个列
             value = ranges[i][key_idx]
-            if isinstance(value, str):
+            if isinstance(value, datetime):
               value = f"'{value}'"
             conditions.append(f"{key} < {value}")
 

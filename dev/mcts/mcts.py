@@ -68,28 +68,36 @@ class Node:
         # 判断节点是否已经完全扩展. 即是否所有可能的动作都已经尝试过
         return len(self.children) == len(self.state.get_possible_actions())
 
-    def best_child(self, c_param=5):
+    def best_child(self, c_param=1):
         # 使用UCB1策略选择最佳子节点
         if not self.children:
             print(self.state.tables)
             raise ValueError("No children to select from")
+        for child in self.children:
+            if child.visits == 0:
+                print("child.visits == 0")
+                print(child.depth)
+                print(child.state.tables)
         choices_weights = [
-            (child.reward / child.visits) + c_param * math.sqrt((math.log(self.visits) / child.visits))
+            (child.reward / child.visits) + c_param * math.sqrt((math.log(self.visits) / child.visits)) * 600000000
             for child in self.children
         ]
+        # for child in self.children:
+        #     print("(child.reward / child.visits): ", (child.reward / child.visits))
+        #     print("cparams: ", c_param * math.sqrt((math.log(self.visits) / child.visits)) * 600000000)
         return self.children[choices_weights.index(max(choices_weights))]
 
     def expand(self):
         # 扩展节点
         actions = self.state.get_possible_actions()
-        print("expand node depth:", self.depth)
+        #print("expand node depth:", self.depth)
         #print("actions:", actions)
         for action in actions:
             if action not in [child.state.action for child in self.children]:
                 new_state = self.state.take_action(action)
                 child_node = Node(new_state, self, self.depth + 1)  # 更新子节点的深度
                 self.children.append(child_node)
-                print("take action:", action)
+                #print("take action:", action)
                 print("append child to node depth:", self.depth)
                 return child_node
         raise Exception("Should never reach here")
