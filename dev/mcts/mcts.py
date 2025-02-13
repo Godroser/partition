@@ -22,12 +22,13 @@ class State:
             for column in partition_candidates:
                 if column not in table['partition_keys']:
                     actions.append(('partition', table['name'], column))
-            for column in replica_partition_candidates:
-                if column not in table['replica_partition_keys']:
-                    actions.append(('replica_partition', table['name'], column))
-            for column in replica_candidates:
-                if column not in table['replicas']:
-                    actions.append(('replica', table['name'], column))
+            ######todo
+            # for column in replica_partition_candidates:
+            #     if column not in table['replica_partition_keys']:
+            #         actions.append(('replica_partition', table['name'], column))
+            # for column in replica_candidates:
+            #     if column not in table['replicas']:
+            #         actions.append(('replica', table['name'], column))
         random.shuffle(actions)  # 打乱actions的顺序
         return actions
 

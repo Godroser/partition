@@ -30,7 +30,13 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
     return mysql.connector.connect(**db_conf)
 
 if __name__ == "__main__":
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM history;")
-        print(cur.fetchall()[0][0])
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM history;")
+    #     print(cur.fetchall()[0][0])
+
+    ll = []
+    ll1 = [[1,2,3],[4,5,6],[7,8,9]]
+    for i in range(len(ll1)):
+        ll.append(ll1[i])
+    print(ll)

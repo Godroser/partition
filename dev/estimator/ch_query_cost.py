@@ -18,6 +18,10 @@ def calculate_q1(engine, q1params):
     tablescan = TableScan(content, rows_tablescan, rowSize_tablescan)
     selection = Selection(content, rows_selection, 1)
 
+    print("Query1")
+    print("rows_tablescan: ", rows_tablescan)
+    print("rows_selection", rows_selection)
+
     tablescan.engine = engine
     selection.engine = engine
 
