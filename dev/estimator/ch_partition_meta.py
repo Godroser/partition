@@ -40,6 +40,10 @@ class Customer_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM customer;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -57,8 +61,8 @@ class Customer_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -79,7 +83,7 @@ class Customer_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM customer WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -96,6 +100,10 @@ class District_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 40 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM district;") 
+        self.count = cur.fetchall()[0][0]     
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -113,8 +121,8 @@ class District_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -135,7 +143,7 @@ class District_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM district WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -152,6 +160,10 @@ class History_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 124913 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM history;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -169,8 +181,8 @@ class History_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -191,7 +203,7 @@ class History_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM history WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -208,6 +220,10 @@ class Item_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 100000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM item;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -225,8 +241,8 @@ class Item_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -247,7 +263,7 @@ class Item_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM item WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          # print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -264,6 +280,10 @@ class Nation_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM nation;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -281,8 +301,8 @@ class Nation_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -303,7 +323,7 @@ class Nation_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM nation WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -320,6 +340,10 @@ class New_Order_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM new_order;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -337,8 +361,8 @@ class New_Order_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -359,7 +383,7 @@ class New_Order_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM new_order WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -375,7 +399,11 @@ class Order_Line_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
-    self.count = 120000 # count(*) 
+    self.count = 1250435 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM order_line;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -393,8 +421,8 @@ class Order_Line_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -415,7 +443,7 @@ class Order_Line_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM order_line WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -432,6 +460,10 @@ class Orders_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM orders;") 
+        self.count = cur.fetchall()[0][0]        
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -449,8 +481,8 @@ class Orders_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -471,7 +503,7 @@ class Orders_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM orders WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -488,6 +520,10 @@ class Region_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 5 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM region;") 
+        self.count = cur.fetchall()[0][0]        
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -505,8 +541,8 @@ class Region_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -527,7 +563,7 @@ class Region_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM region WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -544,6 +580,10 @@ class Stock_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 400000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM stock;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -561,8 +601,8 @@ class Stock_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -583,7 +623,7 @@ class Stock_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM stock WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -600,6 +640,10 @@ class Supplier_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 10000 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM supplier;") 
+        self.count = cur.fetchall()[0][0]         
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -617,8 +661,8 @@ class Supplier_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -639,7 +683,7 @@ class Supplier_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM supplier WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -656,6 +700,10 @@ class Warehouse_Meta:
     self.ispartition = True #True: use partition_metadata, False:full table scan
     self.keys = [] # partition keys []
     self.count = 4 # count(*) 
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        cur.execute("SELECT count(*) FROM warehouse;") 
+        self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -673,8 +721,8 @@ class Warehouse_Meta:
     for i in range(len(ranges)):
       self.partition_range.append(ranges[i])
     
-    print("ranges: ", ranges)
-    print("partition_range: ", self.partition_range)
+    # print("ranges: ", ranges)
+    # print("partition_range: ", self.partition_range)
 
     # 根据keys和ranges,查询每个分区的tuple数量
     with get_connection(autocommit=False) as connection:
@@ -695,7 +743,7 @@ class Warehouse_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM warehouse WHERE " + " AND ".join(conditions) + ";"
-          print(f"Executing query: {query}")
+          #print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)
@@ -741,3 +789,10 @@ if __name__ == "__main__":
   print("partition keys: ", customer_meta.keys)
   print("partition_cnt: ", customer_meta.partition_cnt)
   print("partition_range: ", customer_meta.partition_range)
+
+  ranges =  [[datetime(2024, 10, 24, 17, 0, 0), datetime(2024, 10, 25, 19, 0, 0), datetime(2024, 10, 28, 17, 0, 0), datetime(2024, 11, 2, 15, 15, 5)]]
+  keys = ['o_entry_d']
+  orders_meta.update_partition_metadata(keys, ranges)   
+  print("partition keys: ", orders_meta.keys)
+  print("partition_cnt: ", orders_meta.partition_cnt)
+  print("partition_range: ", orders_meta.partition_range)   

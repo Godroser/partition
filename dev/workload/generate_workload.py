@@ -806,27 +806,27 @@ def generate_ap(max_qry_cnt):
       sql_script = file.read()
       sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
 
-  sqls[0] = sqls[0].format(wl_param.sql_date_min)
-  sqls[2] = sqls[2].format(wl_param.sql_date_min)
-  sqls[3] = sqls[3].format(wl_param.sql_date_min, wl_param.sql_date_max)
-  sqls[4] = sqls[4].format(wl_param.sql_date_min)
+  sqls[0] = sqls[0].format(wl_param.sql_date_mid)
+  sqls[2] = sqls[2].format(wl_param.sql_date_mid)
+  sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[4] = sqls[4].format(wl_param.sql_date_mid)
   sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
   sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
   sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
   
-  sqls[9] = sqls[9].format(wl_param.sql_date_min)
+  sqls[9] = sqls[9].format(wl_param.sql_date_mid)
   
   sqls[11] = sqls[11].format(wl_param.sql_date_max)
 
   sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
   sqls[14] = sqls[14].format(wl_param.sql_date_mid)
   
-  sqls[19] = sqls[20].format(wl_param.sql_date_min)
+  sqls[19] = sqls[19].format(wl_param.sql_date_mid)
 
 
-  # with open('workloadd.sql', 'w', encoding='utf-8') as file:
-  #   for sql in sqls:
-  #     file.write(sql + '\n')     
+  with open('workloadd.sql', 'w', encoding='utf-8') as file:
+    for sql in sqls:
+      file.write(sql + '\n')     
 
   while True:  
     with get_connection(autocommit=False) as connection:
@@ -943,6 +943,6 @@ if __name__ == '__main__':
   #tp_wl_generator.generate_delivery()
   #tp_wl_generator.generate_stock_level()
   
-  generate_tp(10)
-  #generate_ap(1)
+  #generate_tp(10)
+  generate_ap(1)
   #generate_workload(100, 0.5)

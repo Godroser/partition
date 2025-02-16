@@ -1,3 +1,4 @@
+#from ch_partition_meta import *
 from estimator.ch_partition_meta import *
 
 ## 每个query只有selection算子会受到过滤条件和分区元数据的影响
@@ -39,98 +40,164 @@ class Qcard():
         else:
             raise ValueError(f"Attribute {key} does not exist")  
 
-    # get the card of the key_idx-th operator
+    # get the card of the table
+    # table_idx: the index of the table in self.tables
     # update the row_tablescan params
-    def get_operator_card(self, partition_meta, key_idx):
+    def get_table_card(self, partition_meta, table_idx):
+        # 这个表要扫描的分区和基数
+        scanned_partitions = []    
+        scanned_partition_card = 0             
+        
         # 检查表是否有分区
         if len(partition_meta.keys) == 0:
-            return 0, 0
+            scanned_partitions = [0, 1, 2, 3]
+            scanned_partition_card = partition_meta.count
+            self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
+            self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)            
+            return scanned_partitions, scanned_partition_card
         
-        # 检查keys是否命中分区键
-        # 如果是,根据filter operators values从partition_meta类获取基数
-        # 初始化需要扫描的分区范围
-        #print("key_idx: ", key_idx)
-        if self.keys[key_idx] != partition_meta.keys[0]:
-            return 0, 0
-                
-        start_partition = 0
-        end_partition = len(partition_meta.partition_range[key_idx]) - 1
+        # 默认扫描全部分区
+        for i in range(len(partition_meta.partition_range[0])):
+            scanned_partitions.append(i)               
 
-        # 根据第key_idx个的operator 和 value 确定需要扫描的分区
-        for op_idx, operator in enumerate(self.operators):
-            if key_idx != op_idx:
-                continue
 
-            value = self.values[op_idx]
+        # print(self.keys[table_idx])
+        # print(partition_meta.partition_range)
+
+        #遍历这个表所有的过滤条件
+        for key_idx, key in enumerate(self.keys[table_idx]):
+            # 检查key是否命中分区键
+            # 如果是,根据filter operators values从partition_meta类获取基数
+            # 否则所有分区都要扫描
+            #print("key_idx: ", key_idx)
+            if key != partition_meta.keys[0]:
+                scanned_partition = []
+                for i in range(len(partition_meta.partition_range[0])):
+                    scanned_partition.append(i)
+                # 求各个过滤条件的交集
+                scanned_partitions = list(set(scanned_partitions) & set(scanned_partition))   
+                continue                 
+                    
+            start_partition = 0
+            end_partition = len(partition_meta.partition_range[0]) - 1
+
+
+            # 根据第key_idx个的key operator 和 value 确定需要扫描的分区
+            operator = self.operators[table_idx][key_idx]
+            value = self.values[table_idx][key_idx]
+
             if operator == 'gt' or operator == 'ge':
                 # 大于或大于等于
                 for i in range(start_partition, end_partition + 1):
                     #print("debug partition_meta.partition_range[i][0]: ", partition_meta.partition_range[key_idx][i])
                     #print("debug value: ", value)
-                    if partition_meta.partition_range[key_idx][i] > value:
+                    if partition_meta.partition_range[0][i] > value:
                         start_partition = i
                         break
             elif operator == 'lt' or operator == 'le':
                 # 小于或小于等于
-                print("check: ",end_partition, start_partition)
-
-                for i in range(end_partition, start_partition, -1):
-                    print(i)
-                    print("check: ",partition_meta.partition_range)
-                    if partition_meta.partition_range[key_idx][i] < value:
-                        end_partition = i
+                #print("check: ",end_partition, start_partition)
+                for i in range(end_partition, start_partition-1, -1):
+                    #print(i)
+                    # print("check: ",partition_meta.partition_range)
+                    #print("check: ", partition_meta.partition_range[0][i], value)
+                    if partition_meta.partition_range[0][i] < value: 
+                        end_partition = i+1
                         break
             elif operator == 'eq':
                 # 等于
                 for i in range(start_partition, end_partition + 1):
-                    if partition_meta.partition_range[key_idx][i] > value:
+                    if partition_meta.partition_range[0][i] > value:
                         start_partition = i
                         end_partition = i
                         break
 
-        # 计算需要扫描的分区及其基数
-        scanned_partitions = []
-        scanned_partition_cnt = 0
-        for i in range(start_partition, end_partition + 1):
-            scanned_partitions.append(i)
-            #print("check artition_meta.partition_cnt[i]: ", partition_meta.partition_cnt[i])
-            scanned_partition_cnt += partition_meta.partition_cnt[i]
+            # 计算需要扫描的分区及其基数
+            scanned_partition = []
+            for i in range(start_partition, end_partition + 1):
+                scanned_partition.append(i)
+                # #print("check artition_meta.partition_cnt[i]: ", partition_meta.partition_cnt[i])
+                # scanned_partition_card += partition_meta.partition_cnt[i]
 
-        # params_dict = {
-        #     'tablescan_customer' : self.rows_tablescan_customer,
-        #     'selection_customer' : self.rows_selection_customer,
-        #     'tablescan_district' : self.rows_tablescan_district,
-        #     'selection_district' : self.rows_selection_district,
-        #     'tablescan_history' : self.rows_tablescan_history,
-        #     'selection_history' : self.rows_selection_history,
-        #     'tablescan_item' : self.rows_tablescan_item,
-        #     'selection_item' : self.rows_selection_item,
-        #     'tablescan_nation' : self.rows_tablescan_nation,
-        #     'selection_nation' : self.rows_selection_nation,
-        #     'tablescan_new_order' : self.rows_tablescan_new_order,
-        #     'selection_new_order' : self.rows_selection_new_order,
-        #     'tablescan_order_line' : self.rows_tablescan_order_line,
-        #     'selection_order_line' : self.rows_selection_order_line,
-        #     'tablescan_orders' : self.rows_tablescan_orders,
-        #     'selection_orders' : self.rows_selection_orders,
-        #     'tablescan_region' : self.rows_tablescan_region,
-        #     'selection_region' : self.rows_selection_region,
-        #     'tablescan_stock' : self.rows_tablescan_stock,
-        #     'selection_stock' : self.rows_selection_stock,
-        #     'tablescan_supplier' : self.rows_tablescan_supplier,
-        #     'selection_supplier' : self.rows_selection_supplier,
-        #     'tablescan_warehouse' : self.rows_tablescan_warehouse,
-        #     'selection_warehouse': self.rows_selection_warehouse,   
-        # }    
-        # params_name = "tablescan_" + self.tables[key_idx]
-        # params = params_dict.get(params_name)
+            # 求各个过滤条件的交集
+            scanned_partitions = list(set(scanned_partitions) & set(scanned_partition))
 
-        self.update_param('rows_tablescan_' + self.tables[key_idx], scanned_partition_cnt)
+        # 计算需要扫描分区的基数
+        for p in scanned_partitions:
+            scanned_partition_card += partition_meta.partition_cnt[p]
+
+        self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
         # print(self.rows_tablescan_order_line)
-        self.update_param('rows_selection_' + self.tables[key_idx], scanned_partition_cnt)
+        self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)
         # print(self.rows_selection_order_line)            
         
-        return scanned_partitions, scanned_partition_cnt
+        return scanned_partitions, scanned_partition_card
+
+
+
+    # # get the card of the key_idx-th operator
+    # # update the row_tablescan params
+    # def get_operator_card(self, partition_meta, key_idx):
+    #     # 检查表是否有分区
+    #     if len(partition_meta.keys) == 0:
+    #         return 0, 0  # do nothing
+        
+    #     # 检查keys是否命中分区键
+    #     # 如果是,根据filter operators values从partition_meta类获取基数
+    #     # 初始化需要扫描的分区范围
+    #     #print("key_idx: ", key_idx)
+    #     if self.keys[key_idx] != partition_meta.keys[0]:
+    #         return 0, 0
+                
+    #     start_partition = 0
+    #     end_partition = len(partition_meta.partition_range[0]) - 1
+
+    #     # 根据第key_idx个的operator 和 value 确定需要扫描的分区
+    #     for op_idx, operator in enumerate(self.operators):
+    #         if key_idx != op_idx:
+    #             continue
+
+    #         value = self.values[op_idx]
+    #         if operator == 'gt' or operator == 'ge':
+    #             # 大于或大于等于
+    #             for i in range(start_partition, end_partition + 1):
+    #                 #print("debug partition_meta.partition_range[i][0]: ", partition_meta.partition_range[key_idx][i])
+    #                 #print("debug value: ", value)
+    #                 if partition_meta.partition_range[0][i] > value:
+    #                     start_partition = i
+    #                     break
+    #         elif operator == 'lt' or operator == 'le':
+    #             # 小于或小于等于
+    #             #print("check: ",end_partition, start_partition)
+
+    #             for i in range(end_partition, start_partition, -1):
+    #                 # print(i)
+    #                 # print("check: ",partition_meta.partition_range)
+    #                 if partition_meta.partition_range[0][i] < value:
+    #                     end_partition = i
+    #                     break
+    #         elif operator == 'eq':
+    #             # 等于
+    #             for i in range(start_partition, end_partition + 1):
+    #                 if partition_meta.partition_range[0][i] > value:
+    #                     start_partition = i
+    #                     end_partition = i
+    #                     break
+
+    #     # 计算需要扫描的分区及其基数
+    #     scanned_partitions = []
+    #     scanned_partition_cnt = 0
+    #     for i in range(start_partition, end_partition + 1):
+    #         scanned_partitions.append(i)
+    #         #print("check artition_meta.partition_cnt[i]: ", partition_meta.partition_cnt[i])
+    #         scanned_partition_cnt += partition_meta.partition_cnt[i]
+
+    #     self.update_param('rows_tablescan_' + self.tables[key_idx], scanned_partition_cnt)
+    #     # print(self.rows_tablescan_order_line)
+    #     self.update_param('rows_selection_' + self.tables[key_idx], scanned_partition_cnt)
+    #     # print(self.rows_selection_order_line)            
+        
+    #     return scanned_partitions, scanned_partition_cnt
 
     def get_query_card(self, customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta):    
         table_dict = {
@@ -149,12 +216,12 @@ class Qcard():
         }        
         for table_idx, table_name in enumerate(self.tables):
             partition_meta_name = table_name
-            # print("Table: ", partition_meta_name)
-            # 调用 get_operator_card 函数
+            #print("Table: ", partition_meta_name)
+            # 调用 get_table_card 函数
             partition_meta = table_dict.get(partition_meta_name)
             #print(partition_meta)
             # print("Partition keys: ", partition_meta.keys)
-            scanned_partitions, scanned_partition_cnt = self.get_operator_card(partition_meta, table_idx)
+            scanned_partitions, scanned_partition_cnt = self.get_table_card(partition_meta, table_idx)
             # print("Scanned partitions:", scanned_partitions)
             # print("Scanned tuples count:", scanned_partition_cnt)               
             
@@ -164,10 +231,12 @@ class Q1card(Qcard):
         self.rows_tablescan_orderline = 1250435 ##tbd
         self.rowSize_tablescan_orderline = 65
         self.rows_selection_orderline = 885150 
-        self.keys = ['ol_delivery_d']  # filter keys
-        self.values = ['2024-10-27 14:00:00'] # filter values
+
+        ## tables:[] keys:[[]]一个table内涉及多个keys的过滤 operators:[[]] values:[[]]
+        self.keys = [['ol_delivery_d']]  # filter keys
+        self.values = [[datetime(2024, 10, 27, 14, 0, 0)]]  # filter values
         self.tables = ['order_line']
-        self.operators = ['gt'] # filter operators '>'    
+        self.operators = [['gt']] # filter operators '>'    
 
 # Query2基数不受分区影响
 class Q2card(Qcard):
@@ -206,10 +275,10 @@ class Q3card(Qcard):
         self.rows_tablescan_orders = 125038 ##tbd
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd
-        self.keys = ['o_entry_d']  # filter keys
+        self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['gt'] # filter operators '>'
+        self.values = [[datetime(2024, 10, 27, 17, 0, 0)]] # filter values
+        self.operators = [['gt']] # filter operators '>'
 
 
 class Q4card(Qcard):
@@ -220,10 +289,10 @@ class Q4card(Qcard):
         self.rows_tablescan_orderline = 1250435 ##tbd
         self.rowsize_tablescan_orderline = 65
         self.rows_selection_orderline = 1250435 ##tbd       
-        self.keys = ['o_entry_d']  # filter keys
+        self.keys = [['o_entry_d', 'o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['gt'] # filter operators '>'  
+        self.values = [[datetime(2024, 10, 27, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
+        self.operators = [['gt', 'lt']] # filter operators '>'  
 
 class Q5card(Qcard):
     def init(self):
@@ -250,18 +319,18 @@ class Q5card(Qcard):
         self.rows_selection_orders = 125038 ##tbd        
         self.keys = ['o_entry_d']  # filter keys
         self.tables = ['orders']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'  
+        self.values = [datetime(2024, 10, 27, 17, 0, 0)] # filter values
+        self.operators = [['ge']] # filter operators '>'  
 
 class Q6card(Qcard):
     def init(self):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
         self.rows_selection_order_line = 1250435 ##tbd       
-        self.keys = ['ol_delivery_d']  # filter keys
+        self.keys = [['ol_delivery_d', 'ol_delivery_d', 'ol_quantity', 'ol_quantity']]  # filter keys
         self.tables = ['order_line']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'  
+        self.values = [[datetime(2024, 10, 23, 17, 0, 0), datetime(2024, 10, 25, 17, 0, 0), 1, 100000]] # filter values
+        self.operators = [['ge', 'lt', 'gt', 'lt']] # filter operators '>'  
 
 class Q7card(Qcard):
     def init(self):
@@ -281,10 +350,10 @@ class Q7card(Qcard):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
         self.rows_selection_order_line = 1250435 ##tbd    
-        self.keys = ['o_entry_d']  # filter keys
+        self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = ['2024-10-25 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'  
+        self.values = [[datetime(2024, 10, 27, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
+        self.operators = [['ge', 'lt']] # filter operators '>'  
 
 class Q8card(Qcard):
     def init(self):
@@ -311,10 +380,10 @@ class Q8card(Qcard):
         self.rows_tablescan_orders = 125038 ##tbd
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd   
-        self.keys = ['i_id', 'ol_i_id', 's_i_id', 'o_entry_d']  # filter keys
-        self.tables = ['item', 'order_line', 'stock', 'orders'] # filter tables
-        self.values = [1000, 1000, 1000, '2024-10-23 17:00:00'] # filter values
-        self.operators = ['lt', 'lt', 'lt', 'ge'] # filter operators '>'  
+        self.keys = [['ol_i_id'], ['o_entry_d', 'o_entry_d']]  # filter keys
+        self.tables = ['order_line', 'orders'] # filter tables
+        self.values = [[1000],[datetime(2024, 10, 23, 17, 0, 0), datetime(2024, 10, 25, 17, 0, 0)]] # filter values
+        self.operators = [['lt'], ['ge', 'lt']] # filter operators '>'  
 
 class Q9card(Qcard):
     def init(self):
@@ -349,10 +418,10 @@ class Q10card(Qcard):
         self.rows_selection_orders = 125038 ##tbd
         self.rows_tablescan_customer = 120000 ##tbd
         self.rowsize_tablescan_customer = 671    
-        self.keys = ['o_entry_d']  # filter keys
+        self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'  
+        self.values = [[datetime(2024, 10, 27, 17, 0, 0)]] # filter values
+        self.operators = [['ge']] # filter operators '>'  
 
 class Q11card(Qcard):
     def init(self):
@@ -376,10 +445,10 @@ class Q12card(Qcard):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
         self.rows_selection_order_line = 1250435 ##tbd     
-        self.keys = ['ol_delivery_d']  # filter keys
+        self.keys = [['ol_delivery_d']]  # filter keys
         self.tables = ['order_line']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>' 
+        self.values = [[datetime(2024, 10, 23, 17, 0, 0)]] # filter values
+        self.operators = [['ge']] # filter operators '>' 
 
 class Q13card(Qcard):            
     def init(self):
@@ -388,10 +457,10 @@ class Q13card(Qcard):
         self.rows_selection_orders = 125038 ##tbd
         self.rows_tablescan_customer = 120000 ##tbd
         self.rowsize_tablescan_customer = 671        
-        self.keys = ['o_carrier_id']  # filter keys
+        self.keys = [['o_carrier_id']]  # filter keys
         self.tables = ['orders']
-        self.values = [8] # filter values
-        self.operators = ['gt'] # filter operators '>'         
+        self.values = [[8]] # filter values
+        self.operators = [['gt']] # filter operators '>'         
 
 class Q14card(Qcard):
     def init(self):
@@ -400,10 +469,10 @@ class Q14card(Qcard):
         self.rows_selection_order_line = 1250435 ##tbd
         self.rows_tablescan_item = 100000 ##tbd
         self.rowsize_tablescan_item = 87   
-        self.keys = ['ol_delivery_d']  # filter keys
+        self.keys = [['ol_delivery_d', 'ol_delivery_d']]  # filter keys
         self.tables = ['order_line']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'             
+        self.values = [[datetime(2024, 10, 23, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
+        self.operators = [['ge', 'lt']] # filter operators '>'             
 
 class Q15card(Qcard):
     def init(self):
@@ -414,10 +483,10 @@ class Q15card(Qcard):
         self.rows_selection_order_line = 1250435 ##tbd
         self.rows_tablescan_stock = 400000 ##tbd
         self.rowsize_tablescan_stock = 314  
-        self.keys = ['ol_delivery_d']  # filter keys
+        self.keys = [['ol_delivery_d']]  # filter keys
         self.tables = ['order_line']
-        self.values = ['2024-10-23 17:00:00'] # filter values
-        self.operators = ['ge'] # filter operators '>'        
+        self.values = [[datetime(2024, 10, 23, 17, 0, 0)]] # filter values
+        self.operators = [['ge']] # filter operators '>'        
 
 class Q16card(Qcard):
     def init(self):
@@ -477,10 +546,10 @@ class Q19card(Qcard):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
         self.rows_selection_order_line = 1250435 ##tbd  
-        self.keys = ['ol_quantity']  # filter keys
-        self.tables = ['order_line']
-        self.values = [1] # filter values
-        self.operators = ['ge'] # filter operators '>'        
+        self.keys = [['ol_quantity'], ['i_price', 'i_price']]  # filter keys
+        self.tables = ['order_line', 'item']
+        self.values = [[1], [1, 400000]] # filter values
+        self.operators = [['ge'], ['ge', 'lt']] # filter operators '>'        
 
 class Q20card(Qcard):   
     def init(self):
@@ -498,10 +567,10 @@ class Q20card(Qcard):
         self.rows_selection_nation = 25 ##tbd
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
-        self.keys = ['ol_delivery_d']  # filter keys
+        self.keys = [['ol_delivery_d']]  # filter keys
         self.tables = ['order_line']
-        self.values = ['2024-12-23 12:00:00'] # filter values
-        self.operators = ['gt'] # filter operators '>'        
+        self.values = [[datetime(2024, 10, 27, 17, 0, 0)]] # filter values
+        self.operators = [['gt']] # filter operators '>'        
 
 class Q21card(Qcard):
     def init(self):
@@ -530,10 +599,10 @@ class Q22card(Qcard):
         self.rows_tablescan_customer = 120000 ##tbd
         self.rowsize_tablescan_customer = 671
         self.rows_selection_customer = 120000 ##tbd     
-        self.keys = ['c_balance']  # filter keys
+        self.keys = [['c_balance']]  # filter keys
         self.tables = ['customer']
-        self.values = [49556.891238] # filter values
-        self.operators = ['gt'] # filter operators '>'             
+        self.values = [[0]] # filter values
+        self.operators = [['gt']] # filter operators '>'             
 
 # 示例使用
 if __name__ == "__main__":
@@ -566,22 +635,60 @@ if __name__ == "__main__":
 
 
     
-    ranges = [[25000], [50000], [75000], [math.inf]]
+    ranges = [[25000, 50000, 75000, 500000]]
     keys = ['i_id']
     item_meta.update_partition_metadata(keys, ranges)
 
-    ranges = [[25000], [50000], [75000], [math.inf]]
-    keys = ['ol_i_id']
-    order_line_meta.update_partition_metadata(keys, ranges)    
+    ranges =  [[datetime(2024, 10, 24, 17, 0, 0), datetime(2024, 10, 25, 19, 0, 0), datetime(2024, 10, 28, 17, 0, 0), datetime(2024, 11, 2, 15, 15, 5)], [800, 1600, 2400, 10000]]
+    keys = ['ol_delivery_d', 'ol_o_id']
+    order_line_meta.update_partition_metadata(keys, ranges)   
 
-    ranges = [[25000], [50000], [75000], [math.inf]]
+    ranges = [[25000, 50000, 75000, 500000]]
     keys = ['s_i_id']
     stock_meta.update_partition_metadata(keys, ranges)    
 
-    ranges =  [['2024-10-24 17:00:00'], ['2024-10-25 19:00:00'], ['2024-10-28 17:00:00'], ['2024-11-02 15:15:05']]
+    # ranges =  [[datetime(2024, 10, 24, 17, 0, 0), datetime(2024, 10, 25, 19, 0, 0), datetime(2024, 10, 28, 17, 0, 0), datetime(2024, 11, 2, 15, 15, 5)], [750, 1500, 2250, 3600]]
+    # keys = ['o_entry_d', 'o_id']
+    ranges =  [[datetime(2024, 10, 24, 17, 0, 0), datetime(2024, 10, 25, 19, 0, 0), datetime(2024, 10, 28, 17, 0, 0), datetime(2024, 11, 2, 15, 15, 5)]]
     keys = ['o_entry_d']
-    orders_meta.update_partition_metadata(keys, ranges)    
+    orders_meta.update_partition_metadata(keys, ranges)
 
+    ranges = [[750, 1500, 2250, 3001]]
+    keys = ['c_id']
+    customer_meta.update_partition_metadata(keys, ranges)
+
+    print("Q8")
     q8card = Q8card()
     q8card.init()
+    # print("rows_tablescan_item: ", q8card.rows_tablescan_item)
+    # print("rows_tablescan_stock: ", q8card.rows_tablescan_stock)
+    # print("rows_tablescan_orders: ", q8card.rows_tablescan_orders)    
     q8card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    # print("rows_tablescan_item: ", q8card.rows_tablescan_item)
+    # print("rows_tablescan_stock: ", q8card.rows_tablescan_stock)
+    # print("rows_tablescan_orders: ", q8card.rows_tablescan_orders)
+
+    print("Q1")
+    q1card = Q1card()
+    q1card.init()
+    q1card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+
+    print("Q2")
+    q2card = Q2card()
+    q2card.init()
+    q2card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+
+    print("Q10")
+    q10card = Q10card()
+    q10card.init()
+    q10card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+
+    print("Q7")
+    q7card = Q7card()
+    q7card.init()
+    q7card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+
+    print("Q22")
+    q22card = Q22card()
+    q22card.init()
+    q22card.get_query_card(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)  

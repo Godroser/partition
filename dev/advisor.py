@@ -50,14 +50,14 @@ def update_meta(table_columns, table_meta, candidates):
                     max_val = minmaxvalue[1]
                     # 对于整型，直接均匀分成四份
                     step = (max_val - min_val) // 4
-                    table_ranges.append([min_val + i * step for i in range(4)])
+                    table_ranges.append([min_val + i * step for i in range(1, 5)])
                 # 检查是否为字符串类型并尝试转换为整数
                 elif isinstance(minmaxvalue[0], str) and isinstance(minmaxvalue[1], str):
                     min_val = int(minmaxvalue[0])
                     max_val = int(minmaxvalue[1])
                     # 对于整型，直接均匀分成四份
                     step = (max_val - min_val) // 4
-                    table_ranges.append([min_val + i * step for i in range(4)])
+                    table_ranges.append([min_val + i * step for i in range(1, 5)])
                 else:
                     raise ValueError("Unsupported type for partition keys")
             except ValueError:
@@ -73,25 +73,28 @@ def update_meta(table_columns, table_meta, candidates):
                     # 对于datetime类型，根据天均匀分成四份
                     total_days = (max_val - min_val).days
                     step = total_days // 4
-                    table_ranges.append([min_val + timedelta(days=i * step) for i in range(4)])
+                    table_ranges.append([min_val + timedelta(days=i * step) for i in range(1, 5)])
                 except ValueError:
                     raise ValueError(f"Unsupported type for partition keys: {minmaxvalue}")
 
         #print('table_ranges: ', table_ranges)
         # update partition metadata
         if len(table_ranges) == 0: # 没有选分区键
+            #print("Table {} no partition keys".format(table_name))
             return
         
         # 更新meta类的分区元信息
         table_meta[idx].update_partition_metadata(candidate['partition_keys'], table_ranges)
 
 # 计算候选的reward
-def calculate_reward(candidates):
+# candidates是每个表的分区和副本设置
+def calculate_reward(table_columns, table_meta, candidates):
     # 根据分区副本情况更新元数据    
     update_meta(table_columns, table_meta, candidates)
 
     # get Qcard 获取每个query扫描对应表的card
-    qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    qcard_list = get_qcard(table_meta)
+    # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
 
     # update Qparams 将qcard复制到qparams
     qparams_list = update_qparams_with_qcard(qcard_list)
@@ -123,9 +126,14 @@ def calculate_reward(candidates):
     reward += calculate_q21(engine, qparams_list[20])
     reward += calculate_q22(engine, qparams_list[21]) 
 
-    # print(table_meta[0].keys)
-    # print(table_meta[0].partition_cnt)
-    # print(table_meta[0].partition_range)
+    # print(table_meta[6].keys)
+    # print(table_meta[6].partition_cnt)
+    # print(table_meta[6].partition_range)
+    # print(table_meta[6].count)  
+    # print(table_meta[7].keys)
+    # print(table_meta[7].partition_cnt)
+    # print(table_meta[7].partition_range)
+    # print(table_meta[7].count)     
     reset_table_meta(table_meta)
     # print(table_meta[0].keys)
     # print(table_meta[0].partition_cnt)
@@ -144,16 +152,23 @@ def simulate(state, depth, max_depth=10):
         state_simu = state_simu.take_action(action)
         depth += 1      
         #print(action)
-    return calculate_reward(state_simu.tables) ######todo
+    return calculate_reward(table_columns, table_meta, state_simu.tables)
+
+def normalize_reward(reward):
+    # 归一化
+    N = 3000000000.0
+    return (N - reward) / 1000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
-    for _ in range(iterations):
+    for i in range(iterations):
+        print(i)
         node = root
         # 选择. 对于完全扩展的节点，选择最佳子节点，直到达到最大深度
         while node.is_fully_expanded() and node.depth < max_depth:
+            # 节点没有可能的动作，退出循环              
             if not node.state.get_possible_actions():
                 break
-            node = node.best_child()
+            node = node.best_child()          
         if not node.state.get_possible_actions():
             continue
 
@@ -163,7 +178,11 @@ def monte_carlo_tree_search(root, iterations, max_depth):
 
         # 模拟
         reward = simulate(node.state, node.depth, max_depth)
-        print(reward)       
+        #print("Reward: ", reward)       
+        reward = normalize_reward(reward)
+        print("Reward: ", reward)
+        # print("*****************************")
+        # print("*****************************")
 
         # 反向传播
         while node is not None:
@@ -312,52 +331,63 @@ if __name__ == "__main__":
         dict_tmp['replica_partition_keys'] = table_column.replica_partition_keys
         tables.append(dict_tmp)
 
+    # ##独立测试的代码
+    # initial_state = State(tables)
+    # root = Node(initial_state)    
+    # print("initial reward: ", calculate_reward(table_columns, table_meta, root.state.tables))
+
+    # print(customer_meta.keys)
+    # tables[0]['partition_keys'] = ['c_id']
+    # tables[1]['partition_keys'] = ['d_id']
+    # tables[2]['partition_keys'] = ['h_c_id']
+    # tables[3]['partition_keys'] = ['i_id']
+    # tables[4]['partition_keys'] = ['n_nationkey']
+    # tables[5]['partition_keys'] = ['no_o_id']
+    # tables[6]['partition_keys'] = ['ol_delivery_d']
+    # tables[7]['partition_keys'] = ['o_entry_d']
+    # print("initial reward1: ", calculate_reward(table_columns, table_meta,tables))
+    # print(customer_meta.keys)
+   
+
+
+
+
+    # 4. 进行并行化的mcts搜索
     initial_state = State(tables)
-    root = Node(initial_state)    
-    print("initial reward: ", calculate_reward(root.state.tables))
-    tables[0]['partition_keys'] = ['c_id']
-    tables[1]['partition_keys'] = ['d_id']
-    tables[2]['partition_keys'] = ['h_c_id']
-    tables[3]['partition_keys'] = ['i_id']
-    tables[4]['partition_keys'] = ['n_nationkey']
-    tables[5]['partition_keys'] = ['no_o_id']
-    tables[6]['partition_keys'] = ['ol_o_id']
-    print("initial reward1: ", calculate_reward(tables))
+    root = Node(initial_state) 
 
+    print('cpu_count: ', cpu_count())
 
-    # # 4. 进行并行化的mcts搜索
-    # print('cpu_count: ', cpu_count())
+    start_time = time.time()
+    #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
+    monte_carlo_tree_search(root, iterations=300, max_depth=10)
+    mcts_time = time.time() - start_time
 
-    # start_time = time.time()
-    # #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    # monte_carlo_tree_search(root, iterations=10000, max_depth=10)
-    # mcts_time = time.time() - start_time
+    start_time = time.time()
+    # 从根节点开始，选择最佳子节点，直到叶子节点
+    node = root.best_child(c_param=0)
+    node1 = copy.deepcopy(node)
+    while True:
+        if len(node.children) == 0:
+            break        
+        node = node.best_child(c_param=0)
+        if node.state.get_reward() > node1.state.get_reward():
+            node1 = copy.deepcopy(node)
+    selection_time = time.time() - start_time
 
-    # start_time = time.time()
-    # # 从根节点开始，选择最佳子节点，直到叶子节点
-    # node = root.best_child(c_param=0)
-    # node1 = copy.deepcopy(node)
-    # while True:
-    #     if len(node.children) == 0:
-    #         break        
-    #     node = node.best_child(c_param=0)
-    #     if node.state.get_reward() > node1.state.get_reward():
-    #         node1 = copy.deepcopy(node)
-    # selection_time = time.time() - start_time
+    #print("最佳分区键和副本设置:", node1.state.tables)
+    print("最佳分区键和副本设置:")
+    # 使用 json.dumps 格式化输出
+    formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
+    # 将格式化后的输出写入到文件
+    with open('Output/best_advisor.txt', 'w', encoding='utf-8') as f:
+        f.write(formatted_output)
 
-    # #print("最佳分区键和副本设置:", node1.state.tables)
-    # print("最佳分区键和副本设置:")
-    # # 使用 json.dumps 格式化输出
-    # formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
-    # # 将格式化后的输出写入到文件
-    # with open('Output/best_advisor.txt', 'w', encoding='utf-8') as f:
-    #     f.write(formatted_output)
+    print("最佳收益:", node1.reward)
+    print("最佳收益:", node1.state.get_reward())    
 
-    # print("最佳收益:", node1.reward)
-    # print("最佳收益:", node1.state.get_reward())    
-
-    # print(f"蒙特卡洛树搜索时间: {mcts_time:.2f}秒")
-    # print(f"选择最佳子节点时间: {selection_time:.2f}秒")
+    print(f"蒙特卡洛树搜索时间: {mcts_time:.2f}秒")
+    print(f"选择最佳子节点时间: {selection_time:.2f}秒")
     
 
 

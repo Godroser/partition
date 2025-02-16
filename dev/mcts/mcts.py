@@ -80,12 +80,13 @@ class Node:
                 print(child.depth)
                 print(child.state.tables)
         choices_weights = [
-            (child.reward / child.visits) + c_param * math.sqrt((math.log(self.visits) / child.visits)) * 600000000
+            (child.reward / child.visits) + c_param * math.sqrt((math.log(self.visits) / child.visits))
             for child in self.children
         ]
         # for child in self.children:
         #     print("(child.reward / child.visits): ", (child.reward / child.visits))
-        #     print("cparams: ", c_param * math.sqrt((math.log(self.visits) / child.visits)) * 600000000)
+        #     print("cparams: ", c_param * math.sqrt((math.log(self.visits) / child.visits)))
+        print("best child: ",choices_weights.index(max(choices_weights)))
         return self.children[choices_weights.index(max(choices_weights))]
 
     def expand(self):

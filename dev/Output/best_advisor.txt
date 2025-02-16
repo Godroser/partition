@@ -32,10 +32,10 @@
             "c_payment_cnt",
             "c_delivery_cnt"
         ],
-        "partition_keys": [],
-        "replicas": [
-            "c_d_id"
+        "partition_keys": [
+            "c_w_id"
         ],
+        "replicas": [],
         "replica_partition_keys": []
     },
     {
