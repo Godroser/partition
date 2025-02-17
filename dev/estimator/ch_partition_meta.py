@@ -79,7 +79,7 @@ class Customer_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM customer WHERE " + " AND ".join(conditions) + ";"
@@ -139,7 +139,7 @@ class District_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM district WHERE " + " AND ".join(conditions) + ";"
@@ -199,7 +199,7 @@ class History_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM history WHERE " + " AND ".join(conditions) + ";"
@@ -259,7 +259,7 @@ class Item_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM item WHERE " + " AND ".join(conditions) + ";"
@@ -319,7 +319,7 @@ class Nation_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM nation WHERE " + " AND ".join(conditions) + ";"
@@ -379,7 +379,7 @@ class New_Order_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM new_order WHERE " + " AND ".join(conditions) + ";"
@@ -439,7 +439,7 @@ class Order_Line_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM order_line WHERE " + " AND ".join(conditions) + ";"
@@ -499,7 +499,7 @@ class Orders_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM orders WHERE " + " AND ".join(conditions) + ";"
@@ -559,7 +559,7 @@ class Region_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM region WHERE " + " AND ".join(conditions) + ";"
@@ -619,7 +619,7 @@ class Stock_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM stock WHERE " + " AND ".join(conditions) + ";"
@@ -679,7 +679,7 @@ class Supplier_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM supplier WHERE " + " AND ".join(conditions) + ";"
@@ -739,7 +739,7 @@ class Warehouse_Meta:
             value = ranges[key_idx][i]
             if isinstance(value, datetime):
               value = f"'{value}'"
-            conditions.append(f"{key} < {value}")
+            conditions.append(f"{key} <= {value}")
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM warehouse WHERE " + " AND ".join(conditions) + ";"

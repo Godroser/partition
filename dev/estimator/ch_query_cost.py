@@ -206,6 +206,7 @@ def calculate_q6(engine, q6params):
     rows_tablescan_order_line = q6params.rows_tablescan_order_line
     rowsize_tablescan_order_line = q6params.rowsize_tablescan_order_line
     rows_selection_order_line = q6params.rows_selection_order_line
+    #print('rows_tablescan_order_line', rows_tablescan_order_line)
 
     tablescan_orderline = TableScan(content, rows_tablescan_order_line, rowsize_tablescan_order_line)
     selection_orderline = Selection(content, rows_selection_order_line, 1)

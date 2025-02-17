@@ -88,6 +88,21 @@ class Node:
         #     print("cparams: ", c_param * math.sqrt((math.log(self.visits) / child.visits)))
         print("best child: ",choices_weights.index(max(choices_weights)))
         return self.children[choices_weights.index(max(choices_weights))]
+    
+    # 找到最大reward的节点
+    def best_reward_node(self):
+        if not self.children:
+            print(self.state.tables)
+            raise ValueError("No children to select from")
+        for child in self.children:
+            if child.visits == 0:
+                print("child.visits == 0")
+                print(child.depth)
+                print(child.state.tables)
+        choices_weights = [
+            child.reward for child in self.children
+        ]
+        return self.children[choices_weights.index(max(choices_weights))]
 
     def expand(self):
         # 扩展节点
@@ -101,6 +116,7 @@ class Node:
                 self.children.append(child_node)
                 #print("take action:", action)
                 print("append child to node depth:", self.depth)
+                print("child action:", action)
                 return child_node
         raise Exception("Should never reach here")
 

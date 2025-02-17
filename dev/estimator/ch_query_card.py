@@ -58,7 +58,7 @@ class Qcard():
         
         # 默认扫描全部分区
         for i in range(len(partition_meta.partition_range[0])):
-            scanned_partitions.append(i)               
+            scanned_partitions.append(i)  
 
 
         # print(self.keys[table_idx])
@@ -548,7 +548,7 @@ class Q19card(Qcard):
         self.rows_selection_order_line = 1250435 ##tbd  
         self.keys = [['ol_quantity'], ['i_price', 'i_price']]  # filter keys
         self.tables = ['order_line', 'item']
-        self.values = [[1], [1, 400000]] # filter values
+        self.values = [[5], [1, 40]] # filter values
         self.operators = [['ge'], ['ge', 'lt']] # filter operators '>'        
 
 class Q20card(Qcard):   

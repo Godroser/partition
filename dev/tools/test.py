@@ -40,18 +40,24 @@ def generate_random_datetime():
     return start_time + timedelta(seconds=random_seconds)
 
 if __name__ == "__main__":
-  config = Config()
-  with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:   
-        # 查询 orders 表中的所有记录
-        select_query = "SELECT o_w_id,o_d_id FROM orders"  # 假设表中有 o_id 作为主键
-        cur.execute(select_query)
-        rows = cur.fetchall()
-        print(rows)
+#   config = Config()
+#   with get_connection(autocommit=False) as connection:
+#       with connection.cursor() as cur:   
+#         # 查询 orders 表中的所有记录
+#         select_query = "SELECT o_w_id,o_d_id FROM orders"  # 假设表中有 o_id 作为主键
+#         cur.execute(select_query)
+#         rows = cur.fetchall()
+#         print(rows)
 
-        for row in rows:
-            o_w_id = row[0]
-            o_d_id = row[1]
-            random_datetime = generate_random_datetime()
-            update_query = f"UPDATE orders SET o_entry_d = '{random_datetime}' WHERE o_w_id = {o_w_id} and o_d_id = {o_d_id}"
-            cur.execute(update_query)
+#         for row in rows:
+#             o_w_id = row[0]
+#             o_d_id = row[1]
+#             random_datetime = generate_random_datetime()
+#             update_query = f"UPDATE orders SET o_entry_d = '{random_datetime}' WHERE o_w_id = {o_w_id} and o_d_id = {o_d_id}"
+#             cur.execute(update_query)
+
+    min_val = datetime(2024,5,1,18,00,00)
+    step = 3 / 4
+    table_ranges = []
+    table_ranges.append([min_val + timedelta(days=i * step) for i in range(1, 5)])    
+    print(table_ranges)

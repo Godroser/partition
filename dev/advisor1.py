@@ -27,13 +27,10 @@ def update_meta(table_columns, table_meta, candidates):
 
     # 每一个candidate都是一个表的分区和副本设置
     for candidate in candidates:
-        #print('table_ranges: ', table_ranges)
-        # update partition metadata
         # 没有选分区键
         if len(candidate['partition_keys']) == 0:
             #print("Table {} no partition keys".format(table_name))
-            continue
-
+            continue        
         # get tables key min and max value
         table_name = candidate['name']
         idx = table_dict.get(table_name)
@@ -42,6 +39,8 @@ def update_meta(table_columns, table_meta, candidates):
         # [[],[]] minmaxvalue[i][0]: min value, minmaxvalue[i][1]: max value
         minmaxvalues = table_columns[idx].get_keys_ranges(candidate['partition_keys'])  
 
+        # print("candidate", candidate)
+        # print("candidate['partition_keys']:", candidate['partition_keys'])
         # print('minmaxvalue: ', minmaxvalues)  
         # if len(minmaxvalues) > 0:
         #     print('minmaxvalue type: ', type(minmaxvalues[0][1]))
@@ -49,7 +48,7 @@ def update_meta(table_columns, table_meta, candidates):
         # get tables keys ranges 划定每个分区的范围, 支持多个列
         # [[],[]] table_ranges[i]:第i个分区键的范围列表，默认分成4份
         table_ranges = [] 
-        #print(minmaxvalues)
+        print(minmaxvalues)
         for minmaxvalue in minmaxvalues:
             try:
                 # 检查是否为整数类型
@@ -72,7 +71,7 @@ def update_meta(table_columns, table_meta, candidates):
                     max_val = minmaxvalue[1]
                     # 对于Decimal类型，直接均匀分成四份
                     step = (max_val - min_val) / 4
-                    table_ranges.append([min_val + i * step for i in range(1, 5)])                    
+                    table_ranges.append([min_val + i * step for i in range(1, 5)])
                 else:
                     raise ValueError("Unsupported type for partition keys")
             except ValueError:
@@ -91,7 +90,6 @@ def update_meta(table_columns, table_meta, candidates):
                     table_ranges.append([min_val + timedelta(days=i * step) for i in range(1, 5)])
                 except ValueError:
                     raise ValueError(f"Unsupported type for partition keys: {minmaxvalue}")
-
         
         # 更新meta类的分区元信息
         table_meta[idx].update_partition_metadata(candidate['partition_keys'], table_ranges)
@@ -380,61 +378,67 @@ if __name__ == "__main__":
 
 
 
-    # 4. 进行并行化的mcts搜索
-    initial_state = State(tables)
-    root = Node(initial_state) 
+    # # 4. 进行并行化的mcts搜索
+    # initial_state = State(tables)
+    # root = Node(initial_state) 
 
-    print('cpu_count: ', cpu_count())
+    # print('cpu_count: ', cpu_count())
 
-    start_time = time.time()
-    #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=1000, max_depth=10)
-    mcts_time = time.time() - start_time
+    # start_time = time.time()
+    # #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
+    # monte_carlo_tree_search(root, iterations=2000, max_depth=10)
+    # mcts_time = time.time() - start_time
 
-    start_time = time.time()
-    # 从根节点开始，选择最佳子节点，直到叶子节点
-    node = root.best_child(c_param=0)
-    node1 = copy.deepcopy(node)
-    while True:
-        if len(node.children) == 0:
-            break        
-        node = node.best_child(c_param=0)
-        if (node.reward / node.visits) > (node1.reward / node1.visits):
-            print("node1 copy")
-            node1 = copy.deepcopy(node)         
-    selection_time = time.time() - start_time
+    # start_time = time.time()
+    # # 从根节点开始，选择最佳子节点，直到叶子节点
+    # node = root.best_child(c_param=0)
+    # node1 = copy.deepcopy(node)
+    # while True:
+    #     if len(node.children) == 0:
+    #         break        
+    #     node = node.best_child(c_param=0)
+    #     if (node.reward / node.visits) > (node1.reward / node1.visits):
+    #         print("node1 copy")
+    #         node1 = copy.deepcopy(node)         
+    # selection_time = time.time() - start_time
 
-    #print("最佳分区键和副本设置:", node1.state.tables)
-    #print("最佳分区键和副本设置:")
-    # 使用 json.dumps 格式化输出
-    formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
-    # 将格式化后的输出写入到文件
-    with open('Output/best_advisor.txt', 'w', encoding='utf-8') as f:
-        f.write(formatted_output)
+    # #print("最佳分区键和副本设置:", node1.state.tables)
+    # #print("最佳分区键和副本设置:")
+    # # 使用 json.dumps 格式化输出
+    # formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
+    # # 将格式化后的输出写入到文件
+    # with open('Output/best_advisor.txt', 'w', encoding='utf-8') as f:
+    #     f.write(formatted_output)
 
-    print("最佳收益:", node1.reward / node1.visits)
-    print("访问次数:", node1.visits)    
-    print("层数:", node1.depth)
+    # print("最佳收益:", node1.reward / node1.visits)
+    # print("访问次数:", node1.visits)    
+    # print("层数:", node1.depth)
 
-    print(f"蒙特卡洛树搜索时间: {mcts_time:.2f}秒")
-    print(f"选择最佳子节点时间: {selection_time:.2f}秒")
+    # print(f"蒙特卡洛树搜索时间: {mcts_time:.2f}秒")
+    # print(f"选择最佳子节点时间: {selection_time:.2f}秒")
     
 
 
 
     # #*************************独立测试时用的代码*************************
-    # # 3. 根据分区副本情况更新元数据
-    # candidates = [{'name': 'customer', 'partition_keys': ['c_id', 'c_w_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}, {'name': 'order_line', 'partition_keys': ['ol_i_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}]
+    # 3. 根据分区副本情况更新元数据
+    candidates = [{'name': 'customer', 'partition_keys': ['c_id', 'c_w_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}, {'name': 'order_line', 'partition_keys': ['ol_i_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}]
 
-    # tables[0]['partition_keys'] = ['c_w_id']
+    #tables[0]['partition_keys'] = ['c_w_id']
+    #tables[0]['partition_keys'] = ['c_delivery_cnt']
     # tables[1]['partition_keys'] = ['d_id']
     # tables[2]['partition_keys'] = ['h_c_w_id']
     # tables[3]['partition_keys'] = ['i_id', 'i_im_id']
-    # tables[4]['partition_keys'] = ['n_regionkey']
+    tables[3]['partition_keys'] = ['i_price']
+    #tables[4]['partition_keys'] = ['n_regionkey']
+    # tables[4]['partition_keys'] = ['n_nationkey']
     # tables[5]['partition_keys'] = ['no_w_id']
-    # #tables[6]['partition_keys'] = ['ol_w_id']
-    # tables[6]['partition_keys'] = ['ol_delivery_d']
-    # tables[7]['partition_keys'] = ['o_all_local']    
+    # tables[6]['partition_keys'] = ['ol_w_id']
+    #tables[6]['partition_keys'] = ['ol_delivery_d']
+    #tables[6]['partition_keys'] = ['ol_quantity']
+    #tables[6]['partition_keys'] = ['ol_supply_w_id']
+    #tables[7]['partition_keys'] = ['o_all_local']   
+    #tables[7]['partition_keys'] = ['o_entry_d']  
 
     # update_meta(table_columns, table_meta, tables)
 
@@ -444,12 +448,12 @@ if __name__ == "__main__":
     # # update Qparams
     # qparams_list = update_qparams_with_qcard(qcard_list)
 
-    # # calculate query cost
-    # engine = 'Tiflash'
+    # calculate query cost
+    engine = 'Tiflash'
     
-    # reward = calculate_reward(table_columns, table_meta,tables)
-    # reward = normalize_reward(reward)
-    # print("initial reward: ", reward)
+    reward = calculate_reward(table_columns, table_meta,tables)
+    reward = normalize_reward(reward)
+    print("initial reward: ", reward)
 
     # print(calculate_q1(engine, qparams_list[0]))
     # print(calculate_q2(engine, qparams_list[1]))
