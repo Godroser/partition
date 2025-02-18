@@ -90,7 +90,7 @@ def update_meta(table_columns, table_meta, candidates):
                     table_ranges.append([min_val + timedelta(days=i * step) for i in range(1, 5)])
                 except ValueError:
                     raise ValueError(f"Unsupported type for partition keys: {minmaxvalue}")
-        
+        print(table_ranges)
         # 更新meta类的分区元信息
         table_meta[idx].update_partition_metadata(candidate['partition_keys'], table_ranges)
 
@@ -429,24 +429,25 @@ if __name__ == "__main__":
     # tables[1]['partition_keys'] = ['d_id']
     # tables[2]['partition_keys'] = ['h_c_w_id']
     # tables[3]['partition_keys'] = ['i_id', 'i_im_id']
-    tables[3]['partition_keys'] = ['i_price']
+    #tables[3]['partition_keys'] = ['i_price']
     #tables[4]['partition_keys'] = ['n_regionkey']
     # tables[4]['partition_keys'] = ['n_nationkey']
     # tables[5]['partition_keys'] = ['no_w_id']
     # tables[6]['partition_keys'] = ['ol_w_id']
-    #tables[6]['partition_keys'] = ['ol_delivery_d']
-    #tables[6]['partition_keys'] = ['ol_quantity']
+    # tables[6]['partition_keys'] = ['ol_delivery_d']
+    # tables[6]['partition_keys'] = ['ol_quantity']
     #tables[6]['partition_keys'] = ['ol_supply_w_id']
-    #tables[7]['partition_keys'] = ['o_all_local']   
-    #tables[7]['partition_keys'] = ['o_entry_d']  
+    # tables[7]['partition_keys'] = ['o_all_local']   
+    # tables[7]['partition_keys'] = ['o_entry_d']  
+    tables[7]['partition_keys'] = ['o_carrier_id'] 
 
-    # update_meta(table_columns, table_meta, tables)
+    update_meta(table_columns, table_meta, tables)
 
-    # # get Qcard
-    # qcard_list = get_qcard(table_meta)
+    # get Qcard
+    qcard_list = get_qcard(table_meta)
 
-    # # update Qparams
-    # qparams_list = update_qparams_with_qcard(qcard_list)
+    # update Qparams
+    qparams_list = update_qparams_with_qcard(qcard_list)
 
     # calculate query cost
     engine = 'Tiflash'
@@ -455,25 +456,25 @@ if __name__ == "__main__":
     reward = normalize_reward(reward)
     print("initial reward: ", reward)
 
-    # print(calculate_q1(engine, qparams_list[0]))
-    # print(calculate_q2(engine, qparams_list[1]))
-    # print(calculate_q3(engine, qparams_list[2]))
-    # print(calculate_q4(engine, qparams_list[3]))
-    # print(calculate_q5(engine, qparams_list[4]))
-    # print(calculate_q6(engine, qparams_list[5]))
-    # print(calculate_q7(engine, qparams_list[6]))
-    # print(calculate_q8(engine, qparams_list[7]))
-    # print(calculate_q9(engine, qparams_list[8]))  
-    # print(calculate_q10(engine, qparams_list[9]))
-    # print(calculate_q11(engine, qparams_list[10]))
-    # print(calculate_q12(engine, qparams_list[11]))
-    # print(calculate_q13(engine, qparams_list[12]))
-    # print(calculate_q14(engine, qparams_list[13]))
-    # print(calculate_q15(engine, qparams_list[14]))
-    # print(calculate_q16(engine, qparams_list[15]))
-    # print(calculate_q17(engine, qparams_list[16]))    
-    # print(calculate_q18(engine, qparams_list[17]))
-    # print(calculate_q19(engine, qparams_list[18]))
-    # print(calculate_q20(engine, qparams_list[19]))
-    # print(calculate_q21(engine, qparams_list[20]))
-    # print(calculate_q22(engine, qparams_list[21]))
+    print(calculate_q1(engine, qparams_list[0]))
+    print(calculate_q2(engine, qparams_list[1]))
+    print(calculate_q3(engine, qparams_list[2]))
+    print(calculate_q4(engine, qparams_list[3]))
+    print(calculate_q5(engine, qparams_list[4]))
+    print(calculate_q6(engine, qparams_list[5]))
+    print(calculate_q7(engine, qparams_list[6]))
+    print(calculate_q8(engine, qparams_list[7]))
+    print(calculate_q9(engine, qparams_list[8]))  
+    print(calculate_q10(engine, qparams_list[9]))
+    print(calculate_q11(engine, qparams_list[10]))
+    print(calculate_q12(engine, qparams_list[11]))
+    print(calculate_q13(engine, qparams_list[12]))
+    print(calculate_q14(engine, qparams_list[13]))
+    print(calculate_q15(engine, qparams_list[14]))
+    print(calculate_q16(engine, qparams_list[15]))
+    print(calculate_q17(engine, qparams_list[16]))    
+    print(calculate_q18(engine, qparams_list[17]))
+    print(calculate_q19(engine, qparams_list[18]))
+    print(calculate_q20(engine, qparams_list[19]))
+    print(calculate_q21(engine, qparams_list[20]))
+    print(calculate_q22(engine, qparams_list[21]))

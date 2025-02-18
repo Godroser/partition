@@ -291,7 +291,7 @@ class Q4card(Qcard):
         self.rows_selection_orderline = 1250435 ##tbd       
         self.keys = [['o_entry_d', 'o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = [[datetime(2024, 10, 27, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
+        self.values = [[datetime(2024, 10, 30, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
         self.operators = [['gt', 'lt']] # filter operators '>'  
 
 class Q5card(Qcard):
@@ -317,9 +317,9 @@ class Q5card(Qcard):
         self.rows_tablescan_orders = 125038 ##tbd
         self.rowsize_tablescan_orders = 36
         self.rows_selection_orders = 125038 ##tbd        
-        self.keys = ['o_entry_d']  # filter keys
+        self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = [datetime(2024, 10, 27, 17, 0, 0)] # filter values
+        self.values = [[datetime(2024, 10, 30, 17, 0, 0)]] # filter values
         self.operators = [['ge']] # filter operators '>'  
 
 class Q6card(Qcard):
@@ -352,7 +352,7 @@ class Q7card(Qcard):
         self.rows_selection_order_line = 1250435 ##tbd    
         self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = [[datetime(2024, 10, 27, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
+        self.values = [[datetime(2024, 10, 30, 17, 0, 0), datetime(2025, 10, 23, 17, 0, 0)]] # filter values
         self.operators = [['ge', 'lt']] # filter operators '>'  
 
 class Q8card(Qcard):
@@ -382,7 +382,7 @@ class Q8card(Qcard):
         self.rows_selection_orders = 125038 ##tbd   
         self.keys = [['ol_i_id'], ['o_entry_d', 'o_entry_d']]  # filter keys
         self.tables = ['order_line', 'orders'] # filter tables
-        self.values = [[1000],[datetime(2024, 10, 23, 17, 0, 0), datetime(2024, 10, 25, 17, 0, 0)]] # filter values
+        self.values = [[1000],[datetime(2024, 10, 30, 17, 0, 0), datetime(2025, 10, 25, 17, 0, 0)]] # filter values
         self.operators = [['lt'], ['ge', 'lt']] # filter operators '>'  
 
 class Q9card(Qcard):
@@ -420,7 +420,7 @@ class Q10card(Qcard):
         self.rowsize_tablescan_customer = 671    
         self.keys = [['o_entry_d']]  # filter keys
         self.tables = ['orders']
-        self.values = [[datetime(2024, 10, 27, 17, 0, 0)]] # filter values
+        self.values = [[datetime(2024, 10, 30, 17, 0, 0)]] # filter values
         self.operators = [['ge']] # filter operators '>'  
 
 class Q11card(Qcard):

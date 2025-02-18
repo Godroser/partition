@@ -32,11 +32,7 @@
             "c_payment_cnt",
             "c_delivery_cnt"
         ],
-        "partition_keys": [
-            "c_d_id",
-            "c_payment_cnt",
-            "c_since"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -60,7 +56,9 @@
             "d_w_id",
             "d_next_o_id"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "d_id"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -117,7 +115,9 @@
             "n_nationkey",
             "n_regionkey"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "n_nationkey"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -191,9 +191,7 @@
         ],
         "partition_keys": [
             "o_carrier_id",
-            "o_w_id",
-            "o_id",
-            "o_ol_cnt"
+            "o_all_local"
         ],
         "replicas": [],
         "replica_partition_keys": []
@@ -208,9 +206,7 @@
         "partitionable_columns": [
             "r_regionkey"
         ],
-        "partition_keys": [
-            "r_regionkey"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -243,7 +239,8 @@
             "s_remote_cnt"
         ],
         "partition_keys": [
-            "s_ytd"
+            "s_order_cnt",
+            "s_w_id"
         ],
         "replicas": [],
         "replica_partition_keys": []

@@ -80,7 +80,7 @@ class Workload_Parameter:
     self.sql_file_path = 'workload.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
-    self.sql_date_mid = '2024-10-25 17:00:00'
+    self.sql_date_mid = '2024-10-28 17:00:00'
     # Default
     # New-Order: 45%
     # Payment: 43%
@@ -929,8 +929,78 @@ def generate_workload(max_txn_cnt, ratio):
       wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
     print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
   
+
   print("Sync LATENCY: ", sync_time)
   print("Sync DATA COUNT: ", int(end_count) - int(start_count))
+
+  for i in range(22):
+    print(wl_stats.query_lat[i])  
+
+
+def test_ap(max_qry_cnt):
+  wl_param = Workload_Parameter()
+  qry_cnt = 0
+  
+  with open(wl_param.sql_file_path, 'r') as file:
+      sql_script = file.read()
+      sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
+
+  sqls[0] = sqls[0].format(wl_param.sql_date_mid)
+  sqls[2] = sqls[2].format(wl_param.sql_date_mid)
+  sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[4] = sqls[4].format(wl_param.sql_date_mid)
+  sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  
+  sqls[9] = sqls[9].format(wl_param.sql_date_mid)
+  
+  sqls[11] = sqls[11].format(wl_param.sql_date_max)
+
+  sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[14] = sqls[14].format(wl_param.sql_date_mid)
+  
+  sqls[19] = sqls[19].format(wl_param.sql_date_mid)
+
+
+  with open('workloadd.sql', 'w', encoding='utf-8') as file:
+    for sql in sqls:
+      file.write(sql + '\n')     
+
+  while True:  
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        for sql_no in range(1, 23):
+          wl_stats.query_cnt[sql_no-1] += 1
+          
+          start_time = time.time()
+          cur.execute(sqls[sql_no-1])
+          print("Query {}".format(sql_no), end=' ')
+          
+          end_time = time.time()
+          cur.fetchall()
+          delay = end_time - start_time
+          print(f"Execution delay: {delay:.6f} seconds")   
+          wl_stats.query_lat_sum[sql_no-1] += delay
+        
+          qry_cnt += 1
+
+        if qry_cnt >= max_qry_cnt:
+          break
+  
+  print("\n")
+  print("Summary:")
+  
+  for i in range(22):
+    if wl_stats.query_cnt[i] == 0:
+      wl_stats.query_lat[i] = 0
+    else:
+      wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
+    print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
+
+  for i in range(22):
+    print(wl_stats.query_lat[i])   
+
 
 
 if __name__ == '__main__':
@@ -944,5 +1014,7 @@ if __name__ == '__main__':
   #tp_wl_generator.generate_stock_level()
   
   #generate_tp(10)
-  generate_ap(1)
-  #generate_workload(100, 0.5)
+  # generate_ap(200)
+  # generate_workload(100, -1)
+
+  test_ap(200)
