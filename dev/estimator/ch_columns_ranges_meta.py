@@ -35,7 +35,7 @@ class Customer_columns:
     def __init__(self):
         self.name = "customer"
         self.columns = ["c_id", "c_d_id", "c_w_id", "c_first", "c_middle", "c_last", "c_street_1", "c_street_2", "c_city", "c_state", "c_zip", "c_phone", "c_since", "c_credit", "c_credit_lim", "c_discount", "c_balance", "c_ytd_payment", "c_payment_cnt", "c_delivery_cnt", "c_data"]
-        self.partitionable_columns = ["c_id", "c_d_id", "c_w_id", "c_since",  "c_payment_cnt", "c_delivery_cnt"]
+        self.partitionable_columns = ["c_id", "c_d_id", "c_w_id",  "c_payment_cnt"]
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []

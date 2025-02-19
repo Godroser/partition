@@ -32,7 +32,10 @@
             "c_payment_cnt",
             "c_delivery_cnt"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "c_delivery_cnt",
+            "c_since"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -56,9 +59,7 @@
             "d_w_id",
             "d_next_o_id"
         ],
-        "partition_keys": [
-            "d_id"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -82,7 +83,10 @@
             "h_w_id",
             "h_date"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "h_w_id",
+            "h_c_d_id"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -99,7 +103,10 @@
             "i_id",
             "i_im_id"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "i_im_id",
+            "i_id"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -115,9 +122,7 @@
             "n_nationkey",
             "n_regionkey"
         ],
-        "partition_keys": [
-            "n_nationkey"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -190,8 +195,7 @@
             "o_all_local"
         ],
         "partition_keys": [
-            "o_carrier_id",
-            "o_all_local"
+            "o_entry_d"
         ],
         "replicas": [],
         "replica_partition_keys": []
@@ -238,10 +242,7 @@
             "s_order_cnt",
             "s_remote_cnt"
         ],
-        "partition_keys": [
-            "s_order_cnt",
-            "s_w_id"
-        ],
+        "partition_keys": [],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -260,7 +261,9 @@
             "s_suppkey",
             "s_nationkey"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "s_suppkey"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     },
@@ -280,7 +283,9 @@
         "partitionable_columns": [
             "w_id"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "w_id"
+        ],
         "replicas": [],
         "replica_partition_keys": []
     }

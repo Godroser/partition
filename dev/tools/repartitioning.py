@@ -311,8 +311,8 @@ def create_new_database():
 
 
 if __name__ == "__main__":
-    tables = ['district', 'nation', 'order_line', 'orders', 'stock']
-    partition_keys = [['d_id'], ['n_nationkey'], ['ol_delivery_d'], ["o_carrier_id", "o_all_local"], ["s_order_cnt", "s_w_id"]]
+    tables = ['item', 'nation', 'order_line', 'orders', 'supplier', 'warehouse']
+    partition_keys = [["i_im_id", "i_id"], ['n_nationkey', 'n_regionkey'], ['ol_delivery_d'], ["o_entry_d"], ["s_suppkey"], ['w_id']]
     partition_sqls = generate_partition_sql(tables, partition_keys)
     
     create_table_sqls = [get_create_table_sql(table) for table in tables]
@@ -325,4 +325,4 @@ if __name__ == "__main__":
         repartition_table(table, sql)
         load_data(table)       
 
-
+    # load_data('customer')
