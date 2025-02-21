@@ -35,6 +35,8 @@ class Customer_columns:
     def __init__(self):
         self.name = "customer"
         self.columns = ["c_id", "c_d_id", "c_w_id", "c_first", "c_middle", "c_last", "c_street_1", "c_street_2", "c_city", "c_state", "c_zip", "c_phone", "c_since", "c_credit", "c_credit_lim", "c_discount", "c_balance", "c_ytd_payment", "c_payment_cnt", "c_delivery_cnt", "c_data"]
+        self.columns_size =  [4, 4, 4, 33, 4, 33, 41, 41, 41, 4, 18, 32, 8, 4, 6, 3, 6, 6, 4, 4, 1002]
+        self.primary_keys = ["c_id", "c_d_id", "c_w_id"]
         self.partitionable_columns = ["c_id", "c_d_id", "c_w_id",  "c_payment_cnt"]
         self.partition_keys = []
         self.replicas = []
@@ -54,6 +56,8 @@ class District_columns:
     def __init__(self):
         self.name = "district"
         self.columns = ["d_id", "d_w_id", "d_name", "d_street_1", "d_street_2", "d_city", "d_state", "d_zip", "d_tax", "d_ytd", "d_next_o_id"]
+        self.columns_size =  [4, 4, 21, 41, 41, 41, 4, 18, 3, 6, 4]
+        self.primary_keys = ["d_id", "d_w_id"]
         self.partitionable_columns = ["d_id", "d_w_id", "d_next_o_id"]
         self.partition_keys = []
         self.replicas = []
@@ -73,6 +77,8 @@ class Item_columns:
     def __init__(self):
         self.name = "item"
         self.columns = ["i_id", "i_im_id", "i_name", "i_price", "i_data"]
+        self.columns_size =  [4, 4, 49, 3, 101]
+        self.primary_keys = ["i_id"]
         self.partitionable_columns = ["i_id", "i_im_id"]
         self.partition_keys = []
         self.replicas = []
@@ -92,6 +98,8 @@ class New_order_columns:
     def __init__(self):
         self.name = "new_order"
         self.columns = ["no_o_id", "no_d_id", "no_w_id"]
+        self.columns_size =  [4, 4, 4]
+        self.primary_keys = ["no_o_id", "no_d_id", "no_w_id"]
         self.partitionable_columns = ["no_o_id", "no_d_id", "no_w_id"]
         self.partition_keys = []
         self.replicas = []
@@ -112,6 +120,8 @@ class Orders_columns:
         self.name = "orders"
         self.columns = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
         self.partitionable_columns = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
+        self.primary_keys = ["o_id", "o_d_id", "o_w_id", "o_c_id"]
+        self.columns_size =  [4, 4, 4, 4, 8, 4, 4, 4]
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
@@ -130,6 +140,8 @@ class Order_line_columns:
     def __init__(self):
         self.name = "order_line"
         self.columns = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"]
+        self.columns_size =  [4, 4, 4, 4, 4, 4, 8, 4, 3, 96]
+        self.primary_keys = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number"]
         self.partitionable_columns = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_quantity", "ol_delivery_d"]
         self.partition_keys = []
         self.replicas = []
@@ -149,6 +161,8 @@ class Stock_columns:
     def __init__(self):
         self.name = "stock"
         self.columns = ["s_i_id", "s_w_id", "s_quantity", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_ytd", "s_order_cnt", "s_remote_cnt", "s_data"]
+        self.columns_size =  [4, 4, 4, 96, 96, 96, 96, 96, 96, 96, 96, 96, 96, 4, 4, 4, 101]
+        self.primary_keys = ["s_i_id", "s_w_id"]
         self.partitionable_columns = ["s_i_id", "s_w_id", "s_ytd", "s_order_cnt", "s_remote_cnt"]
         self.partition_keys = []
         self.replicas = []
@@ -168,6 +182,8 @@ class Warehouse_columns:
     def __init__(self):
         self.name = "warehouse"
         self.columns = ["w_id", "w_name", "w_street_1", "w_street_2", "w_city", "w_state", "w_zip", "w_tax", "w_ytd"]
+        self.columns_size =  [4, 21, 41, 41, 41, 8, 36, 3, 6]
+        self.primary_keys = ["w_id"]
         self.partitionable_columns = ["w_id"]
         self.partition_keys = []
         self.replicas = []
@@ -187,6 +203,8 @@ class History_columns:
     def __init__(self):
         self.name = "history"
         self.columns = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date", "h_amount", "h_data"]
+        self.columns_size =  [4, 4, 4, 4, 4, 8, 3, 49]
+        self.primary_keys = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date"]
         self.partitionable_columns = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date"]
         self.partition_keys = []
         self.replicas = []
@@ -206,6 +224,8 @@ class Nation_columns:
     def __init__(self):
         self.name = "nation"
         self.columns = ["n_nationkey", "n_name", "n_regionkey", "n_comment"]
+        self.columns_size =  [8, 100, 8, 305]
+        self.primary_keys = ["n_nationkey"]
         self.partitionable_columns = ["n_nationkey", "n_regionkey"]
         self.partition_keys = []
         self.replicas = []
@@ -225,6 +245,8 @@ class Supplier_columns:
     def __init__(self):
         self.name = "supplier"
         self.columns = ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"]
+        self.columns_size =  [8, 100, 81, 8, 60, 7, 203]
+        self.primary_keys = ["s_suppkey"]
         self.partitionable_columns = ["s_suppkey", "s_nationkey"]
         self.partition_keys = []
         self.replicas = []
@@ -244,6 +266,8 @@ class Region_columns:
     def __init__(self):
         self.name = "region"
         self.columns = ["r_regionkey", "r_name", "r_comment"]
+        self.columns_size =  [8, 100, 305]
+        self.primary_keys = ["r_regionkey"]
         self.partitionable_columns = ["r_regionkey"]
         self.partition_keys = []
         self.replicas = []

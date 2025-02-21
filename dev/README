@@ -3,6 +3,10 @@
            replica_progresss_collector是收集replica同步状态的
            sync_metrics_collector是根据普罗米修斯接口统计replica数据同步量的
 /estimator 评估模型相关的代码
+           三个核心类: table_meta类, 记录每个表的分区键, 分区范围, 分区tuple数量
+           table_column类, 记录每个表的列的信息, 列大小, 主键, 可选分区键, 是否有副本
+           Qcard类, 记录每个query特征的类, 包括扫描的表, 扫描的列, 过滤条件, 每个表的扫描基数
+           
            get_ch_plan.py 获取ch各个查询的物理执行计划    
            operators.py 定义通用的几个operator类
            ch_query_cost.py 定义几个query的代价计算. 性能评估模型的测试代码在这里
@@ -12,7 +16,7 @@
            ch_query_params.py 记录ch的sql的cost的相关系数
            test2.py 替换物理执行树的表别名
            ch_partition_meta.py 记录每个表的分区元数据类,包括表的分区键和分区范围
-           ch_query_card.py 针对每一个query计算相应的表的扫描基数
+           ch_query_card.py 针对每一个query计算相应的表的扫描基数, 以及每一个sql扫描的列#豆包里的"分析sql列名"对话获得
 /estimator01 评估模型相关的代码 (已废弃)
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试

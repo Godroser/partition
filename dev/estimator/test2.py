@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -30,13 +31,14 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
     return mysql.connector.connect(**db_conf)
 
 if __name__ == "__main__":
-    # with get_connection(autocommit=False) as connection:
-    #   with connection.cursor() as cur:    
-    #     cur.execute("SELECT count(*) FROM history;")
-    #     print(cur.fetchall()[0][0])
+    start_time = time.time()
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur:    
+        # cur.execute("SELECT count(*) FROM history;")
+        # print(cur.fetchall()[0][0])
+        cur.execute("show create table region;")
+        cur.fetchall()
 
-    ll = []
-    ll1 = [[1,2,3],[4,5,6],[7,8,9]]
-    for i in range(len(ll1)):
-        ll.append(ll1[i])
-    print(ll)
+    end_time = time.time()        
+    delay = end_time - start_time
+    print("delay: ", delay)

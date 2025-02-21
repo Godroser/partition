@@ -38,6 +38,7 @@ from config import get_connection
 class Customer_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica = False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -98,6 +99,7 @@ class Customer_Meta:
 class District_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 40 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -158,6 +160,7 @@ class District_Meta:
 class History_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 124913 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -218,6 +221,7 @@ class History_Meta:
 class Item_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 100000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -278,6 +282,7 @@ class Item_Meta:
 class Nation_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -338,6 +343,7 @@ class Nation_Meta:
 class New_Order_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -398,6 +404,7 @@ class New_Order_Meta:
 class Order_Line_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 1250435 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -458,6 +465,7 @@ class Order_Line_Meta:
 class Orders_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -518,6 +526,7 @@ class Orders_Meta:
 class Region_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 5 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -578,6 +587,7 @@ class Region_Meta:
 class Stock_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 400000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -638,6 +648,7 @@ class Stock_Meta:
 class Supplier_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 10000 # count(*) 
     with get_connection(autocommit=False) as connection:
@@ -698,6 +709,7 @@ class Supplier_Meta:
 class Warehouse_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
+    self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 4 # count(*) 
     with get_connection(autocommit=False) as connection:

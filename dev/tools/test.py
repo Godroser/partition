@@ -1,63 +1,54 @@
-from datetime import datetime, timedelta
-import random
-import sys
-import os
+import sqlparse
 
-sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
-import mysql.connector
-from mysql.connector import MySQLConnection
-from mysql.connector.cursor import MySQLCursor
-from config import Config
+def extract_column_names(sql):
+    parsed = sqlparse.parse(sql)[0]
+    column_names = []
 
-def get_connection(autocommit: bool = True) -> MySQLConnection:
-    config = Config()
-    db_conf = {
-        "host": config.TIDB_HOST,
-        "port": config.TIDB_PORT,
-        "user": config.TIDB_USER,
-        "password": config.TIDB_PASSWORD,
-        "database": config.TIDB_DB_NAME,
-        "autocommit": autocommit,
-        # mysql-connector-python will use C extension by default,
-        # to make this example work on all platforms more easily,
-        # we choose to use pure python implementation.
-        "use_pure": True
-    }
+    def traverse(token):
+        if isinstance(token, sqlparse.sql.Identifier):
+            parts = str(token).split('.')
+            if len(parts) > 1:
+                column_names.append(parts[-1])
+            else:
+                column_names.append(str(token))
+        elif isinstance(token, sqlparse.sql.IdentifierList):
+            for identifier in token.get_identifiers():
+                traverse(identifier)
+        elif isinstance(token, sqlparse.sql.Statement):
+            for sub_token in token.tokens:
+                traverse(sub_token)
+        elif isinstance(token, sqlparse.sql.Function):
+            for param in token.tokens:
+                if isinstance(param, sqlparse.sql.Identifier):
+                    traverse(param)
 
-    if config.ca_path:
-        db_conf["ssl_verify_cert"] = True
-        db_conf["ssl_verify_identity"] = True
-        db_conf["ssl_ca"] = config.ca_path
-    return mysql.connector.connect(**db_conf)
+    traverse(parsed)
+    unique_column_names = list(set(column_names))
+    return unique_column_names
 
-# 生成指定范围内的随机日期时间
-def generate_random_datetime():
-    start_time = datetime.strptime('2024-10-23 17:00:00', '%Y-%m-%d %H:%M:%S')
-    end_time = datetime.strptime('2024-11-01 15:15:05', '%Y-%m-%d %H:%M:%S')
-    time_delta = end_time - start_time
-    random_seconds = random.randint(0, time_delta.total_seconds())
-    return start_time + timedelta(seconds=random_seconds)
 
-if __name__ == "__main__":
-#   config = Config()
-#   with get_connection(autocommit=False) as connection:
-#       with connection.cursor() as cur:   
-#         # 查询 orders 表中的所有记录
-#         select_query = "SELECT o_w_id,o_d_id FROM orders"  # 假设表中有 o_id 作为主键
-#         cur.execute(select_query)
-#         rows = cur.fetchall()
-#         print(rows)
+sql = """
+SELECT su.s_suppkey, su.s_name, n.n_name, i.i_id, i.i_name, su.s_address, su.s_phone, su.s_comment 
+FROM item AS i 
+JOIN stock AS s ON i.i_id = s.s_i_id 
+JOIN supplier AS su ON MOD((s.s_w_id * s.s_i_id), 10000) = su.s_suppkey 
+JOIN nation AS n ON su.s_nationkey = n.n_nationkey 
+JOIN region AS r ON n.n_regionkey = r.r_regionkey 
+JOIN (
+    SELECT s_sub.s_i_id AS m_i_id, MIN(s_sub.s_quantity) AS m_s_quantity 
+    FROM stock AS s_sub 
+    JOIN supplier AS su_sub ON MOD((s_sub.s_w_id * s_sub.s_i_id), 10000) = su_sub.s_suppkey 
+    JOIN nation AS n_sub ON su_sub.s_nationkey = n_sub.n_nationkey 
+    JOIN region AS r_sub ON n_sub.n_regionkey = r_sub.r_regionkey 
+    WHERE r_sub.r_name LIKE 'EUROP%' 
+    GROUP BY s_sub.s_i_id
+) AS m ON i.i_id = m.m_i_id AND s.s_quantity = m.m_s_quantity 
+WHERE i.i_data LIKE '%b' AND r.r_name LIKE 'EUROP%' 
+ORDER BY n.n_name, su.s_name, i.i_id
+"""
 
-#         for row in rows:
-#             o_w_id = row[0]
-#             o_d_id = row[1]
-#             random_datetime = generate_random_datetime()
-#             update_query = f"UPDATE orders SET o_entry_d = '{random_datetime}' WHERE o_w_id = {o_w_id} and o_d_id = {o_d_id}"
-#             cur.execute(update_query)
-
-    min_val = datetime(2024,5,1,18,00,00)
-    step = 3 / 4
-    table_ranges = []
-    table_ranges.append([min_val + timedelta(days=i * step) for i in range(1, 5)])    
-    print(table_ranges)
+columns = extract_column_names(sql)
+print("SQL 语句中出现的列名：")
+for column in columns:
+    print(column)
