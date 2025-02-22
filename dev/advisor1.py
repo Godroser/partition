@@ -500,7 +500,7 @@ if __name__ == "__main__":
     # append的顺序要求一致
     table_meta.extend([customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta]) 
 
-    # 初始化列存表的参数
+    # 初始化replica表的参数
     customer_replica_meta = Customer_Meta()
     district_replica_meta = District_Meta()
     history_replica_meta = History_Meta()
@@ -514,18 +514,18 @@ if __name__ == "__main__":
     supplier_replica_meta = Supplier_Meta()
     warehouse_replica_meta = Warehouse_Meta()
 
-    customer_replica_meta.replica = True
-    district_replica_meta.replica = True
-    history_replica_meta.replica = True
-    item_replica_meta.replica = True
-    nation_replica_meta.replica = True
-    new_order_replica_meta.replica = True
-    order_line_replica_meta.replica = True
-    orders_replica_meta.replica = True
-    region_replica_meta.replica = True
-    stock_replica_meta.replica = True
-    supplier_replica_meta.replica = True
-    warehouse_replica_meta.replica = True
+    customer_replica_meta.isreplica = True
+    district_replica_meta.isreplica = True
+    history_replica_meta.isreplica = True
+    item_replica_meta.isreplica = True
+    nation_replica_meta.isreplica = True
+    new_order_replica_meta.isreplica = True
+    order_line_replica_meta.isreplica = True
+    orders_replica_meta.isreplica = True
+    region_replica_meta.isreplica = True
+    stock_replica_meta.isreplica = True
+    supplier_replica_meta.isreplica = True
+    warehouse_replica_meta.isreplica = True
 
     table_meta.extend([customer_replica_meta, district_replica_meta, history_replica_meta, item_replica_meta, nation_replica_meta, new_order_replica_meta, order_line_replica_meta, orders_replica_meta, region_replica_meta, stock_replica_meta, supplier_replica_meta, warehouse_replica_meta])
 
@@ -653,6 +653,8 @@ if __name__ == "__main__":
     tables[6]['partition_keys'] = ['ol_delivery_d']
     tables[7]['partition_keys'] = ['o_all_local']    
 
+    tables[6]['replicas'] = ['ol_w_id', 'ol_d_id', 'ol_o_id', 'ol_dist_info']
+
     update_meta(table_columns, table_meta, tables)
 
     # 更新每个Qcard类的rowSize
@@ -672,7 +674,10 @@ if __name__ == "__main__":
     # print("initial reward: ", reward)
 
     for i in range(22):
-        calculate_query_cost(i, qparams_list, engine)
+        cost = 0
+        cost = calculate_query_cost(i, qparams_list)
+        cost = normalize_reward(cost)
+        print("Query {} cost: {}".format(i+1, cost))
 
     # print(calculate_q1(engine, qparams_list[0]))
     # print(calculate_q2(engine, qparams_list[1]))

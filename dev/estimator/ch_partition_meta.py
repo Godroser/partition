@@ -38,7 +38,7 @@ from config import get_connection
 class Customer_Meta:
   def __init__(self):
     self.ispartition = True #True: use partition_metadata, False:full table scan
-    self.isreplica = False #True: use row-store, False: use column-store
+    self.isreplica = False #True: use row-store, is table_meta; False: use column-store, is table_replica_meta
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
     with get_connection(autocommit=False) as connection:

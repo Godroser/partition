@@ -269,7 +269,7 @@ def calculate_reward(table_columns, table_meta, candidates):
     reward = 0.0
     # 计算22条query的代价
     for i in range(1,23):
-        calculate_query_cost(i, qparams_list, query_operators, engine)
+        calculate_query_cost(i, qparams_list, query_operators)
 
 
     reward += calculate_q1(engine, qparams_list[0])

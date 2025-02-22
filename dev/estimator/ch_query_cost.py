@@ -36,7 +36,7 @@ def update_query_operators_with_replica(qry_idx, qparams_list, query_operators):
                 tables.append(replica_table)
 
 # 计算指定第qry_idx条query的代价
-def calculate_query_cost(qry_idx, qparams_list, engine):
+def calculate_query_cost(qry_idx, qparams_list):
     update_query_operators_with_replica(qry_idx, qparams_list, query_operators)
     query_info = query_operators[qry_idx]
     operators = query_info["operators"]
@@ -44,7 +44,15 @@ def calculate_query_cost(qry_idx, qparams_list, engine):
     content = '1'
     cost = 0
 
+    # print("Tables:", tables)
+    # print("Operators:", operators)
+    # print('qparams_list: ', qparams_list[qry_idx])
+
     for operator, table in zip(operators, tables):
+        engine = 'Tikv'
+        if table.endswith("_replica"):
+            engine = 'Tiflash'
+
         rows_attr = f"rows_tablescan_{table}"
         rowsize_attr = f"rowsize_tablescan_{table}"
         rows_selection_attr = f"rows_selection_{table}"
@@ -52,6 +60,10 @@ def calculate_query_cost(qry_idx, qparams_list, engine):
         rows = getattr(qparams_list[qry_idx], rows_attr, None)
         rowsize = getattr(qparams_list[qry_idx], rowsize_attr, None)
         rows_selection = getattr(qparams_list[qry_idx], rows_selection_attr, None)
+
+        # print("table:", table)
+        # print('rows_attr: {} : {}'.format(rows_attr, rows))
+        # print('rowsize_attr: {} : {}'.format(rowsize_attr, rowsize))
 
         if operator == "TableScan":
             op_instance = TableScan(content, rows, rowsize)
@@ -64,9 +76,11 @@ def calculate_query_cost(qry_idx, qparams_list, engine):
 
         op_instance.engine = engine
         cost += op_instance.calculate_cost()
+        # print("add op_instance.calculate_cost: ", op_instance.calculate_cost())
 
         # 对于读取了rpelica的情况, 要计算额外的算子开销
         if table.endswith("_replica"):
+            engine = 'Tiflash'
             original_table = table.replace("_replica", "")
             original_rows_attr = f"rows_tablescan_{original_table}"
             original_rowsize_attr = f"rowsize_tablescan_{original_table}"
@@ -83,8 +97,9 @@ def calculate_query_cost(qry_idx, qparams_list, engine):
             hash_join_instance = HashJoin(content, buildRows, 1, buildRowSize, nKeys, probeRows, 1, probeRowSize)
             hash_join_instance.engine = engine
             cost += hash_join_instance.calculate_cost()
+
+            # print("add hash_join_instance.calculate_cost(): ",hash_join_instance.calculate_cost())
             
-            print("Query {} cost: {}".format(qry_idx, cost))
     return cost
 
 def calculate_q1(engine, q1params):

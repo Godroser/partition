@@ -230,7 +230,7 @@ class HashJoin(TreeNode):
             cpuFactor = 0
             memFactor = 0
             concurrency = 1
-        cost = (self.buildRows * self.buildFilters * cpuFactor + self.buildRows*self.nKeys*self.cpuFactor + self.buildRows*self.buildRowSize*memFactor + self.buildRows*cpuFactor + self.probeRows * self.probeFilters * cpuFactor + self.probeRows*self.nKeys*cpuFactor + self.probeRows*self.probeRowSize*memFactor + self.probeRows*cpuFactor) / concurrency
+        cost = (self.buildRows * self.buildFilters * cpuFactor + self.buildRows*self.nKeys * cpuFactor + self.buildRows*self.buildRowSize*memFactor + self.buildRows * cpuFactor + self.probeRows * self.probeFilters * cpuFactor + self.probeRows* self.nKeys * cpuFactor + self.probeRows * self.probeRowSize * memFactor + self.probeRows * cpuFactor) / concurrency
         if self.engine == "Tiflash":
             return cost
         else:

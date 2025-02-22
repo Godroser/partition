@@ -103,13 +103,20 @@ class Qcard():
         scanned_partitions = []    
         scanned_partition_card = 0             
         
-        # 检查表是否有分区
+        # 检查表是否有分区, 没分区默认全表扫描
         if len(partition_meta.keys) == 0:
             scanned_partitions = [0, 1, 2, 3]
             scanned_partition_card = partition_meta.count
-            self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
-            self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)            
-            return scanned_partitions, scanned_partition_card
+
+            # 判断是replica_meta还是table_meta, 相应更新的参数名称不一样
+            if not partition_meta.isreplica: # 不是replica
+                self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
+                self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)            
+                return scanned_partitions, scanned_partition_card
+            else:
+                self.update_param('rows_tablescan_' + self.tables[table_idx] +  '_replica', scanned_partition_card)
+                self.update_param('rows_selection_' + self.tables[table_idx] + '_replica', scanned_partition_card)            
+                return scanned_partitions, scanned_partition_card                
         
         # 默认扫描全部分区
         for i in range(len(partition_meta.partition_range[0])):
@@ -194,9 +201,14 @@ class Qcard():
         for p in scanned_partitions:
             scanned_partition_card += partition_meta.partition_cnt[p]
 
-        self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
-        # print(self.rows_tablescan_order_line)
-        self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)
+        # 判断是replica_meta还是table_meta, 相应更新的参数名称不一样
+        if not partition_meta.isreplica: # 不是replica
+            self.update_param('rows_tablescan_' + self.tables[table_idx], scanned_partition_card)
+            self.update_param('rows_selection_' + self.tables[table_idx], scanned_partition_card)            
+            return scanned_partitions, scanned_partition_card
+        else:
+            self.update_param('rows_tablescan_' + self.tables[table_idx] +  '_replica', scanned_partition_card)
+            self.update_param('rows_selection_' + self.tables[table_idx] + '_replica', scanned_partition_card)           
         # print(self.rows_selection_order_line)            
         
         return scanned_partitions, scanned_partition_card
@@ -267,14 +279,16 @@ class Qcard():
         
     #     return scanned_partitions, scanned_partition_cnt
 
-    # 计算每个query扫描的各个表的基数
+    
+    # 判断是否要读表的replica, 计算每个query扫描的各个表和replica的基数
     def get_query_card(self, table_meta, candidates):    
         table_dict = {'customer': 0, 'district': 1, 'history': 2, 'item': 3, 'nation': 4, 'new_order': 5, 'order_line': 6, 'orders': 7, 'region': 8, 'stock': 9, 'supplier': 10, 'warehouse': 11}  
+                
 
         for table_idx, table_name in enumerate(self.tables):
             # 对应table的candidate
             candidate = next((c for c in candidates if c['name'] == table_name), None)            
-
+                 
             # 如果这个表没有replica, 则只需要扫描原始table
             if candidate['replicas'] == None:
                 # 这个表上没有过滤操作, 默认扫描全部tuple
@@ -290,27 +304,40 @@ class Qcard():
                 # print("Scanned partitions:", scanned_partitions)
                 # print("Scanned tuples count:", scanned_partition_cnt)  
 
-            # 如果这个表有replica, 则需要扫描原始table和replica
-            else:  
-                # 这个表上没有过滤操作, 默认扫描全部tuple
-                if self.operators[table_idx] == None:
-                    continue
-                # 计算原始表基数
-                table_meta_idx = table_dict.get(table_name)
-                # print("Table: ", partition_meta_name)
-                # 调用 get_table_card 函数
-                partition_meta = table_meta[table_meta_idx]
-                scanned_partitions, scanned_partition_cnt = self.get_table_card(partition_meta, table_idx, candidates)
-                # print("Scanned partitions:", scanned_partitions)
-                # print("Scanned tuples count:", scanned_partition_cnt) 
+            # 如果这个表有replica, 则需要判断是否要扫描原始table还是replica
+            else:             
+
+                # 检测query是否要扫描当前table的replica
+                scan_columns = self.columns[table_idx]
+                for scan_column in scan_columns:
+                    if scan_column in candidate['replicas']:
+                        self.scan_table_replica.append(table_name)
+                        break                
+
+                # 这个表上过滤操作, 再计算要扫描的基数
+                # qcard初始化默认是全表扫描
+                if self.operators[table_idx]:
+                    # 计算原始表基数
+                    table_meta_idx = table_dict.get(table_name)
+                    # print("Table: ", partition_meta_name)
+                    # 调用 get_table_card 函数
+                    partition_meta = table_meta[table_meta_idx]
+                    scanned_partitions, scanned_partition_cnt = self.get_table_card(partition_meta, table_idx, candidates)
+                    # print("Query :")
+                    # print("Scanned partitions:", scanned_partitions)
+                    # print("Scanned tuples count:", scanned_partition_cnt) 
                 
-                # 计算replica的基数
-                table_replica_meta_idx = table_meta_idx + 12
-                partition_meta_replica = table_meta[table_replica_meta_idx]
-                scanned_partitions_replica, scanned_partition_cnt_replica = self.get_table_card(partition_meta_replica, table_idx, candidates)
-                # print("Scanned partitions:", scanned_partitions_replica)
-                # print("Scanned tuples count:", scanned_partition_cnt_replica)
-             
+
+                # 当前table在rpelica的扫描列表中
+                if table_name in self.scan_table_replica:
+                    if self.operators[table_idx]:
+                        # 计算replica的基数
+                        table_replica_meta_idx = table_meta_idx + 12
+                        partition_meta_replica = table_meta[table_replica_meta_idx]
+                        scanned_partitions_replica, scanned_partition_cnt_replica = self.get_table_card(partition_meta_replica, table_idx, candidates)
+                        # print("Scanned partitions:", scanned_partitions_replica)
+                        # print("Scanned tuples count:", scanned_partition_cnt_replica)
+                        # print("self.rows_tablescan_order_line_replica", self.rows_tablescan_order_line_replica)     
                 
 
              
@@ -331,8 +358,6 @@ class Qcard():
             rowsize_replica = 0
             rowsize = 0
 
-            scan_replica = False
-
             # 找到对应的table_column类
             column_class_idx = table_dict.get(table_name)
             table_column = table_columns[column_class_idx]
@@ -343,7 +368,7 @@ class Qcard():
                 if column in table_column.columns:
                     idx = table_column.columns.index(column)
                     rowsize_replica += table_column.columns_size[idx]
-                    scan_replica = True
+                    # scan_replica = True
                 else:
                     print("Column not found in table columns")
                     break
@@ -357,10 +382,6 @@ class Qcard():
         
             self.update_param('rowsize_tablescan_' + table_name, rowsize)
             self.update_param('rowsize_tablescan_' + table_name + '_replica', rowsize_replica)
-
-            # 增加扫描replica的列表
-            if scan_replica == True:
-                self.scan_table_replica.append(table_name)
 
 
 
@@ -895,7 +916,7 @@ class Q22card(Qcard):
         self.operators = [['gt'], []] # filter operators '>'             
 
 
-# 根据分区metadata, 获取每一个quert的查询基数
+# 根据分区metadata, 获取每一个query的查询基数
 #def get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta):
 def get_qcard(table_meta, qcard_list, candidates):
     customer_meta = table_meta[0]
@@ -1056,10 +1077,12 @@ def update_qparams_with_qcard(qcard_list):
         
         # Copy attributes from qcard to qparams
         for attr in dir(qcard):
+            # print("attr: ", attr)
             if not attr.startswith('__') and not callable(getattr(qcard, attr)):
                 setattr(qparams, attr, getattr(qcard, attr))
         
         qparams_list.append(qparams)
+        # print("qparams.rows_tablescan_order_line_replica: ", qparams.rows_tablescan_order_line_replica)
     
     return qparams_list    
 
