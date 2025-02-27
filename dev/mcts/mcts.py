@@ -3,7 +3,8 @@ import random
 import copy
 from fpdf import FPDF
 import time
-
+import logging
+from log.logging_config import setup_logging
 
 class State:
     def __init__(self, tables, action=None):
@@ -22,13 +23,12 @@ class State:
             for column in partition_candidates:
                 if column not in table['partition_keys']:
                     actions.append(('partition', table['name'], column))
-            ######todo
-            # for column in replica_partition_candidates:
-            #     if column not in table['replica_partition_keys']:
-            #         actions.append(('replica_partition', table['name'], column))
-            # for column in replica_candidates:
-            #     if column not in table['replicas']:
-            #         actions.append(('replica', table['name'], column))
+            for column in replica_candidates:
+                if column not in table['replicas']:
+                    actions.append(('replica', table['name'], column))            
+            for column in replica_partition_candidates:
+                if column not in table['replica_partition_keys']:
+                    actions.append(('replica_partition', table['name'], column))
         random.shuffle(actions)  # 打乱actions的顺序
         return actions
 
@@ -86,7 +86,8 @@ class Node:
         # for child in self.children:
         #     print("(child.reward / child.visits): ", (child.reward / child.visits))
         #     print("cparams: ", c_param * math.sqrt((math.log(self.visits) / child.visits)))
-        print("best child: ",choices_weights.index(max(choices_weights)))
+        # print("best child: ",choices_weights.index(max(choices_weights)))
+        logging.info(f"best child: {choices_weights.index(max(choices_weights))}")
         return self.children[choices_weights.index(max(choices_weights))]
     
     # 找到最大reward的节点
@@ -115,8 +116,10 @@ class Node:
                 child_node = Node(new_state, self, self.depth + 1)  # 更新子节点的深度
                 self.children.append(child_node)
                 #print("take action:", action)
-                print("append child to node depth:", self.depth)
-                print("child action:", action)
+                # print("append child to node depth:", self.depth)
+                # print("child action:", action)
+                logging.info(f"append child to node depth: {self.depth}")
+                logging.info(f"child action: {action}")
                 return child_node
         raise Exception("Should never reach here")
 

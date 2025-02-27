@@ -450,7 +450,7 @@ class Order_Line_Meta:
 
           # 拼接 SQL 查询
           query = "SELECT count(*) FROM order_line WHERE " + " AND ".join(conditions) + ";"
-          #print(f"Executing query: {query}")
+          # print(f"Executing query: {query}")
           
           # 执行查询
           cur.execute(query)

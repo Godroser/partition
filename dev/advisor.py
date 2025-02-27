@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timedelta
 from multiprocessing import Pool, cpu_count
 from decimal import Decimal
+import logging
 
 #sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -19,6 +20,8 @@ from estimator.ch_query_card import *
 from estimator.ch_query_cost import *
 from estimator.ch_columns_ranges_meta import *
 from config import Config
+from log.logging_config import setup_logging
+
 
 # update metadata given the partition and replica candidate
 # candidate format:{'name': , 'columns':, 'partitionable_columns': , 'partition_keys': [], 'replicas': [], 'replica_partition_keys': []}
@@ -151,6 +154,7 @@ def update_rowsize(table_columns, candidates):
     q7card.init()
     #print("Query 7")
     q7card.update_table_rowsize(table_columns, candidates)
+    qcard.append(q7card)
 
     q8card = Q8card()
     q8card.init()
@@ -256,7 +260,7 @@ def calculate_reward(table_columns, table_meta, candidates):
     # 更新每个Qcard类的rowSize
     qcard_list = update_rowsize(table_columns, candidates)
 
-    # get Qcard 获取每个query扫描对应表的card
+    # get Qcard 判断是否要读表的replica, 获取每个query扫描对应表的card
     get_qcard(table_meta, qcard_list, candidates)
     # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
 
@@ -268,32 +272,34 @@ def calculate_reward(table_columns, table_meta, candidates):
     
     reward = 0.0
     # 计算22条query的代价
-    for i in range(1,23):
-        calculate_query_cost(i, qparams_list, query_operators)
+    for i in range(0,22):
+        cost = 0
+        cost = calculate_query_cost(i, qparams_list)
+        reward += cost
+        logging.info(f"Query{i+1}: {cost}")
 
-
-    reward += calculate_q1(engine, qparams_list[0])
-    reward += calculate_q2(engine, qparams_list[1])
-    reward += calculate_q3(engine, qparams_list[2])
-    reward += calculate_q4(engine, qparams_list[3])
-    reward += calculate_q5(engine, qparams_list[4])
-    reward += calculate_q6(engine, qparams_list[5])
-    reward += calculate_q7(engine, qparams_list[6])
-    reward += calculate_q8(engine, qparams_list[7])
-    reward += calculate_q9(engine, qparams_list[8])  
-    reward += calculate_q10(engine, qparams_list[9])
-    reward += calculate_q11(engine, qparams_list[10])
-    reward += calculate_q12(engine, qparams_list[11])
-    reward += calculate_q13(engine, qparams_list[12])
-    reward += calculate_q14(engine, qparams_list[13])
-    reward += calculate_q15(engine, qparams_list[14])
-    reward += calculate_q16(engine, qparams_list[15])
-    reward += calculate_q17(engine, qparams_list[16])    
-    reward += calculate_q18(engine, qparams_list[17])
-    reward += calculate_q19(engine, qparams_list[18])
-    reward += calculate_q20(engine, qparams_list[19])
-    reward += calculate_q21(engine, qparams_list[20])
-    reward += calculate_q22(engine, qparams_list[21]) 
+    # reward += calculate_q1(engine, qparams_list[0])
+    # reward += calculate_q2(engine, qparams_list[1])
+    # reward += calculate_q3(engine, qparams_list[2])
+    # reward += calculate_q4(engine, qparams_list[3])
+    # reward += calculate_q5(engine, qparams_list[4])
+    # reward += calculate_q6(engine, qparams_list[5])
+    # reward += calculate_q7(engine, qparams_list[6])
+    # reward += calculate_q8(engine, qparams_list[7])
+    # reward += calculate_q9(engine, qparams_list[8])  
+    # reward += calculate_q10(engine, qparams_list[9])
+    # reward += calculate_q11(engine, qparams_list[10])
+    # reward += calculate_q12(engine, qparams_list[11])
+    # reward += calculate_q13(engine, qparams_list[12])
+    # reward += calculate_q14(engine, qparams_list[13])
+    # reward += calculate_q15(engine, qparams_list[14])
+    # reward += calculate_q16(engine, qparams_list[15])
+    # reward += calculate_q17(engine, qparams_list[16])    
+    # reward += calculate_q18(engine, qparams_list[17])
+    # reward += calculate_q19(engine, qparams_list[18])
+    # reward += calculate_q20(engine, qparams_list[19])
+    # reward += calculate_q21(engine, qparams_list[20])
+    # reward += calculate_q22(engine, qparams_list[21]) 
 
     # print(table_meta[6].keys)
     # print(table_meta[6].partition_cnt)
@@ -310,7 +316,7 @@ def calculate_reward(table_columns, table_meta, candidates):
     #print("reward: ", reward)
     return reward    
 
-def simulate(state, depth, max_depth=10):
+def simulate(state, depth, max_depth=5):
     # 随机模拟直到终止状态
     state_simu = copy.deepcopy(state)
     while depth < max_depth:
@@ -320,18 +326,19 @@ def simulate(state, depth, max_depth=10):
         action = random.choice(possible_actions)
         state_simu = state_simu.take_action(action)
         depth += 1      
-        #print(action)
+        logging.info(action)
     return calculate_reward(table_columns, table_meta, state_simu.tables)
 
 def normalize_reward(reward):
     # 归一化
-    N = 3000000000.0
-    return (N - reward) / 1000000.0
+    N = 30000000000.0
+    return (N - reward) / 100000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
     for i in range(iterations):
         print(i)
         node = root
+        reward = 0
         # 选择. 对于完全扩展的节点，选择最佳子节点，直到达到最大深度
         while node.is_fully_expanded() and node.depth < max_depth:
             # 节点没有可能的动作，退出循环              
@@ -349,7 +356,8 @@ def monte_carlo_tree_search(root, iterations, max_depth):
         reward = simulate(node.state, node.depth, max_depth)
         #print("Reward: ", reward)       
         reward = normalize_reward(reward)
-        print("Reward: ", reward)
+        # print("Reward: ", reward)
+        logging.info(f"Reward: {reward}")
         # print("*****************************")
         # print("*****************************")
 
@@ -368,8 +376,8 @@ def expand_root(root, max_depth):
                 new_state = root.state.take_action(action)
                 child_node = Node(new_state, root, root.depth + 1)  # 更新子节点的深度
                 root.children.append(child_node)
-                print("take action:", action)
-                print("append child to node depth:", root.depth)
+                logging.info(f"take action: {action}")
+                logging.info(f"append child to node depth: {root.depth}")
                 child_nodes.append(child_node)   
 
     # 计算reward
@@ -466,18 +474,18 @@ def reset_table_meta(table_meta):
     supplier_replica_meta = Supplier_Meta()
     warehouse_replica_meta = Warehouse_Meta()
 
-    customer_replica_meta.replica = True
-    district_replica_meta.replica = True
-    history_replica_meta.replica = True
-    item_replica_meta.replica = True
-    nation_replica_meta.replica = True
-    new_order_replica_meta.replica = True
-    order_line_replica_meta.replica = True
-    orders_replica_meta.replica = True
-    region_replica_meta.replica = True
-    stock_replica_meta.replica = True
-    supplier_replica_meta.replica = True
-    warehouse_replica_meta.replica = True
+    customer_replica_meta.isreplica = True
+    district_replica_meta.isreplica = True
+    history_replica_meta.isreplica = True
+    item_replica_meta.isreplica = True
+    nation_replica_meta.isreplica = True
+    new_order_replica_meta.isreplica = True
+    order_line_replica_meta.isreplica = True
+    orders_replica_meta.isreplica = True
+    region_replica_meta.isreplica = True
+    stock_replica_meta.isreplica = True
+    supplier_replica_meta.isreplica = True
+    warehouse_replica_meta.isreplica = True
 
     table_meta.extend([customer_replica_meta, district_replica_meta, history_replica_meta, item_replica_meta, nation_replica_meta, new_order_replica_meta, order_line_replica_meta, orders_replica_meta, region_replica_meta, stock_replica_meta, supplier_replica_meta, warehouse_replica_meta])    
 
@@ -513,18 +521,18 @@ if __name__ == "__main__":
     supplier_replica_meta = Supplier_Meta()
     warehouse_replica_meta = Warehouse_Meta()
 
-    customer_replica_meta.replica = True
-    district_replica_meta.replica = True
-    history_replica_meta.replica = True
-    item_replica_meta.replica = True
-    nation_replica_meta.replica = True
-    new_order_replica_meta.replica = True
-    order_line_replica_meta.replica = True
-    orders_replica_meta.replica = True
-    region_replica_meta.replica = True
-    stock_replica_meta.replica = True
-    supplier_replica_meta.replica = True
-    warehouse_replica_meta.replica = True
+    customer_replica_meta.isreplica = True
+    district_replica_meta.isreplica = True
+    history_replica_meta.isreplica = True
+    item_replica_meta.isreplica = True
+    nation_replica_meta.isreplica = True
+    new_order_replica_meta.isreplica = True
+    order_line_replica_meta.isreplica = True
+    orders_replica_meta.isreplica = True
+    region_replica_meta.isreplica = True
+    stock_replica_meta.isreplica = True
+    supplier_replica_meta.isreplica = True
+    warehouse_replica_meta.isreplica = True
 
     table_meta.extend([customer_replica_meta, district_replica_meta, history_replica_meta, item_replica_meta, nation_replica_meta, new_order_replica_meta, order_line_replica_meta, orders_replica_meta, region_replica_meta, stock_replica_meta, supplier_replica_meta, warehouse_replica_meta])
 
@@ -555,7 +563,11 @@ if __name__ == "__main__":
         dict_tmp['partition_keys'] = table_column.partition_keys
         dict_tmp['replicas'] = table_column.replicas
         dict_tmp['replica_partition_keys'] = table_column.replica_partition_keys
-        tables.append(dict_tmp)
+        tables.append(dict_tmp)   
+
+    # 设置日志
+    setup_logging()
+
 
     # #*************************独立测试时用的代码*************************
     # initial_state = State(tables)
@@ -604,7 +616,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=2000, max_depth=10)
+    monte_carlo_tree_search(root, iterations=5000, max_depth=10)
     mcts_time = time.time() - start_time
 
     start_time = time.time()

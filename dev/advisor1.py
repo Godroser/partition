@@ -8,6 +8,7 @@ import json
 from datetime import datetime, timedelta
 from multiprocessing import Pool, cpu_count
 from decimal import Decimal
+import logging
 
 #sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -19,6 +20,8 @@ from estimator.ch_query_card import *
 from estimator.ch_query_cost import *
 from estimator.ch_columns_ranges_meta import *
 from config import Config
+from log.logging_config import setup_logging
+ 
 
 # update metadata given the partition and replica candidate
 # candidate format:{'name': , 'columns':, 'partitionable_columns': , 'partition_keys': [], 'replicas': [], 'replica_partition_keys': []}
@@ -257,7 +260,7 @@ def calculate_reward(table_columns, table_meta, candidates):
     # 更新每个Qcard类的rowSize
     qcard_list = update_rowsize(table_columns, candidates)
 
-    # get Qcard 获取每个query扫描对应表的card
+    # get Qcard 判断是否要读表的replica, 获取每个query扫描对应表的card
     get_qcard(table_meta, qcard_list, candidates)
     # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
 
@@ -270,31 +273,31 @@ def calculate_reward(table_columns, table_meta, candidates):
     reward = 0.0
     # 计算22条query的代价
     for i in range(1,23):
-        calculate_query_cost(i, qparams_list, query_operators, engine)
+        reward += calculate_query_cost(i, qparams_list)
 
 
-    reward += calculate_q1(engine, qparams_list[0])
-    reward += calculate_q2(engine, qparams_list[1])
-    reward += calculate_q3(engine, qparams_list[2])
-    reward += calculate_q4(engine, qparams_list[3])
-    reward += calculate_q5(engine, qparams_list[4])
-    reward += calculate_q6(engine, qparams_list[5])
-    reward += calculate_q7(engine, qparams_list[6])
-    reward += calculate_q8(engine, qparams_list[7])
-    reward += calculate_q9(engine, qparams_list[8])  
-    reward += calculate_q10(engine, qparams_list[9])
-    reward += calculate_q11(engine, qparams_list[10])
-    reward += calculate_q12(engine, qparams_list[11])
-    reward += calculate_q13(engine, qparams_list[12])
-    reward += calculate_q14(engine, qparams_list[13])
-    reward += calculate_q15(engine, qparams_list[14])
-    reward += calculate_q16(engine, qparams_list[15])
-    reward += calculate_q17(engine, qparams_list[16])    
-    reward += calculate_q18(engine, qparams_list[17])
-    reward += calculate_q19(engine, qparams_list[18])
-    reward += calculate_q20(engine, qparams_list[19])
-    reward += calculate_q21(engine, qparams_list[20])
-    reward += calculate_q22(engine, qparams_list[21]) 
+    # reward += calculate_q1(engine, qparams_list[0])
+    # reward += calculate_q2(engine, qparams_list[1])
+    # reward += calculate_q3(engine, qparams_list[2])
+    # reward += calculate_q4(engine, qparams_list[3])
+    # reward += calculate_q5(engine, qparams_list[4])
+    # reward += calculate_q6(engine, qparams_list[5])
+    # reward += calculate_q7(engine, qparams_list[6])
+    # reward += calculate_q8(engine, qparams_list[7])
+    # reward += calculate_q9(engine, qparams_list[8])  
+    # reward += calculate_q10(engine, qparams_list[9])
+    # reward += calculate_q11(engine, qparams_list[10])
+    # reward += calculate_q12(engine, qparams_list[11])
+    # reward += calculate_q13(engine, qparams_list[12])
+    # reward += calculate_q14(engine, qparams_list[13])
+    # reward += calculate_q15(engine, qparams_list[14])
+    # reward += calculate_q16(engine, qparams_list[15])
+    # reward += calculate_q17(engine, qparams_list[16])    
+    # reward += calculate_q18(engine, qparams_list[17])
+    # reward += calculate_q19(engine, qparams_list[18])
+    # reward += calculate_q20(engine, qparams_list[19])
+    # reward += calculate_q21(engine, qparams_list[20])
+    # reward += calculate_q22(engine, qparams_list[21]) 
 
     # print(table_meta[6].keys)
     # print(table_meta[6].partition_cnt)
@@ -326,8 +329,8 @@ def simulate(state, depth, max_depth=10):
 
 def normalize_reward(reward):
     # 归一化
-    N = 3000000000.0
-    return (N - reward) / 1000000.0
+    N = 30000000000.0
+    return (N - reward) / 100000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
     for i in range(iterations):
@@ -558,6 +561,9 @@ if __name__ == "__main__":
         dict_tmp['replica_partition_keys'] = table_column.replica_partition_keys
         tables.append(dict_tmp)
 
+    # 设置日志
+    setup_logging()
+
     # #*************************独立测试时用的代码*************************
     # initial_state = State(tables)
     # root = Node(initial_state)    
@@ -643,17 +649,29 @@ if __name__ == "__main__":
     # 3. 根据分区副本情况更新元数据
     candidates = [{'name': 'customer', 'partition_keys': ['c_id', 'c_w_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}, {'name': 'order_line', 'partition_keys': ['ol_i_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}]
 
-    tables[0]['partition_keys'] = ['c_w_id']
-    tables[1]['partition_keys'] = ['d_id']
-    tables[2]['partition_keys'] = ['h_c_w_id']
-    tables[3]['partition_keys'] = ['i_id', 'i_im_id']
-    tables[4]['partition_keys'] = ['n_regionkey']
-    tables[5]['partition_keys'] = ['no_w_id']
-    #tables[6]['partition_keys'] = ['ol_w_id']
+    # tables[0]['partition_keys'] = ['c_id']
+    # tables[1]['partition_keys'] = ['d_id']
+    # tables[2]['partition_keys'] = ['h_date']
+    # # tables[3]['partition_keys'] = ['i_id', 'i_im_id']
+    # tables[4]['partition_keys'] = ['n_nationkey']
+    # tables[5]['partition_keys'] = ['no_o_id']
+    # tables[6]['partition_keys'] = ['ol_d_id']
     tables[6]['partition_keys'] = ['ol_delivery_d']
-    tables[7]['partition_keys'] = ['o_all_local']    
+    # tables[7]['partition_keys'] = ['o_all_local']    
 
-    tables[6]['replicas'] = ['ol_w_id', 'ol_d_id', 'ol_o_id', 'ol_dist_info']
+    tables[0]['replicas'] = ['c_data']
+    # tables[1]['replicas'] = ['d_state', 'd_ytd']
+    # tables[2]['replicas'] = ['h_d_id']
+    # tables[3]['replicas'] = ['i_id', 'i_im_id', 'i_data']
+    # tables[4]['replicas'] = ['n_nationkey']
+    # tables[5]['replicas'] = ['no_w_id']
+    tables[6]['replicas'] = ['ol_dist_info']
+    # tables[6]['replica_partition_keys'] = ['ol_delivery_d']
+    tables[9]['replicas'] = ['s_dist_02', 's_data']
+    # tables[10]['replicas'] = ['s_nationkey']
+    # tables[11]['replicas'] = ['w_tax']
+
+
 
     update_meta(table_columns, table_meta, tables)
 
@@ -673,11 +691,11 @@ if __name__ == "__main__":
     # reward = normalize_reward(reward)
     # print("initial reward: ", reward)
 
+    cost = 0
     for i in range(22):
-        cost = 0
-        cost = calculate_query_cost(i, qparams_list)
-        cost = normalize_reward(cost)
-        print("Query {} cost: {}".format(i+1, cost))
+        cost += calculate_query_cost(i, qparams_list)
+        print("Cost {} reward: {}".format(i+1, cost))
+    print("Reward: ", normalize_reward(cost))
 
     # print(calculate_q1(engine, qparams_list[0]))
     # print(calculate_q2(engine, qparams_list[1]))

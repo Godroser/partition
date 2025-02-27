@@ -17,6 +17,7 @@
            test2.py 替换物理执行树的表别名
            ch_partition_meta.py 记录每个表的分区元数据类,包括表的分区键和分区范围
            ch_query_card.py 针对每一个query计算相应的表的扫描基数, 以及每一个sql扫描的列#豆包里的"分析sql列名"对话获得
+           query_operators.py 存放每个query需要评估的算子, 根据ch_query_cost每个query的calculate计算得到的
 /estimator01 评估模型相关的代码 (已废弃)
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试

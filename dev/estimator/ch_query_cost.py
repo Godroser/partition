@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+import copy
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -9,6 +11,7 @@ from estimator.ch_partition_meta import *
 from estimator.ch_query_card import *
 from estimator.query_operators import query_operators
 from estimator.ch_columns_ranges_meta import *
+from log.logging_config import setup_logging
 
 ##
 ## 计算cost的代码应该重构, 维护每一个query的计算开销的算子, 通过算子名称对应的qparams里面的参数实例化这个算子, 然后再调用算子本身计算cost的方法来计算.
@@ -16,24 +19,34 @@ from estimator.ch_columns_ranges_meta import *
 ## 目前就是每一个query的算子计算是写死的, 这种情况下只能先判断每个表是否要在replica上执行, 如果要在replica上执行, 就再调用一遍计算函数
 ##
 
-# 更新 query_operators 列表，判断是否读 replica
+# 更新 query_operators 列表，对于要读 replica, 加入对应原表的算子
 def update_query_operators_with_replica(qry_idx, qparams_list, query_operators):
     qparams = qparams_list[qry_idx]
     scan_table_replica = qparams.scan_table_replica
 
+    # 如果当前query不读取replica, 直接返回
     if not scan_table_replica:
         return
 
+    # 扫描要读的每一个replica, 加入原表对应的算子
     for table in scan_table_replica:
         replica_table = f"{table}_replica"
-        query_info = query_operators[qry_idx]
+        query_info = copy.deepcopy(query_operators[qry_idx])
         operators = query_info["operators"]
         tables = query_info["tables"]
+        logging.debug(f"initial operators len: {len(query_operators[qry_idx]['operators'])}")
+        # lennn = len(query_operators[qry_idx]['operators'])
 
+        # 遍历query本来要读的表
         for i, tbl in enumerate(tables):
             if tbl == table:
                 operators.append(operators[i])
                 tables.append(replica_table)
+        logging.debug(f"finial operators len: {len(query_operators[qry_idx]['operators'])}")     
+        # if lennn == len(query_operators[qry_idx]['operators']):
+        #     print("table:", table)
+        #     print("qry_idx:", qry_idx)
+        #     print("scan_table_replica: ", scan_table_replica)
 
 # 计算指定第qry_idx条query的代价
 def calculate_query_cost(qry_idx, qparams_list):
@@ -64,6 +77,7 @@ def calculate_query_cost(qry_idx, qparams_list):
         # print("table:", table)
         # print('rows_attr: {} : {}'.format(rows_attr, rows))
         # print('rowsize_attr: {} : {}'.format(rowsize_attr, rowsize))
+        # logging.debug(f"rowsize_attr: {rowsize_attr} : {rowsize}")
 
         if operator == "TableScan":
             op_instance = TableScan(content, rows, rowsize)
@@ -318,9 +332,9 @@ def calculate_q7(engine, q7params):
     rows_tablescan_nation = q7params.rows_tablescan_nation
     rowsize_tablescan_nation = q7params.rowsize_tablescan_nation
     rows_selection_nation = q7params.rows_selection_nation
-    #rows_tablescan_nation = q7params.rows_tablescan_nation
-    #rowsize_tablescan_nation = q7params.rowsize_tablescan_nation
-    #rows_selection_nation = q7params.rows_selection_nation
+    rows_tablescan_nation = q7params.rows_tablescan_nation
+    rowsize_tablescan_nation = q7params.rowsize_tablescan_nation
+    rows_selection_nation = q7params.rows_selection_nation
     rows_tablescan_supplier = q7params.rows_tablescan_supplier
     rowsize_tablescan_supplier = q7params.rowsize_tablescan_supplier
     rows_tablescan_stock = q7params.rows_tablescan_stock
@@ -331,6 +345,8 @@ def calculate_q7(engine, q7params):
     rows_tablescan_order_line = q7params.rows_tablescan_order_line
     rowsize_tablescan_order_line = q7params.rowsize_tablescan_order_line
     rows_selection_order_line = q7params.rows_selection_order_line
+    rows_tablescan_customer = q7params.rows_tablescan_customer
+    rowsize_tablescan_customer = q7params.rowsize_tablescan_customer
 
     tablescan_nation = TableScan(content, rows_tablescan_nation, rowsize_tablescan_nation)
     selection_nation = Selection(content, rows_selection_nation, 1)
@@ -356,6 +372,11 @@ def calculate_q7(engine, q7params):
     selection_order_line = Selection(content, rows_selection_order_line, 1)
     tablescan_order_line.engine = engine
     selection_order_line.engine = engine
+
+    tablescan_customer = TableScan(content, rows_tablescan_customer, rowsize_tablescan_customer)
+    tablereader_customer = TableReader(content,  rows_tablescan_customer, rowsize_tablescan_customer)
+    tablescan_customer.engine = engine
+    tablereader_customer.engine = engine      
 
     cost = tablescan_nation.calculate_cost()*2 + selection_nation.calculate_cost()*2 + tablescan_supplier.calculate_cost() + tablereader_supplier.calculate_cost() + tablescan_stock.calculate_cost() + tablereader_stock.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost() + tablescan_order_line.calculate_cost() + selection_order_line.calculate_cost()
     return cost
@@ -431,7 +452,7 @@ def calculate_q8(engine, q8params):
     tablescan_orders.engine = engine
     selection_orders.engine = engine
 
-    cost = tablescan_nation.calculate_cost()*2 + tablereader_nation.calculate_cost()*2 + tablescan_region.calculate_cost() + selection_region.calculate_cost() + tablescan_customer.calculate_cost() + tablescan_supplier.calculate_cost() + tablereader_supplier.calculate_cost() + tablescan_item.calculate_cost() + selection_item.calculate_cost() + tablescan_order_line.calculate_cost() + selection_order_line.calculate_cost() + tablescan_stock.calculate_cost() + selection_stock.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost()
+    cost = tablescan_nation.calculate_cost()*2 + tablereader_nation.calculate_cost()*2 + tablescan_region.calculate_cost() + selection_region.calculate_cost() + tablescan_customer.calculate_cost() + tablereader_customer.calculate_cost() + tablescan_supplier.calculate_cost() + tablereader_supplier.calculate_cost() + tablescan_item.calculate_cost() + selection_item.calculate_cost() + tablescan_order_line.calculate_cost() + selection_order_line.calculate_cost() + tablescan_stock.calculate_cost() + selection_stock.calculate_cost() + tablescan_orders.calculate_cost() + selection_orders.calculate_cost()
     return cost
 
 def calculate_q9(engine, q9params):

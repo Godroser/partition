@@ -24,11 +24,11 @@ query_operators = [
         "tables": ["order_line", "order_line"]
     },
     {
-        "operators": ["TableScan", "Selection", "TableScan", "TableReader", "TableScan", "TableReader", "TableScan", "Selection", "TableScan", "Selection"],
-        "tables": ["nation", "nation", "supplier", "supplier", "stock", "stock", "orders", "orders", "order_line", "order_line"]
+        "operators": ["TableScan", "Selection", "TableScan", "TableReader", "TableScan", "TableReader", "TableScan", "Selection", "TableScan", "Selection", "TableScan", "TableReader"],
+        "tables": ["nation", "nation", "supplier", "supplier", "stock", "stock", "orders", "orders", "order_line", "order_line", "customer", "customer"]
     },
     {
-        "operators": ["TableScan", "TableReader", "TableScan", "Selection", "TableScan", "TableReader", "TableScan", "TableReader", "TableScan", "Selection", "TableScan", "Selection", "TableScan", "Selection"],
+        "operators": ["TableScan", "TableReader", "TableScan", "Selection", "TableScan", "TableReader", "TableScan", "TableReader", "TableScan", "Selection", "TableScan", "Selection", "TableScan", "Selection", "TableScan", "Selection"],
         "tables": ["nation", "nation", "region", "region", "customer", "customer", "supplier", "supplier", "item", "item", "order_line", "order_line", "stock", "stock", "orders", "orders"]
     },
     {

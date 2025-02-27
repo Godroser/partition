@@ -134,11 +134,11 @@ class Qcard():
             # 这里要确保处理的key所在的表和partition_meta对应的表相同
             # key在replica, partition_meta是原表的
             if (key in candidates[table_idx]['replicas']) and table_idx < 12:
-                print("skip replica key")
+                # print("skip replica key")
                 continue
             # key在原表, partition_meta是replica的
             if (key not in candidates[table_idx]['replicas']) and table_idx >= 12:
-                print("skip original table key")
+                # print("skip original table key")
                 continue
 
             # 检查key是否命中分区键
@@ -375,11 +375,13 @@ class Qcard():
             
             # 计算rowsize的大小
             rowsize = sum(table_column.columns_size) - rowsize_replica
+            if rowsize == 0:
+                rowsize = 1
 
             # 加上主键的大小
             primary_keys_size = sum(table_column.columns_size[table_column.columns.index(pk)] for pk in table_column.primary_keys)
             rowsize_replica += primary_keys_size
-        
+
             self.update_param('rowsize_tablescan_' + table_name, rowsize)
             self.update_param('rowsize_tablescan_' + table_name + '_replica', rowsize_replica)
 
@@ -517,9 +519,6 @@ class Q7card(Qcard):
         self.rows_tablescan_nation = 25 ##tbd
         self.rowsize_tablescan_nation = 193
         self.rows_selection_nation = 25 ##tbd
-        self.rows_tablescan_nation = 25 ##tbd
-        self.rowsize_tablescan_nation = 193
-        self.rows_selection_nation = 25 ##tbd
         self.rows_tablescan_supplier = 10000 ##tbd
         self.rowsize_tablescan_supplier = 202
         self.rows_tablescan_stock = 400000 ##tbd
@@ -530,6 +529,8 @@ class Q7card(Qcard):
         self.rows_tablescan_order_line = 1250435 ##tbd
         self.rowsize_tablescan_order_line = 65
         self.rows_selection_order_line = 1250435 ##tbd    
+        self.rows_tablescan_customer = 120000 ##tbd
+        self.rowsize_tablescan_customer = 671
 
         self.columns = [
             ["ol_amount", "ol_supply_w_id", "ol_i_id", "ol_w_id", "ol_d_id", "ol_o_id"],
@@ -919,19 +920,6 @@ class Q22card(Qcard):
 # 根据分区metadata, 获取每一个query的查询基数
 #def get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta):
 def get_qcard(table_meta, qcard_list, candidates):
-    customer_meta = table_meta[0]
-    district_meta = table_meta[1] 
-    history_meta = table_meta[2] 
-    item_meta = table_meta[3] 
-    nation_meta = table_meta[4]
-    new_order_meta = table_meta[5] 
-    order_line_meta = table_meta[6] 
-    orders_meta = table_meta[7]
-    region_meta = table_meta[8] 
-    stock_meta = table_meta[9]
-    supplier_meta = table_meta[10] 
-    warehouse_meta = table_meta[11]
-
     # get Qcard
     # qcard = []
     # q1card = Q1card()
