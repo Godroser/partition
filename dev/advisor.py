@@ -21,7 +21,7 @@ from estimator.ch_query_cost import *
 from estimator.ch_columns_ranges_meta import *
 from config import Config
 from log.logging_config import setup_logging
-
+from workload.workload_analyzer import get_normalized_column_usage, tp_column_usage
 
 # update metadata given the partition and replica candidate
 # candidate format:{'name': , 'columns':, 'partitionable_columns': , 'partition_keys': [], 'replicas': [], 'replica_partition_keys': []}
@@ -321,6 +321,14 @@ def simulate(state, depth, max_depth=5):
     state_simu = copy.deepcopy(state)
     while depth < max_depth:
         possible_actions = state_simu.get_possible_actions()
+
+        # 获取列的查询更新信息, 设置action优先级
+        qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
+        for qcard in qcard_list:
+            qcard.init()           
+        normalized_usage, zero_values = get_normalized_column_usage(qcard_list, tp_column_usage)
+        possible_actions = state_simu.sort_actions(possible_actions, normalized_usage, zero_values)
+
         if not possible_actions:
             break  # 如果没有可能的动作，退出循环
         action = random.choice(possible_actions)

@@ -24,6 +24,7 @@
 /Output 存放了使用VGAE的训练结果
 /tools     repartition.py 指定每个表分区键的自动重分区
            repartition3.py 指定每个表分区键(另一组)的自动重分区,这个用来建表导数据更好
+           repartitioning.py 最新的根据mcts的candidate进行自动重分区的脚本
            summary_latency_list.py 对ch-benchmark跑出来的延迟结果一键统计
 /workload  create_table.py 自动建表
            generate_workload.py CH-benchmark的负载测试脚本

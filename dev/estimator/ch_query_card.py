@@ -422,7 +422,7 @@ class Q2card(Qcard):
         self.rows_selection_item = 100000 #tbd
 
         # 记录每个表读取的columns, 和tables顺序一致
-        self.columns = [ ["i_id", "i_name", "i_data"], ["s_i_id", "s_w_id", "s_quantity"], ["s_suppkey", "s_name", "s_address", "s_phone", "s_comment", "s_nationkey"], ["n_nationkey", "n_name", "n_regionkey"], ["r_regionkey", "r_name"], ["m_i_id", "m_s_quantity"] ]  
+        self.columns = [ ["i_id", "i_name", "i_data"], ["s_i_id", "s_w_id", "s_quantity"], ["s_suppkey", "s_name", "s_address", "s_phone", "s_comment", "s_nationkey"], ["n_nationkey", "n_name", "n_regionkey"], ["r_regionkey", "r_name"]]  
 
 
         self.keys = [[], [], [], [], []]

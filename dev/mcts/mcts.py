@@ -4,12 +4,28 @@ import copy
 from fpdf import FPDF
 import time
 import logging
+import random
+
+from estimator.ch_query_card import *
 from log.logging_config import setup_logging
+from workload.workload_analyzer import get_normalized_column_usage, tp_column_usage
 
 class State:
     def __init__(self, tables, action=None):
         self.tables = tables # 记录每个表的分区键和副本情况
         self.action = action # 即将执行的三元组(action_type, table_name, column_name)
+
+    # action设置优先级。根据normalized_usage列的查询更新情况对action进行排序
+    def sort_actions(self, actions, normalized_usage, zero_values):
+        def action_key(action):
+            action_type, table_name, column_name = action
+            if action_type == 'replica':
+                return -normalized_usage.get(table_name, {}).get(column_name, 0)
+            else:
+                return random.uniform(zero_values, 1)
+
+        actions.sort(key=action_key)
+        return actions
 
     def get_possible_actions(self):
         # 获取可能的动作（选择分区键或设置副本）
@@ -108,6 +124,15 @@ class Node:
     def expand(self):
         # 扩展节点
         actions = self.state.get_possible_actions()
+
+        # 获取列的查询更新信息, 设置action优先级
+        qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
+        for qcard in qcard_list:
+            qcard.init()        
+        normalized_usage, zero_values = get_normalized_column_usage(qcard_list, tp_column_usage)
+        actions = self.state.sort_actions(actions, normalized_usage, zero_values)
+        logging.info(f"get actions: {actions[:10]}")
+
         #print("expand node depth:", self.depth)
         #print("actions:", actions)
         for action in actions:
