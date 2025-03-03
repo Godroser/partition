@@ -161,8 +161,7 @@ def get_create_table_sql(table_name):
             `c_ytd_payment` decimal(12,2) DEFAULT NULL,
             `c_payment_cnt` int(11) DEFAULT NULL,
             `c_delivery_cnt` int(11) DEFAULT NULL,
-            `c_data` varchar(500) DEFAULT NULL,
-            KEY `idx_customer` (`c_w_id`,`c_d_id`,`c_last`,`c_first`)
+            `c_data` varchar(500) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
         """,
         'district': """
@@ -189,9 +188,7 @@ def get_create_table_sql(table_name):
             `h_w_id` int(11) NOT NULL,
             `h_date` datetime DEFAULT NULL,
             `h_amount` decimal(6,2) DEFAULT NULL,
-            `h_data` varchar(24) DEFAULT NULL,
-            KEY `idx_h_w_id` (`h_w_id`),
-            KEY `idx_h_c_w_id` (`h_c_w_id`)
+            `h_data` varchar(24) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
         """,
         'item': """
@@ -205,10 +202,10 @@ def get_create_table_sql(table_name):
         """,
         'nation': """
             CREATE TABLE `nation` (
-            `N_NATIONKEY` bigint(20) NOT NULL,
-            `N_NAME` char(25) NOT NULL,
-            `N_REGIONKEY` bigint(20) NOT NULL,
-            `N_COMMENT` varchar(152) DEFAULT NULL
+            `n_nationkey` bigint(20) NOT NULL,
+            `n_name` char(25) NOT NULL,
+            `n_regionkey` bigint(20) NOT NULL,
+            `n_comment` varchar(152) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin      
         """,
         'new_order': """
@@ -241,15 +238,14 @@ def get_create_table_sql(table_name):
             `o_entry_d` datetime DEFAULT NULL,
             `o_carrier_id` int(11) DEFAULT NULL,
             `o_ol_cnt` int(11) DEFAULT NULL,
-            `o_all_local` int(11) DEFAULT NULL,
-            KEY `idx_order` (`o_w_id`,`o_d_id`,`o_c_id`,`o_id`)
+            `o_all_local` int(11) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
         """,
         'region': """
             CREATE TABLE `region` (
-            `R_REGIONKEY` bigint(20) NOT NULL,
-            `R_NAME` char(25) NOT NULL,
-            `R_COMMENT` varchar(152) DEFAULT NULL
+            `r_regionkey` bigint(20) NOT NULL,
+            `r_name` char(25) NOT NULL,
+            `r_comment` varchar(152) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
         """,
         'stock': """
@@ -275,13 +271,13 @@ def get_create_table_sql(table_name):
         """,
         'supplier': """
             CREATE TABLE `supplier` (
-            `S_SUPPKEY` bigint(20) NOT NULL,
-            `S_NAME` char(25) NOT NULL,
-            `S_ADDRESS` varchar(40) NOT NULL,
-            `S_NATIONKEY` bigint(20) NOT NULL,
-            `S_PHONE` char(15) NOT NULL,
-            `S_ACCTBAL` decimal(15,2) NOT NULL,
-            `S_COMMENT` varchar(101) NOT NULL
+            `s_suppkey` bigint(20) NOT NULL,
+            `s_name` char(25) NOT NULL,
+            `s_address` varchar(40) NOT NULL,
+            `s_nationkey` bigint(20) NOT NULL,
+            `s_phone` char(15) NOT NULL,
+            `s_acctbal` decimal(15,2) NOT NULL,
+            `s_comment` varchar(101) NOT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin   
         """,
         'warehouse': """
@@ -294,8 +290,7 @@ def get_create_table_sql(table_name):
               `w_state` char(2) DEFAULT NULL,
               `w_zip` char(9) DEFAULT NULL,
               `w_tax` decimal(4,4) DEFAULT NULL,
-              `w_ytd` decimal(12,2) DEFAULT NULL,
-              PRIMARY KEY (`w_id`) /*T![clustered_index] CLUSTERED */
+              `w_ytd` decimal(12,2) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin  
         """
     }
