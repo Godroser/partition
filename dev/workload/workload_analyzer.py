@@ -66,6 +66,7 @@ def normalize_column_usage(column_usage):
     
     normalized_usage = {}
     zero_values = 0
+    zero_values_num = 0
 
     for table, columns in column_usage.items():
         if table not in normalized_usage:
@@ -77,16 +78,17 @@ def normalize_column_usage(column_usage):
                 normalized_usage[table][column] = normalized_value
                 if usage == 0:
                     zero_values = normalized_value
+                    zero_values_num += 1
                     # zero_values[f"{table}.{column}"] = normalized_value
             else:
                 normalized_usage[table][column] = 0
 
-    return normalized_usage, zero_values
+    return normalized_usage, zero_values, zero_values_num
 
 def get_normalized_column_usage(qcard_list, tp_column_usage):
     final_usage = generate_column_usage(qcard_list, tp_column_usage)
-    normalized_usage, zero_values = normalize_column_usage(final_usage)
-    return normalized_usage, zero_values
+    normalized_usage, zero_values, zero_values_num = normalize_column_usage(final_usage)
+    return normalized_usage, zero_values, zero_values_num
 
 if __name__ == "__main__":
     qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
@@ -99,6 +101,6 @@ if __name__ == "__main__":
     final_usage = generate_column_usage(qcard_list, tp_column_usage)
     print(final_usage)
     
-    normalized_usage, zero_values = normalize_column_usage(final_usage)
+    normalized_usage, zero_values, zero_values_num = normalize_column_usage(final_usage)
     print(normalized_usage)
     print("Zero values after normalization:", zero_values)

@@ -20,7 +20,7 @@ class State:
         def action_key(action):
             action_type, table_name, column_name = action
             if action_type == 'replica':
-                return -normalized_usage.get(table_name, {}).get(column_name, 0)
+                return normalized_usage.get(table_name, {}).get(column_name, 0)
             else:
                 return random.uniform(zero_values, 1)
 
@@ -83,7 +83,22 @@ class Node:
 
     def is_fully_expanded(self):
         # 判断节点是否已经完全扩展. 即是否所有可能的动作都已经尝试过
-        return len(self.children) == len(self.state.get_possible_actions())
+        # return len(self.children) == len(self.state.get_possible_actions())        
+    
+        # 测试部分action扩展. 对于一些意义不大的列, 不需要扩展
+        # 获取列的查询更新信息, 设置action优先级
+        qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
+        for qcard in qcard_list:
+            qcard.init()           
+        normalized_usage, zero_values, zero_values_num = get_normalized_column_usage(qcard_list, tp_column_usage)
+        logging.info(f"zero_values_num: {zero_values_num}")
+
+        # 减去意义不大的列的扩展
+        return len(self.children) >= (len(self.state.get_possible_actions()) - zero_values_num)
+
+        
+
+        
 
     def best_child(self, c_param=1):
         # 使用UCB1策略选择最佳子节点
@@ -129,7 +144,7 @@ class Node:
         qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
         for qcard in qcard_list:
             qcard.init()        
-        normalized_usage, zero_values = get_normalized_column_usage(qcard_list, tp_column_usage)
+        normalized_usage, zero_values, _ = get_normalized_column_usage(qcard_list, tp_column_usage)
         actions = self.state.sort_actions(actions, normalized_usage, zero_values)
         logging.info(f"get actions: {actions[:10]}")
 
