@@ -624,7 +624,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=4000, max_depth=20)
+    monte_carlo_tree_search(root, iterations=5000, max_depth=20)
     mcts_time = time.time() - start_time
 
     start_time = time.time()

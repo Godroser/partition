@@ -1,3 +1,4 @@
+tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑性能测试的库
 /Bayes 包含贝叶斯优化的相关代码
 /collector analyzer.py 是解析sql的谓词 join等条件的
            replica_progresss_collector是收集replica同步状态的
@@ -22,7 +23,7 @@
            train_data_generator.py用于测试算子延迟和基数
 /OSS  todo 用于OSS负载测试
 /Output 存放了使用VGAE的训练结果
-/tools     repartition.py 指定每个表分区键的自动重分区
+/tools     repartition.py 指定每个表分区键的自动重分区(已废弃)
            repartition3.py 指定每个表分区键(另一组)的自动重分区,这个用来建表导数据更好
            repartitioning.py 最新的根据mcts的candidate进行自动重分区的脚本
            summary_latency_list.py 对ch-benchmark跑出来的延迟结果一键统计
