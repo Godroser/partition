@@ -63,7 +63,7 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
-    self.sql_file_path = 'workloadd.sql'
+    self.sql_file_path = 'workloadd_rewrite.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
     self.sql_date_mid = '2024-10-28 17:00:00'

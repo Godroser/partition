@@ -1,10 +1,12 @@
 import os
 import sys
+import json
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
 from tools.repartitioning import *
 from tools.repartitioning import get_create_table_sql
+from tools.repartitioning import generate_partition_sql
 import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
@@ -12,6 +14,27 @@ from config import Config
 
 # 导入主键类
 from estimator.ch_columns_ranges_meta import Customer_columns, Warehouse_columns, Supplier_columns, Stock_columns, Region_columns, Orders_columns, Order_line_columns, New_order_columns, Nation_columns, Item_columns, History_columns, District_columns
+
+def get_connection(autocommit: bool = True) -> MySQLConnection:
+    config = Config()
+    db_conf = {
+        "host": config.TIDB_HOST,
+        "port": config.TIDB_PORT,
+        "user": config.TIDB_USER,
+        "password": config.TIDB_PASSWORD,
+        "database": 'ch_test', #指定测试库
+        "autocommit": autocommit,
+        # mysql-connector-python will use C extension by default,
+        # to make this example work on all platforms more easily,
+        # we choose to use pure python implementation.
+        "use_pure": True
+    }
+
+    if config.ca_path:
+        db_conf["ssl_verify_cert"] = True
+        db_conf["ssl_verify_identity"] = True
+        db_conf["ssl_ca"] = config.ca_path
+    return mysql.connector.connect(**db_conf)
 
 # 定义表名到主键类的映射
 table_to_class = {
@@ -29,7 +52,7 @@ table_to_class = {
     'district': District_columns
 }
 
-def split_table_sql(table_name, replica_columns):
+def split_table_sql(table_name, replica_columns, partition_keys, replica_partition_keys):
     original_sql = get_create_table_sql(table_name)
     if not original_sql:
         raise ValueError(f"No create table SQL found for table {table_name}")
@@ -47,20 +70,29 @@ def split_table_sql(table_name, replica_columns):
     # 生成子表1的列定义
     sub_table1_columns = [col for col in columns if not any(replica_col in col for replica_col in replica_columns_without_primary_keys)]
     sub_table1_columns = [col.strip().rstrip(',') for col in sub_table1_columns if col.strip()]  # 去掉空行并去除多余空格和逗号
-    sub_table1_columns.append(f"PRIMARY KEY ({', '.join(primary_keys)})")
+    # sub_table1_columns.append(f"PRIMARY KEY ({', '.join(primary_keys)})")
 
     # 生成子表2的列定义
     sub_table2_columns = [col for col in columns if any(replica_col in col for replica_col in replica_columns_without_primary_keys)]
     # sub_table2_columns.extend([f"{key} int(11) NOT NULL" for key in primary_keys])
     sub_table2_columns.extend(col for col in columns if any(replica_col in col for replica_col in primary_keys))
     sub_table2_columns = [col.strip().rstrip(',') for col in sub_table2_columns if col.strip()]  # 去掉空行并去除多余空格和逗号
-    sub_table2_columns.append(f"PRIMARY KEY ({', '.join(primary_keys)})")
+    # sub_table2_columns.append(f"PRIMARY KEY ({', '.join(primary_keys)})")
 
     # 生成子表1的建表语句
-    sub_table1_sql = f"CREATE TABLE `{table_name}_part1` (\n" + ",\n".join(sub_table1_columns) + "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;"
+    sub_table1_sql = f"CREATE TABLE `{table_name}_part1` (\n" + ",\n".join(sub_table1_columns) + "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin"
 
     # 生成子表2的建表语句
-    sub_table2_sql = f"CREATE TABLE `{table_name}_part2` (\n" + ",\n".join(sub_table2_columns) + "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;"
+    sub_table2_sql = f"CREATE TABLE `{table_name}_part2` (\n" + ",\n".join(sub_table2_columns) + "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin"
+
+    # 加上分区的创建语句
+    # print("table_name:",table_name)
+    # print("replica_columns:",replica_columns) 
+    if partition_keys:
+        sub_table1_sql = comnbine_repartition_sql([sub_table1_sql], generate_partition_sql([table_name], [partition_keys]))[0]   ## 使用generate_partition_sql时, 需要确保config设置成ch_bak数据库
+    if replica_partition_keys:
+        sub_table2_sql = comnbine_repartition_sql([sub_table2_sql],generate_partition_sql([table_name], [replica_partition_keys]))   
+    # print("sub_table1_sql, sub_table2_sql", sub_table1_sql, sub_table2_sql)
 
     output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/"
     os.makedirs(output_dir, exist_ok=True)
@@ -167,37 +199,19 @@ def get_replica_column_indices(table_name, replica_columns):
     
     return replica_column_indices
 
-def get_connection(autocommit: bool = True) -> MySQLConnection:
-    config = Config()
-    db_conf = {
-        "host": config.TIDB_HOST,
-        "port": config.TIDB_PORT,
-        "user": config.TIDB_USER,
-        "password": config.TIDB_PASSWORD,
-        "database": 'ch_test', #指定测试库
-        "autocommit": autocommit,
-        # mysql-connector-python will use C extension by default,
-        # to make this example work on all platforms more easily,
-        # we choose to use pure python implementation.
-        "use_pure": True
-    }
 
-    if config.ca_path:
-        db_conf["ssl_verify_cert"] = True
-        db_conf["ssl_verify_identity"] = True
-        db_conf["ssl_ca"] = config.ca_path
-    return mysql.connector.connect(**db_conf)
-
-# 指定table和replica_columns, 自动创建两个子表, 并且导入对应数据
-def modify_table_data(table, replica_columns):
+# 指定table和replica_columns partition_keys, 自动创建两个子表,实现分区创建,实现副本, 并且导入对应数据
+def modify_table_data(table, replica_columns, partition_keys, replica_partition_keys):
     input_dir = "/data3/dzh/CH-data/ch"
     data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
     os.makedirs(data_dir, exist_ok=True)
     
     if replica_columns:
-        # 有副本列的表
-        replica_columns = replica_columns_dict[table]
-        part1_sql, part2_sql = split_table_sql(table, replica_columns)
+        # 实现分表的建表语句, 加上分区的创建语句
+        part1_sql, part2_sql = split_table_sql(table, replica_columns, partition_keys, replica_partition_keys)
+
+        # print("part1_sql, part2_sql:", part1_sql, part2_sql)
+        # 生成分表的.sql数据文件
         sql_files = split_table_data(table, replica_columns)
     
         # execute create two table_parts sql
@@ -208,6 +222,7 @@ def modify_table_data(table, replica_columns):
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
                     print("Drop table {}_part1;".format(table))
+                print("part1_sql:", part1_sql)
                 cur.execute(part1_sql)
                 print("Table {}_part1 is created!".format(table))     
 
@@ -219,6 +234,11 @@ def modify_table_data(table, replica_columns):
 
                 cur.execute(part2_sql)
                 print("Table {}_part2 is created!".format(table))                
+
+                # 设置副本
+                set_replica_sql = f"ALTER TABLE `ch_test`.`{table}_part2` SET TIFLASH REPLICA 1;"
+                cur.execute(set_replica_sql)
+                print("Table {}_part2 replica is created!")
 
         # load table_part data
         for file in sql_files:
@@ -240,6 +260,10 @@ def modify_table_data(table, replica_columns):
         original_sql = get_create_table_sql(table)
         if not original_sql:
             raise ValueError(f"No create table SQL found for table {table}")
+
+        # 加上分区的创建语句
+        if partition_keys:
+            original_sql = comnbine_repartition_sql([original_sql], generate_partition_sql([table], [partition_keys]))[0]   ## 使用generate_partition_sql时, 需要确保config设置成ch_bak数据库      
 
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:
@@ -269,60 +293,34 @@ def modify_table_data(table, replica_columns):
         print("Table {} data loaded!".format(table))            
 
 
+def load_candidate(file_path):
+    with open(file_path, 'r') as file:
+        candidate = json.load(file)
+    return candidate
 
 if __name__ == "__main__":
-    # # 示例：拆分customer表
-    # replica_columns = ['c_data', 'c_discount', 'c_balance']
-    # customer_part1_sql, customer_part2_sql = split_table_sql('customer', replica_columns)
+    # 加载candidate
+    candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor copy.txt"
+    candidate = load_candidate(candidate_file_path)
 
-    # print(customer_part1_sql)
-    # print(customer_part2_sql)
+    # 修改tables顺序
+    # tables = [table_info['name'] for table_info in candidate]
+    tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
 
-    # # 示例：拆分customer表数据
-    # replica_columns = [15, 16, 20]  # c_discount, c_balance,  c_data 在插入语句中的索引
-    # split_table_data('customer', replica_columns)
-
-
-
-
-    # 对其他表进行类似操作
-    tables = ['customer', 'warehouse', 'supplier', 'stock', 'region', 'orders', 'order_line', 'new_order', 'nation', 'item', 'history', 'district']
-    replica_columns_dict = {
-        'customer': [], #['c_data', 'c_discount', 'c_balance'],  # c_discount, c_balance,  c_data 
-        'warehouse': ['w_ytd'], #['w_name', 'w_street_1', 'w_street_2'],  # w_name, w_street_1, w_street_2
-        'supplier': [], #['s_name', 's_address'],  # S_NAME, S_ADDRESS
-        'stock': ["s_dist_06",
-            "s_dist_07",
-            "s_dist_05",
-            "s_dist_02",
-            "s_dist_01",
-            "s_dist_08",
-            "s_data",
-            "s_dist_04",
-            "s_dist_03",
-            "s_dist_10",
-            "s_dist_09",
-            "s_order_cnt"],  # s_quantity, s_ytd
-        'region': [], #["r_regionkey", "r_name",],  # R_NAME, R_COMMENT
-        'orders': [], #["o_entry_d", "o_carrier_id"],  # o_entry_d, o_carrier_id
-        'order_line': [ "ol_dist_info", "ol_number"],  # ol_delivery_d, ol_amount
-        'new_order': [], #["no_d_id"],  # no_d_id
-        'nation': [], #["n_regionkey", "n_comment"],  # N_NAME, N_COMMENT
-        'item': [], #["i_data"],  # i_name, i_price
-        'history': [], #["h_date", "h_amount", "h_data"],  # h_date, h_amount
-        'district': [] #[ "d_zip", "d_tax", "d_ytd"]  # d_name, d_street_1, d_street_2
-    }
-
-    # for table in tables:
-    #     replica_columns = replica_columns_dict[table]
-    #     part1_sql, part2_sql = split_table_sql(table, replica_columns)
-    #     print(part1_sql)
-    #     print(part2_sql)
-
-    # for table in tables:
-    #     replica_columns = replica_columns_dict[table]
-    #     split_table_data(table, replica_columns)
+    # 记录candidate里的replicas, partition_keys, replica_partition_keys
+    replica_columns_dict = {table_info['name']: table_info['replicas'] for table_info in candidate}
+    #replica_columns_dict = {'customer': [], 'warehouse': ['w_ytd']}
+    partition_keys_dict = {table_info['name']: table_info['partition_keys'] for table_info in candidate}
+    replica_partition_keys_dict = {table_info['name']: table_info['replica_partition_keys'] for table_info in candidate}
+    
 
     for table in tables:
         replica_columns = replica_columns_dict[table]
-        modify_table_data(table, replica_columns)
+        partition_keys = partition_keys_dict[table]
+        replica_partition_keys = replica_partition_keys_dict[table]
+
+        # 创建子表, 实现分区, 设置副本, 导入数据
+        modify_table_data(table, replica_columns, partition_keys, replica_partition_keys)
+
+    # 现在的功能是实现表拆分，输出新的建表语句，拆分.sql文件，导入数据库
+    # 要实现成表拆分，加入分区建表，输出新的建表语句，拆分.sql文件，导入数据库

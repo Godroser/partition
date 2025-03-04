@@ -25,10 +25,13 @@ tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑�
 /Output 存放了使用VGAE的训练结果
 /tools     repartition.py 指定每个表分区键的自动重分区(已废弃)
            repartition3.py 指定每个表分区键(另一组)的自动重分区,这个用来建表导数据更好
-           repartitioning.py 最新的根据mcts的candidate进行自动重分区的脚本
+           repartitioning.py 根据mcts的candidate进行自动重分区的脚本(只有分区)
+           reorganize/table_data_modify.py 根据mcts的candidate进行自动重分区分表的脚本(包含分区,replica,分表建表)
            summary_latency_list.py 对ch-benchmark跑出来的延迟结果一键统计
 /workload  create_table.py 自动建表
            generate_workload.py CH-benchmark的负载测试脚本
+           workloadd.sql 是之前能跑的sql文件
+           workloadd_rewrite.sql 是经过sql重写后的文件
 analyzer.py 是解析sql的谓词 join等条件的
 CH-connector.py 连接tidb的脚本
 clustering.py VGAE的聚类
