@@ -191,10 +191,11 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
 # 指定table和replica_columns, 自动创建两个子表, 并且导入对应数据
 def modify_table_data(table, replica_columns):
     input_dir = "/data3/dzh/CH-data/ch"
-    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/"
+    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
     os.makedirs(data_dir, exist_ok=True)
     
     if replica_columns:
+        # 有副本列的表
         replica_columns = replica_columns_dict[table]
         part1_sql, part2_sql = split_table_sql(table, replica_columns)
         sql_files = split_table_data(table, replica_columns)
@@ -226,6 +227,12 @@ def modify_table_data(table, replica_columns):
             print(command)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             #print(result)
+            # 判断命令是否成功执行
+            if result.returncode == 0:
+                print("命令执行成功")
+            else:
+                print("命令执行失败")
+                print("错误信息:", result.stderr)            
         print("Table {} data loaded!".format(table))    
     
     else: 
@@ -249,10 +256,16 @@ def modify_table_data(table, replica_columns):
 
         # load table_part data
         for file in sql_files:
-            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'ch_test', data_dir, file)
+            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'ch_test', input_dir, file)
             print(command)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             #print(result)
+            # 判断命令是否成功执行
+            if result.returncode == 0:
+                print("命令执行成功")
+            else:
+                print("命令执行失败")
+                print("错误信息:", result.stderr)            
         print("Table {} data loaded!".format(table))            
 
 
@@ -273,21 +286,31 @@ if __name__ == "__main__":
 
 
     # 对其他表进行类似操作
-    # tables = ['customer', 'warehouse', 'supplier', 'stock', 'region', 'orders', 'order_line', 'new_order', 'nation', 'item', 'history', 'district']
-    tables = ['history', 'district']
+    tables = ['customer', 'warehouse', 'supplier', 'stock', 'region', 'orders', 'order_line', 'new_order', 'nation', 'item', 'history', 'district']
     replica_columns_dict = {
-        'customer': ['c_data', 'c_discount', 'c_balance'],  # c_discount, c_balance,  c_data 
-        'warehouse': ['w_name', 'w_street_1', 'w_street_2'],  # w_name, w_street_1, w_street_2
-        'supplier': ['s_name', 's_address'],  # S_NAME, S_ADDRESS
-        'stock': ['s_quantity', 's_ytd'],  # s_quantity, s_ytd
-        'region': ["r_regionkey", "r_name",],  # R_NAME, R_COMMENT
-        'orders': ["o_entry_d", "o_carrier_id"],  # o_entry_d, o_carrier_id
-        'order_line': [ "ol_delivery_d", "ol_quantity"],  # ol_delivery_d, ol_amount
-        'new_order': ["no_d_id"],  # no_d_id
-        'nation': ["n_regionkey", "n_comment"],  # N_NAME, N_COMMENT
-        'item': ["i_data"],  # i_name, i_price
-        'history': ["h_date", "h_amount", "h_data"],  # h_date, h_amount
-        'district': [ "d_zip", "d_tax", "d_ytd"]  # d_name, d_street_1, d_street_2
+        'customer': [], #['c_data', 'c_discount', 'c_balance'],  # c_discount, c_balance,  c_data 
+        'warehouse': ['w_ytd'], #['w_name', 'w_street_1', 'w_street_2'],  # w_name, w_street_1, w_street_2
+        'supplier': [], #['s_name', 's_address'],  # S_NAME, S_ADDRESS
+        'stock': ["s_dist_06",
+            "s_dist_07",
+            "s_dist_05",
+            "s_dist_02",
+            "s_dist_01",
+            "s_dist_08",
+            "s_data",
+            "s_dist_04",
+            "s_dist_03",
+            "s_dist_10",
+            "s_dist_09",
+            "s_order_cnt"],  # s_quantity, s_ytd
+        'region': [], #["r_regionkey", "r_name",],  # R_NAME, R_COMMENT
+        'orders': [], #["o_entry_d", "o_carrier_id"],  # o_entry_d, o_carrier_id
+        'order_line': [ "ol_dist_info", "ol_number"],  # ol_delivery_d, ol_amount
+        'new_order': [], #["no_d_id"],  # no_d_id
+        'nation': [], #["n_regionkey", "n_comment"],  # N_NAME, N_COMMENT
+        'item': [], #["i_data"],  # i_name, i_price
+        'history': [], #["h_date", "h_amount", "h_data"],  # h_date, h_amount
+        'district': [] #[ "d_zip", "d_tax", "d_ytd"]  # d_name, d_street_1, d_street_2
     }
 
     # for table in tables:
