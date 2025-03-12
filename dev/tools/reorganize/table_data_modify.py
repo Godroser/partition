@@ -91,7 +91,7 @@ def split_table_sql(table_name, replica_columns, partition_keys, replica_partiti
     if partition_keys:
         sub_table1_sql = comnbine_repartition_sql([sub_table1_sql], generate_partition_sql([table_name], [partition_keys]))[0]   ## 使用generate_partition_sql时, 需要确保config设置成ch_bak数据库
     if replica_partition_keys:
-        sub_table2_sql = comnbine_repartition_sql([sub_table2_sql],generate_partition_sql([table_name], [replica_partition_keys]))   
+        sub_table2_sql = comnbine_repartition_sql([sub_table2_sql],generate_partition_sql([table_name], [replica_partition_keys]))[0]   
     # print("sub_table1_sql, sub_table2_sql", sub_table1_sql, sub_table2_sql)
 
     output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/"
@@ -222,7 +222,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
                     print("Drop table {}_part1;".format(table))
-                print("part1_sql:", part1_sql)
+                # print("part1_sql:", part1_sql)
                 cur.execute(part1_sql)
                 print("Table {}_part1 is created!".format(table))     
 
@@ -238,7 +238,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 # 设置副本
                 set_replica_sql = f"ALTER TABLE `ch_test`.`{table}_part2` SET TIFLASH REPLICA 1;"
                 cur.execute(set_replica_sql)
-                print("Table {}_part2 replica is created!")
+                print("Table {}_part2 replica is created!".format(table))
 
         # load table_part data
         for file in sql_files:
@@ -300,12 +300,14 @@ def load_candidate(file_path):
 
 if __name__ == "__main__":
     # 加载candidate
-    candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor copy.txt"
+    # candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor copy.txt"
+    candidate_file_path = "/data3/dzh/project/grep/dev/Output/manual_advisor.txt"
     candidate = load_candidate(candidate_file_path)
 
     # 修改tables顺序
     # tables = [table_info['name'] for table_info in candidate]
-    tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
+    # tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
+    tables = ['orders']
 
     # 记录candidate里的replicas, partition_keys, replica_partition_keys
     replica_columns_dict = {table_info['name']: table_info['replicas'] for table_info in candidate}
@@ -320,7 +322,5 @@ if __name__ == "__main__":
         replica_partition_keys = replica_partition_keys_dict[table]
 
         # 创建子表, 实现分区, 设置副本, 导入数据
+        # 不需要修改config.py, 写死成ch_test数据库
         modify_table_data(table, replica_columns, partition_keys, replica_partition_keys)
-
-    # 现在的功能是实现表拆分，输出新的建表语句，拆分.sql文件，导入数据库
-    # 要实现成表拆分，加入分区建表，输出新的建表语句，拆分.sql文件，导入数据库

@@ -15,14 +15,14 @@ class State:
         self.tables = tables # 记录每个表的分区键和副本情况
         self.action = action # 即将执行的三元组(action_type, table_name, column_name)
 
-    # action设置优先级。根据normalized_usage列的查询更新情况对action进行排序
+    # action设置优先级。根据normalized_usage列的查询更新情况对action进行排序---------------
     def sort_actions(self, actions, normalized_usage, zero_values):
         def action_key(action):
             action_type, table_name, column_name = action
             if action_type == 'replica':
-                return normalized_usage.get(table_name, {}).get(column_name, 0)
+                return (1 - normalized_usage.get(table_name, {}).get(column_name, 0))
             else:
-                return random.uniform(zero_values, 1)
+                return random.uniform(1 - zero_values, 1)
 
         actions.sort(key=action_key)
         return actions
@@ -31,20 +31,39 @@ class State:
         # 获取可能的动作（选择分区键或设置副本）
         actions = []
         for table in self.tables:
-            partition_candidates = set(table['partitionable_columns']) - set(table['replicas'])
+            #partition_candidates = set(table['partitionable_columns']) - set(table['replicas'])
+            #replica_candidates = set(table['columns']) - set(table['partition_keys'])
+            #replica_partition_candidates = set(table['partitionable_columns']) & set(table['replicas'])
+
+            ## 初始默认全表replica, action移除列的replica
+            partition_candidates = set(table['partitionable_columns']) - set(table['replica_partition_keys'])
             replica_candidates = set(table['columns']) - set(table['partition_keys'])
             replica_partition_candidates = set(table['partitionable_columns']) & set(table['replicas'])
+
             #print("partition_candidates:", partition_candidates)
             #print("replica_partition_candidates:", replica_partition_candidates)
+
+            # for column in partition_candidates:
+            #     if column not in table['partition_keys']:
+            #         actions.append(('partition', table['name'], column))
+            # for column in replica_candidates:
+            #     if column not in table['replicas']:
+            #         actions.append(('replica', table['name'], column))
+            # for column in replica_partition_candidates:
+            #     if column not in table['replica_partition_keys']:
+            #         actions.append(('replica_partition', table['name'], column))
+
+            ## 初始默认全表replica, action移除列的replica
             for column in partition_candidates:
                 if column not in table['partition_keys']:
                     actions.append(('partition', table['name'], column))
             for column in replica_candidates:
-                if column not in table['replicas']:
-                    actions.append(('replica', table['name'], column))            
+                if column in table['replicas']:  
+                    actions.append(('remove replica', table['name'], column))
             for column in replica_partition_candidates:
                 if column not in table['replica_partition_keys']:
                     actions.append(('replica_partition', table['name'], column))
+
         random.shuffle(actions)  # 打乱actions的顺序
         return actions
 
@@ -54,9 +73,15 @@ class State:
         for table in new_tables:
             if table['name'] == action[1]:
                 if action[0] == 'partition':
+                    # logging.info(f"partition action: {action}")
+                    # logging.info(f"table replica: {table['replicas']}")
                     table['partition_keys'].append(action[2])
-                elif action[0] == 'replica':
-                    table['replicas'].append(action[2])
+                    if action[2] in table['replicas']:
+                        table['replicas'].remove(action[2]) ## 初始默认全表replica, action移除列的replica
+                #elif action[0] == 'replica':
+                    #table['replicas'].append(action[2])  
+                elif action[0] == 'remove replica':                    
+                    table['replicas'].remove(action[2])  ## 初始默认全表replica, action移除列的replica
                 elif action[0] == 'replica_partition':
                     table['replica_partition_keys'].append(action[2])
         return State(new_tables, action)
@@ -90,11 +115,14 @@ class Node:
         qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
         for qcard in qcard_list:
             qcard.init()           
-        normalized_usage, zero_values, zero_values_num = get_normalized_column_usage(qcard_list, tp_column_usage)
-        logging.info(f"zero_values_num: {zero_values_num}")
+        normalized_usage, zero_values, zero_values_num, ap_values_num = get_normalized_column_usage(qcard_list, tp_column_usage)
+        # logging.info(f"zero_values_num: {zero_values_num}")
+        # logging.info(f"ap_values_num: {ap_values_num}")
 
         # 减去意义不大的列的扩展
-        return len(self.children) >= (len(self.state.get_possible_actions()) - zero_values_num)
+        #return len(self.children) >= (len(self.state.get_possible_actions()) - zero_values_num)
+        return len(self.children) >= 50
+    #(len(self.state.get_possible_actions()) - ap_values_num - zero_values_num) #### 初始默认全表replica, action移除列的replica
 
         
 
@@ -144,7 +172,7 @@ class Node:
         qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
         for qcard in qcard_list:
             qcard.init()        
-        normalized_usage, zero_values, _ = get_normalized_column_usage(qcard_list, tp_column_usage)
+        normalized_usage, zero_values, _, _ = get_normalized_column_usage(qcard_list, tp_column_usage)
         actions = self.state.sort_actions(actions, normalized_usage, zero_values)
         logging.info(f"get actions: {actions[:10]}")
 

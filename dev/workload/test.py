@@ -21,7 +21,7 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
       "port": config.TIDB_PORT,
       "user": config.TIDB_USER,
       "password": config.TIDB_PASSWORD,
-      "database": config.TIDB_DB_NAME,
+      "database": "ch_test", #config.TIDB_DB_NAME,
       "autocommit": autocommit,
       # mysql-connector-python will use C extension by default,
       # to make this example work on all platforms more easily,

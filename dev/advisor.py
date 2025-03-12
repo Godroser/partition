@@ -255,14 +255,18 @@ def update_rowsize(table_columns, candidates):
 # candidates是每个表的分区和副本设置
 def calculate_reward(table_columns, table_meta, candidates):
     # 根据分区副本情况更新元数据    
+    logging.info("Start Update meta data")
     update_meta(table_columns, table_meta, candidates)
+    logging.info("Finish Update meta data")
 
     # 更新每个Qcard类的rowSize
     qcard_list = update_rowsize(table_columns, candidates)
+    logging.info("Finish Update rowsize")
 
     # get Qcard 判断是否要读表的replica, 获取每个query扫描对应表的card
     get_qcard(table_meta, qcard_list, candidates)
     # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    logging.info("Finish Get Qcard")
 
     # update Qparams 将qcard复制到qparams
     qparams_list = update_qparams_with_qcard(qcard_list)
@@ -309,24 +313,50 @@ def calculate_reward(table_columns, table_meta, candidates):
     # print(table_meta[7].partition_cnt)
     # print(table_meta[7].partition_range)
     # print(table_meta[7].count)     
+
     reset_table_meta(table_meta)
-    # print(table_meta[0].keys)
-    # print(table_meta[0].partition_cnt)
-    # print(table_meta[0].partition_range)
-    #print("reward: ", reward)
+    reward = normalize_reward(reward)
+
+    # 评估减少的replica的列带来的reward, size大小 + tp_column_usage频率
+    removed_replcas_reward = 0
+    columns_size = 0
+    for candidate in candidates:
+        table_name = candidate['name']
+        replicas = candidate['replicas']
+        table_column = next((tc for tc in table_columns if tc.name == table_name), None)
+
+        if table_name not in tp_column_usage:
+            continue
+
+        if table_column:
+            missing_columns = set(table_column.columns) - set(replicas)
+            for missing_column in missing_columns:  # usage * size
+                if missing_column in tp_column_usage[table_name]:
+                    tp_usage = tp_column_usage[table_name][missing_column]
+                    column_size = table_column.columns_size[table_column.columns.index(missing_column)]
+                    removed_replcas_reward += column_size * tp_usage
+
+            missing_columns_size = sum(table_column.columns_size[table_column.columns.index(col)] for col in missing_columns)
+            columns_size += missing_columns_size
+            # logging.info(f"Table: {table_name}, Missing Columns: {missing_columns}, Total Size: {missing_columns_size}")
+    logging.info(f"Total Missing Column Size: {columns_size}")
+    logging.info(f"Total Removed Replica Reward: {removed_replcas_reward}")
+    reward += (removed_replcas_reward)
+
     return reward    
 
-def simulate(state, depth, max_depth=5):
+def simulate(state, depth, max_depth=10):
     # 随机模拟直到终止状态
     state_simu = copy.deepcopy(state)
+
+    # 获取列的查询更新信息, 设置action优先级
+    qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
+    for qcard in qcard_list:
+        qcard.init()           
+    normalized_usage, zero_values, _, _ = get_normalized_column_usage(qcard_list, tp_column_usage)    
+    
     while depth < max_depth:
         possible_actions = state_simu.get_possible_actions()
-
-        # 获取列的查询更新信息, 设置action优先级
-        qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
-        for qcard in qcard_list:
-            qcard.init()           
-        normalized_usage, zero_values, _ = get_normalized_column_usage(qcard_list, tp_column_usage)
         possible_actions = state_simu.sort_actions(possible_actions, normalized_usage, zero_values)
 
         if not possible_actions:
@@ -361,9 +391,7 @@ def monte_carlo_tree_search(root, iterations, max_depth):
             node = node.expand()
 
         # 模拟
-        reward = simulate(node.state, node.depth, max_depth)
-        #print("Reward: ", reward)       
-        reward = normalize_reward(reward)
+        reward = simulate(node.state, node.depth, 10)
         # print("Reward: ", reward)
         logging.info(f"Reward: {reward}")
         # print("*****************************")
@@ -569,7 +597,8 @@ if __name__ == "__main__":
         dict_tmp['columns'] = table_column.columns
         dict_tmp['partitionable_columns'] = table_column.partitionable_columns
         dict_tmp['partition_keys'] = table_column.partition_keys
-        dict_tmp['replicas'] = table_column.replicas
+        #dict_tmp['replicas'] = table_column.replicas
+        dict_tmp['replicas'] = table_column.columns # 初始默认全表replica
         dict_tmp['replica_partition_keys'] = table_column.replica_partition_keys
         tables.append(dict_tmp)   
 
@@ -624,7 +653,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=5000, max_depth=20)
+    monte_carlo_tree_search(root, iterations=5000, max_depth=40)
     mcts_time = time.time() - start_time
 
     start_time = time.time()
@@ -654,6 +683,13 @@ if __name__ == "__main__":
 
     print(f"蒙特卡洛树搜索时间: {mcts_time:.2f}秒")
     print(f"选择最佳子节点时间: {selection_time:.2f}秒")
+
+
+    logging.info("最佳收益:", node1.reward / node1.visits)
+    logging.info("访问次数:", node1.visits)    
+    logging.info("层数:", node1.depth)
+    logging.info("最佳配置:")
+    logging.info(formatted_output)
     
 
 
