@@ -41,10 +41,10 @@ class Customer_Meta:
     self.isreplica = False #True: use row-store, is table_meta; False: use column-store, is table_replica_meta
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM customer;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM customer;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -102,10 +102,10 @@ class District_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 40 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM district;") 
-        self.count = cur.fetchall()[0][0]     
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM district;") 
+    #     self.count = cur.fetchall()[0][0]     
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -163,10 +163,10 @@ class History_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 124913 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM history;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM history;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -224,10 +224,10 @@ class Item_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 100000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM item;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM item;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -285,10 +285,10 @@ class Nation_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM nation;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM nation;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -346,10 +346,10 @@ class New_Order_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM new_order;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM new_order;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -407,10 +407,10 @@ class Order_Line_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 1250435 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM order_line;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM order_line;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -468,10 +468,10 @@ class Orders_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 120000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM orders;") 
-        self.count = cur.fetchall()[0][0]        
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM orders;") 
+    #     self.count = cur.fetchall()[0][0]        
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -529,10 +529,10 @@ class Region_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 5 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM region;") 
-        self.count = cur.fetchall()[0][0]        
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM region;") 
+    #     self.count = cur.fetchall()[0][0]        
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -590,10 +590,10 @@ class Stock_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 400000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM stock;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM stock;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -651,10 +651,10 @@ class Supplier_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 10000 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM supplier;") 
-        self.count = cur.fetchall()[0][0]         
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM supplier;") 
+    #     self.count = cur.fetchall()[0][0]         
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]
@@ -712,10 +712,10 @@ class Warehouse_Meta:
     self.isreplica =False #True: use row-store, False: use column-store
     self.keys = [] # partition keys []
     self.count = 4 # count(*) 
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur:    
-        cur.execute("SELECT count(*) FROM warehouse;") 
-        self.count = cur.fetchall()[0][0]      
+    # with get_connection(autocommit=False) as connection:
+    #   with connection.cursor() as cur:    
+    #     cur.execute("SELECT count(*) FROM warehouse;") 
+    #     self.count = cur.fetchall()[0][0]      
     # each partition tuple cnt []
     self.partition_cnt = []
     # each partition range end value [[],[]]

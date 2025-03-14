@@ -81,6 +81,8 @@ class TableScan(TreeNode):
             scanFactor = global_params.tiflash_scan_factor
         else:
             scanFactor = 0    
+        if self.rowSize == 0:  ## 不读取这个表
+            return 0
         cost = self.rows * math.log2(self.rowSize) * scanFactor + (10000 * math.log2(self.rowSize) * scanFactor)
         return cost
 

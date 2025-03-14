@@ -370,7 +370,7 @@ def simulate(state, depth, max_depth=10):
 def normalize_reward(reward):
     # 归一化
     N = 30000000000.0
-    return (N - reward) / 100000000.0
+    return (N - reward) / 10000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
     for i in range(iterations):
@@ -391,7 +391,7 @@ def monte_carlo_tree_search(root, iterations, max_depth):
             node = node.expand()
 
         # 模拟
-        reward = simulate(node.state, node.depth, 10)
+        reward = simulate(node.state, node.depth, max_depth)
         # print("Reward: ", reward)
         logging.info(f"Reward: {reward}")
         # print("*****************************")
@@ -653,7 +653,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=5000, max_depth=40)
+    monte_carlo_tree_search(root, iterations=30, max_depth=25)
     mcts_time = time.time() - start_time
 
     start_time = time.time()
@@ -690,8 +690,18 @@ if __name__ == "__main__":
     logging.info("层数:", node1.depth)
     logging.info("最佳配置:")
     logging.info(formatted_output)
-    
 
+
+    
+    for table, initial_table in zip(node1.state.tables, initial_state.tables):
+        logging.info(f"{table['name']}:")
+        action_partition_keys = set(table['partition_keys'])
+        action_replicas = set(initial_table['replicas']) - set(table['replicas'])
+        action_replica_partition_keys = set(table['replica_partition_keys'])
+
+        logging.info(f"partition_keys: {action_partition_keys}")
+        logging.info(f"remove replicas: {action_replicas}")
+        logging.info(f"replica_partition_keys: {action_replica_partition_keys}")
 
 
     # #*************************独立测试时用的代码*************************

@@ -21,7 +21,7 @@ from estimator.ch_query_cost import *
 from estimator.ch_columns_ranges_meta import *
 from config import Config
 from log.logging_config import setup_logging
- 
+from workload.workload_analyzer import get_normalized_column_usage, tp_column_usage
 
 # update metadata given the partition and replica candidate
 # candidate format:{'name': , 'columns':, 'partitionable_columns': , 'partition_keys': [], 'replicas': [], 'replica_partition_keys': []}
@@ -255,14 +255,18 @@ def update_rowsize(table_columns, candidates):
 # candidates是每个表的分区和副本设置
 def calculate_reward(table_columns, table_meta, candidates):
     # 根据分区副本情况更新元数据    
+    logging.info("Start Update meta data")
     update_meta(table_columns, table_meta, candidates)
+    logging.info("Finish Update meta data")
 
     # 更新每个Qcard类的rowSize
     qcard_list = update_rowsize(table_columns, candidates)
+    logging.info("Finish Update rowsize")
 
     # get Qcard 判断是否要读表的replica, 获取每个query扫描对应表的card
     get_qcard(table_meta, qcard_list, candidates)
     # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
+    logging.info("Finish Get Qcard")
 
     # update Qparams 将qcard复制到qparams
     qparams_list = update_qparams_with_qcard(qcard_list)
@@ -272,9 +276,11 @@ def calculate_reward(table_columns, table_meta, candidates):
     
     reward = 0.0
     # 计算22条query的代价
-    for i in range(1,23):
-        reward += calculate_query_cost(i, qparams_list)
-
+    for i in range(0,22):
+        cost = 0
+        cost = calculate_query_cost(i, qparams_list)
+        reward += cost
+        logging.info(f"Query{i+1}: {cost}")
 
     # reward += calculate_q1(engine, qparams_list[0])
     # reward += calculate_q2(engine, qparams_list[1])
@@ -307,35 +313,70 @@ def calculate_reward(table_columns, table_meta, candidates):
     # print(table_meta[7].partition_cnt)
     # print(table_meta[7].partition_range)
     # print(table_meta[7].count)     
+
     reset_table_meta(table_meta)
-    # print(table_meta[0].keys)
-    # print(table_meta[0].partition_cnt)
-    # print(table_meta[0].partition_range)
-    #print("reward: ", reward)
+    reward = normalize_reward(reward)
+
+    # 评估减少的replica的列带来的reward, size大小 + tp_column_usage频率
+    removed_replcas_reward = 0
+    columns_size = 0
+    for candidate in candidates:
+        table_name = candidate['name']
+        replicas = candidate['replicas']
+        table_column = next((tc for tc in table_columns if tc.name == table_name), None)
+
+        if table_name not in tp_column_usage:
+            continue
+
+        if table_column:
+            missing_columns = set(table_column.columns) - set(replicas)
+            for missing_column in missing_columns:  # usage * size
+                if missing_column in tp_column_usage[table_name]:
+                    tp_usage = tp_column_usage[table_name][missing_column]
+                    column_size = table_column.columns_size[table_column.columns.index(missing_column)]
+                    removed_replcas_reward += column_size * tp_usage
+
+            missing_columns_size = sum(table_column.columns_size[table_column.columns.index(col)] for col in missing_columns)
+            columns_size += missing_columns_size
+            # logging.info(f"Table: {table_name}, Missing Columns: {missing_columns}, Total Size: {missing_columns_size}")
+    logging.info(f"Total Missing Column Size: {columns_size}")
+    logging.info(f"Total Removed Replica Reward: {removed_replcas_reward/10}")
+    reward += (removed_replcas_reward / 10)
+
     return reward    
 
 def simulate(state, depth, max_depth=10):
     # 随机模拟直到终止状态
     state_simu = copy.deepcopy(state)
+
+    # 获取列的查询更新信息, 设置action优先级
+    qcard_list = [Q1card(), Q2card(), Q3card(), Q4card(), Q5card(), Q6card(), Q7card(), Q8card(), Q9card(), Q10card(), Q11card(), Q12card(), Q13card(), Q14card(), Q15card(), Q16card(), Q17card(), Q18card(), Q19card(), Q20card(), Q21card(), Q22card()]
+    for qcard in qcard_list:
+        qcard.init()           
+    normalized_usage, zero_values, _, _ = get_normalized_column_usage(qcard_list, tp_column_usage)    
+    
     while depth < max_depth:
         possible_actions = state_simu.get_possible_actions()
+        possible_actions = state_simu.sort_actions(possible_actions, normalized_usage, zero_values)
+
         if not possible_actions:
             break  # 如果没有可能的动作，退出循环
         action = random.choice(possible_actions)
         state_simu = state_simu.take_action(action)
         depth += 1      
-        #print(action)
+        logging.info(action)
     return calculate_reward(table_columns, table_meta, state_simu.tables)
 
 def normalize_reward(reward):
     # 归一化
     N = 30000000000.0
-    return (N - reward) / 100000000.0
+    return (N - reward) / 10000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
     for i in range(iterations):
         print(i)
         node = root
+        reward = 0
         # 选择. 对于完全扩展的节点，选择最佳子节点，直到达到最大深度
         while node.is_fully_expanded() and node.depth < max_depth:
             # 节点没有可能的动作，退出循环              
@@ -350,10 +391,9 @@ def monte_carlo_tree_search(root, iterations, max_depth):
             node = node.expand()
 
         # 模拟
-        reward = simulate(node.state, node.depth, max_depth)
-        #print("Reward: ", reward)       
-        reward = normalize_reward(reward)
-        print("Reward: ", reward)
+        reward = simulate(node.state, node.depth, 10)
+        # print("Reward: ", reward)
+        logging.info(f"Reward: {reward}")
         # print("*****************************")
         # print("*****************************")
 
@@ -372,8 +412,8 @@ def expand_root(root, max_depth):
                 new_state = root.state.take_action(action)
                 child_node = Node(new_state, root, root.depth + 1)  # 更新子节点的深度
                 root.children.append(child_node)
-                print("take action:", action)
-                print("append child to node depth:", root.depth)
+                logging.info(f"take action: {action}")
+                logging.info(f"append child to node depth: {root.depth}")
                 child_nodes.append(child_node)   
 
     # 计算reward
@@ -470,20 +510,20 @@ def reset_table_meta(table_meta):
     supplier_replica_meta = Supplier_Meta()
     warehouse_replica_meta = Warehouse_Meta()
 
-    customer_replica_meta.replica = True
-    district_replica_meta.replica = True
-    history_replica_meta.replica = True
-    item_replica_meta.replica = True
-    nation_replica_meta.replica = True
-    new_order_replica_meta.replica = True
-    order_line_replica_meta.replica = True
-    orders_replica_meta.replica = True
-    region_replica_meta.replica = True
-    stock_replica_meta.replica = True
-    supplier_replica_meta.replica = True
-    warehouse_replica_meta.replica = True
+    customer_replica_meta.isreplica = True
+    district_replica_meta.isreplica = True
+    history_replica_meta.isreplica = True
+    item_replica_meta.isreplica = True
+    nation_replica_meta.isreplica = True
+    new_order_replica_meta.isreplica = True
+    order_line_replica_meta.isreplica = True
+    orders_replica_meta.isreplica = True
+    region_replica_meta.isreplica = True
+    stock_replica_meta.isreplica = True
+    supplier_replica_meta.isreplica = True
+    warehouse_replica_meta.isreplica = True
 
-    table_meta.extend([customer_replica_meta, district_replica_meta, history_replica_meta, item_replica_meta, nation_replica_meta, new_order_replica_meta, order_line_replica_meta, orders_replica_meta, region_replica_meta, stock_replica_meta, supplier_replica_meta, warehouse_replica_meta])    
+    table_meta.extend([customer_replica_meta, district_replica_meta, history_replica_meta, item_replica_meta, nation_replica_meta, new_order_replica_meta, order_line_replica_meta, orders_replica_meta, region_replica_meta, stock_replica_meta, supplier_replica_meta, warehouse_replica_meta])  
 
 if __name__ == "__main__":
     # 1. 初始化表参数
@@ -656,8 +696,9 @@ if __name__ == "__main__":
     # tables[4]['partition_keys'] = ['n_nationkey']
     # tables[5]['partition_keys'] = ['no_o_id']
     # tables[6]['partition_keys'] = ['ol_d_id']
-    tables[6]['partition_keys'] = ['ol_delivery_d']
-    # tables[7]['partition_keys'] = ['o_all_local']    
+    # tables[6]['replica_partition_keys'] = ['ol_delivery_d']
+    tables[7]['replica_partition_keys'] = ['o_entry_d']  
+    # tables[9]['replica_partition_keys'] = ['s_i_id']   
 
     tables[0]['replicas'] = ['c_data']
     # tables[1]['replicas'] = ['d_state', 'd_ytd']
@@ -665,11 +706,15 @@ if __name__ == "__main__":
     tables[3]['replicas'] = ['i_id', 'i_im_id', 'i_data']
     tables[4]['replicas'] = ['n_nationkey']
     # tables[5]['replicas'] = ['no_w_id']
-    tables[6]['replicas'] = ['ol_dist_info']
+    tables[6]['replicas'] = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"]
     # tables[6]['replica_partition_keys'] = ['ol_delivery_d']
-    tables[9]['replicas'] = ['s_dist_02', 's_data']
+    tables[7]['replicas'] = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
+    tables[9]['replicas'] = ["s_i_id", "s_w_id", "s_quantity", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_ytd", "s_order_cnt", "s_remote_cnt", "s_data"]
+    # tables[9]['replicas'] = ['s_data']
+    tables[10]['replicas'] = ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"]
     # tables[10]['replicas'] = ['s_nationkey']
     # tables[11]['replicas'] = ['w_tax']
+    tables[11]['replicas'] = ["w_id", "w_name", "w_street_1", "w_street_2", "w_city", "w_state", "w_zip", "w_tax", "w_ytd"]
 
 
 
@@ -695,7 +740,35 @@ if __name__ == "__main__":
     for i in range(22):
         cost += calculate_query_cost(i, qparams_list)
         print("Cost {} reward: {}".format(i+1, cost))
-    print("Reward: ", normalize_reward(cost))
+    cost = normalize_reward(cost)
+    print("Reward: ", cost)
+
+    # 评估减少的replica的列带来的reward, size大小 + tp_column_usage频率
+    removed_replcas_reward = 0
+    columns_size = 0
+    for candidate in tables:
+        table_name = candidate['name']
+        replicas = candidate['replicas']
+        table_column = next((tc for tc in table_columns if tc.name == table_name), None)
+
+        if table_name not in tp_column_usage:
+            continue
+
+        if table_column:
+            missing_columns = set(table_column.columns) - set(replicas)
+            for missing_column in missing_columns:  # usage * size
+                if missing_column in tp_column_usage[table_name]:
+                    tp_usage = tp_column_usage[table_name][missing_column]
+                    column_size = table_column.columns_size[table_column.columns.index(missing_column)]
+                    removed_replcas_reward += column_size * tp_usage
+
+            missing_columns_size = sum(table_column.columns_size[table_column.columns.index(col)] for col in missing_columns)
+            columns_size += missing_columns_size
+            # logging.info(f"Table: {table_name}, Missing Columns: {missing_columns}, Total Size: {missing_columns_size}")
+    print(f"Total Missing Column Size: {columns_size}")
+    print(f"Total Removed Replica Reward: {removed_replcas_reward/10}")
+    cost += (removed_replcas_reward/10)
+    print("Reward add sync: ", cost)
 
     # print(calculate_q1(engine, qparams_list[0]))
     # print(calculate_q2(engine, qparams_list[1]))

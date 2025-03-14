@@ -23,15 +23,17 @@ from log.logging_config import setup_logging
 def update_query_operators_with_replica(qry_idx, qparams_list, query_operators):
     qparams = qparams_list[qry_idx]
     scan_table_replica = qparams.scan_table_replica
+    local_query_operators = copy.deepcopy(query_operators)
 
     # 如果当前query不读取replica, 直接返回
     if not scan_table_replica:
-        return
+        return local_query_operators
 
     # 扫描要读的每一个replica, 加入原表对应的算子
     for table in scan_table_replica:
         replica_table = f"{table}_replica"
-        query_info = copy.deepcopy(query_operators[qry_idx])
+        query_info = local_query_operators[qry_idx]
+        # query_info = query_operators[qry_idx]
         operators = query_info["operators"]
         tables = query_info["tables"]
         logging.debug(f"initial operators len: {len(query_operators[qry_idx]['operators'])}")
@@ -47,11 +49,12 @@ def update_query_operators_with_replica(qry_idx, qparams_list, query_operators):
         #     print("table:", table)
         #     print("qry_idx:", qry_idx)
         #     print("scan_table_replica: ", scan_table_replica)
+    return local_query_operators
 
 # 计算指定第qry_idx条query的代价
 def calculate_query_cost(qry_idx, qparams_list):
-    update_query_operators_with_replica(qry_idx, qparams_list, query_operators)
-    query_info = query_operators[qry_idx]
+    local_query_operators = update_query_operators_with_replica(qry_idx, qparams_list, query_operators)
+    query_info = local_query_operators[qry_idx]
     operators = query_info["operators"]
     tables = query_info["tables"]
     content = '1'
@@ -62,22 +65,25 @@ def calculate_query_cost(qry_idx, qparams_list):
     # print('qparams_list: ', qparams_list[qry_idx])
 
     for operator, table in zip(operators, tables):
-        engine = 'Tikv'
-        if table.endswith("_replica"):
-            engine = 'Tiflash'
-
         rows_attr = f"rows_tablescan_{table}"
         rowsize_attr = f"rowsize_tablescan_{table}"
         rows_selection_attr = f"rows_selection_{table}"
+
+        engine = 'Tikv'
+        if table.endswith("_replica"):
+            engine = 'Tiflash'           
+
 
         rows = getattr(qparams_list[qry_idx], rows_attr, None)
         rowsize = getattr(qparams_list[qry_idx], rowsize_attr, None)
         rows_selection = getattr(qparams_list[qry_idx], rows_selection_attr, None)
 
+
+
         # print("table:", table)
         # print('rows_attr: {} : {}'.format(rows_attr, rows))
         # print('rowsize_attr: {} : {}'.format(rowsize_attr, rowsize))
-        # logging.debug(f"rowsize_attr: {rowsize_attr} : {rowsize}")
+        logging.debug(f"rowsize_attr: {rowsize_attr} : {rowsize}")
 
         if operator == "TableScan":
             op_instance = TableScan(content, rows, rowsize)
@@ -90,6 +96,7 @@ def calculate_query_cost(qry_idx, qparams_list):
 
         op_instance.engine = engine
         cost += op_instance.calculate_cost()
+        # print("operator: ", operator)
         # print("add op_instance.calculate_cost: ", op_instance.calculate_cost())
 
         # 对于读取了rpelica的情况, 要计算额外的算子开销

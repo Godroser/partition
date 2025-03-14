@@ -46,30 +46,30 @@ class Qcard():
         self.rowsize_tablescan_new_order = 0
         self.rowsize_tablescan_history = 0
 
-        self.rows_tablescan_nation_replica = 0
-        self.rows_selection_nation_replica = 0
-        self.rows_tablescan_region_replica = 0
-        self.rows_selection_region_replica = 0
-        self.rows_tablescan_customer_replica = 0
-        self.rows_selection_customer_replica = 0
-        self.rows_tablescan_supplier_replica = 0
-        self.rows_selection_supplier_replica = 0
-        self.rows_tablescan_item_replica = 0
-        self.rows_selection_item_replica = 0
-        self.rows_tablescan_order_line_replica = 0
-        self.rows_selection_order_line_replica = 0
-        self.rows_tablescan_stock_replica = 0
-        self.rows_selection_stock_replica = 0
-        self.rows_tablescan_orders_replica = 0
-        self.rows_selection_orders_replica = 0
-        self.rows_tablescan_district_replica = 0
-        self.rows_selection_district_replica = 0
-        self.rows_tablescan_warehouse_replica = 0
-        self.rows_selection_warehouse_replica = 0
-        self.rows_tablescan_new_order_replica = 0
-        self.rows_selection_new_order_replica = 0
-        self.rows_tablescan_history_replica = 0
-        self.rows_selection_history_replica = 0
+        self.rows_tablescan_nation_replica = 25
+        self.rows_selection_nation_replica = 25
+        self.rows_tablescan_region_replica = 5
+        self.rows_selection_region_replica = 5
+        self.rows_tablescan_customer_replica = 120000
+        self.rows_selection_customer_replica = 120000
+        self.rows_tablescan_supplier_replica = 10000
+        self.rows_selection_supplier_replica = 10000
+        self.rows_tablescan_item_replica = 100000
+        self.rows_selection_item_replica = 100000
+        self.rows_tablescan_order_line_replica = 1250435
+        self.rows_selection_order_line_replica = 1250435
+        self.rows_tablescan_stock_replica = 400000
+        self.rows_selection_stock_replica = 400000
+        self.rows_tablescan_orders_replica = 125038
+        self.rows_selection_orders_replica = 125038
+        self.rows_tablescan_district_replica = 40
+        self.rows_selection_district_replica = 40
+        self.rows_tablescan_warehouse_replica = 4
+        self.rows_selection_warehouse_replica = 4
+        self.rows_tablescan_new_order_replica = 36418
+        self.rows_selection_new_order_replica = 36418
+        self.rows_tablescan_history_replica = 124913
+        self.rows_selection_history_replica = 124913
 
         self.rowsize_tablescan_nation_replica = 0
         self.rowsize_tablescan_region_replica = 0
@@ -314,7 +314,7 @@ class Qcard():
                         self.scan_table_replica.append(table_name)
                         break                
 
-                # 这个表上过滤操作, 再计算要扫描的基数
+                # 如果这个表上有过滤操作, 再计算要扫描的基数
                 # qcard初始化默认是全表扫描
                 if self.operators[table_idx]:
                     # 计算原始表基数
@@ -357,14 +357,15 @@ class Qcard():
             # 计算rowsize
             rowsize_replica = 0
             rowsize = 0
+            scan_row = False   ## 是否读行粗
+            scan_replica = False # 是否读replica
 
             # 找到对应的table_column类
             column_class_idx = table_dict.get(table_name)
             table_column = table_columns[column_class_idx]
-
-            # 遍历replica里面的列, 修改rowsize
+            
+            # 遍历replica里面的列, 找到行存和列存的rowsize
             for column in candidate['replicas']:
-
                 if column in table_column.columns:
                     idx = table_column.columns.index(column)
                     rowsize_replica += table_column.columns_size[idx]
@@ -373,17 +374,34 @@ class Qcard():
                     print("Column not found in table columns")
                     break
             
-            # 计算rowsize的大小
+            # 计算行存rowsize的大小
             rowsize = sum(table_column.columns_size) - rowsize_replica
-            if rowsize == 0:
-                rowsize = 1
+
+            # 计算列存rowsize的大小, 只需要计算查询列的大小
+            rowsize_replica = 0
+            for column in self.columns[table_idx]:
+                if column in candidate['replicas']:
+                    if not scan_replica:
+                        scan_replica = True
+                    idx = table_column.columns.index(column)
+                    rowsize_replica += table_column.columns_size[idx]
+                else:
+                    if not scan_row:
+                        scan_row = True
 
             # 加上主键的大小
             primary_keys_size = sum(table_column.columns_size[table_column.columns.index(pk)] for pk in table_column.primary_keys)
             rowsize_replica += primary_keys_size
 
-            self.update_param('rowsize_tablescan_' + table_name, rowsize)
-            self.update_param('rowsize_tablescan_' + table_name + '_replica', rowsize_replica)
+            ## 根据query读取行存replica的情况更新rowsize
+            if scan_row:
+                self.update_param('rowsize_tablescan_' + table_name, rowsize)
+            else:
+                self.update_param('rowsize_tablescan_' + table_name, 0)
+            if scan_replica:
+                self.update_param('rowsize_tablescan_' + table_name + '_replica', rowsize_replica)
+            else:
+                self.update_param('rowsize_tablescan_' + table_name + '_replica', 0)
 
 
 
