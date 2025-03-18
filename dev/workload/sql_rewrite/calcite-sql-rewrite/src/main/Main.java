@@ -201,9 +201,12 @@ import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.*;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlShuttle;
+import java.util.*;
 
+import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.pretty.SqlPrettyWriter;
+import org.apache.calcite.sql.util.SqlShuttle;
 
 import java.util.*;
 
@@ -290,50 +293,7 @@ public class Main {
         }
     }
 
-
-    public static Set<String> extractIdentifierSql(String originalSql, Map<String, List<String>> originalTable, Map<String, List<String>> primaryKey, Map<String, List<String>> splitTables) throws Exception {
-
-        // 解析 SQL
-        SqlParser parser = SqlParser.create(originalSql);
-        SqlNode sqlNode = parser.parseQuery();
-
-        // 创建Identifier集合
-        Set<String> identifier_set = new HashSet<>(); 
-
-        // 自定义一个访问器来遍历语法树
-        SqlBasicVisitor<Void> visitor = new SqlBasicVisitor<Void>() {
-            @Override
-            public Void visit(SqlCall call) {
-                System.out.println("Node type: " + call.getClass().getSimpleName());
-                System.out.println("Operator: " + call.getOperator().getName());
-                System.out.println("Operands: " + call.getOperandList());
-                // 递归访问子节点
-                for (SqlNode operand : call.getOperandList()) {
-                    // System.out.println(operand.toString());
-                    if (operand instanceof SqlIdentifier){
-                        System.out.println("SqlIdentifier: " + operand);
-                        identifier_set.add(operand.toString());
-                    }
-                    if (operand != null) {
-                        operand.accept(this);
-                    }
-                }
-                return null;
-            }
-
-            @Override
-            public Void visit(SqlIdentifier identifier) {
-                System.out.println("SqlIdentifier: " + identifier);
-                identifier_set.add(identifier.toString()); // 记录列名
-                return null;
-            }            
-        }; 
-
-        // 调用 accept 方法进行访问
-        sqlNode.accept(visitor);      
-
-        return identifier_set;
-    }  
+    
 
 
     public static String rewriteSql(String originalSql, String originalTable, List<String> primaryKey, Map<String, List<String>> splitTables) throws Exception {
@@ -341,7 +301,7 @@ public class Main {
         SqlParser parser = SqlParser.create(originalSql);
         SqlNode sqlNode = parser.parseQuery();
         // System.out.println(sqlNode);
-        // printSqlNodeStructure(sqlNode, 0);
+        printSqlNodeStructure(sqlNode, 0);
 
         // // 存储表和列
         // Set<String> tables = new HashSet<>();
@@ -359,9 +319,6 @@ public class Main {
                 System.out.println("Operands: " + call.getOperandList());
                 // 递归访问子节点
                 for (SqlNode operand : call.getOperandList()) {
-                    if (operand instanceof SqlIdentifier){
-                        System.out.println("SqlIdentifier: " + operand);
-                    }
                     if (operand != null) {
                         operand.accept(this);
                     }
@@ -372,7 +329,7 @@ public class Main {
         // 调用 accept 方法进行访问
         sqlNode.accept(visitor);                     
 
-        System.out.println("*********************************************");
+        
         
         // 解析 SELECT 字段        
         List<String> selectFields = new ArrayList<>();
@@ -381,8 +338,6 @@ public class Main {
         SqlBasicVisitor<Void> select_parse_visitor = new SqlBasicVisitor<Void>() {
             @Override    
             public Void visit(SqlCall call) {
-                
-
                 if (call instanceof SqlSelect) {
                     System.out.println("sqlNode is SqlSelect");
                     SqlSelect sqlSelect = (SqlSelect) call;
@@ -420,7 +375,7 @@ public class Main {
                                         }
                                     }
                                 }
-                                return null; // 不再处理子节点
+                                // return null; // 不再处理子节点
                             } else if (call.getOperator().getName().matches("SUM|AVG|COUNT|MIN|MAX")) {
                                 System.out.println("Agg Operator: " + call.getOperator().getName());
                                 String functionName = call.getOperator().getName();
@@ -556,47 +511,6 @@ public class Main {
         return newSql.toString();
     }
 
-    // 寻找列所在的表
-    public static void findColumnsInTables(Set<String> identifierSet, Map<String, List<String>> originalTables, Map<String, List<String>> primaryKeys, Map<String, List<String>> splitTables) {
-        Set<String> tables = new HashSet<>();
-        Set<String> columns = new HashSet<>();
-
-        // 遍历 identifierSet，判断是表名还是列名
-        for (String identifier : identifierSet) {
-            boolean isColumn = false;
-            for (Map.Entry<String, List<String>> entry : originalTables.entrySet()) {
-                for (String column : entry.getValue()) {
-                    if (column.equalsIgnoreCase(identifier)) {
-                        columns.add(identifier);
-                        isColumn = true;
-                        break;
-                    }
-                }
-            }
-            if (!isColumn) {
-                tables.add(identifier);
-            }
-        }
-
-        // 输出表名
-        System.out.println("Tables: " + tables);
-
-        // 找到所有列所在的表
-        Map<String, Set<String>> columnTableMap = new HashMap<>();
-        for (String column : columns) {
-            for (Map.Entry<String, List<String>> entry : splitTables.entrySet()) {
-                if (entry.getValue().contains(column) || primaryKeys.values().stream().anyMatch(pk -> pk.contains(column))) {
-                    columnTableMap.computeIfAbsent(column, k -> new HashSet<>()).add(entry.getKey());
-                }
-            }
-        }
-
-        // 输出列所在的表
-        for (Map.Entry<String, Set<String>> entry : columnTableMap.entrySet()) {
-            System.out.println("Column: " + entry.getKey() + " is in tables: " + entry.getValue());
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         // String originalSql = "SELECT id, name, age FROM users WHERE age > 18 and name = 'Alice'";
         // String originalTable = "users";
@@ -608,21 +522,14 @@ public class Main {
 
 
         String originalSql = "select   ol_number,  sum(ol_quantity) as sum_qty,  sum(ol_amount) as sum_amount,  avg(ol_quantity) as avg_qty,  avg(ol_amount) as avg_amount,  count(*) as count_order from order_line where ol_delivery_d > '2024-10-28 17:00:00' group by ol_number order by ol_number";
-        // String originalTable = "order_line";
-        Map<String, List<String>> originalTables = new HashMap<>();
-        originalTables.put("order_line", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"));
-        Map<String, List<String>> primaryKeys = new HashMap<>();
-        primaryKeys.put("order_line", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number"));
-
+        String originalTable = "order_line";
+        List<String> primaryKey = Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number");
+        // ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"]
         Map<String, List<String>> splitTables = new HashMap<>();
         splitTables.put("order_line_part1", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity"));
         splitTables.put("order_line_part2", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_amount", "ol_dist_info"));        
 
-        // String rewrittenSql = rewriteSql(originalSql, originalTable, primaryKey, splitTables);
-        // System.out.println("Rewritten SQL: " + rewrittenSql);
-        Set<String> identifier_set = extractIdentifierSql(originalSql, originalTables, primaryKeys, splitTables);
-        System.out.println("identifier_set: " + identifier_set);
-
-        findColumnsInTables(identifier_set, originalTables, primaryKeys, splitTables);
+        String rewrittenSql = rewriteSql(originalSql, originalTable, primaryKey, splitTables);
+        System.out.println("Rewritten SQL: " + rewrittenSql);
     }
 }
