@@ -11,6 +11,9 @@ import java.util.*;
 
 import java.io.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 public class Main {
     public static void printSqlNodeStructure(SqlNode node, int level) {
         if (node == null) return;
@@ -415,6 +418,33 @@ public class Main {
         }
     }
 
+    // 从指定的advisor文件中读取分表信息
+    public static void populateSplitTables(String AdvisorPath, Map<String, List<String>> splitTables, Map<String, List<String>> primaryKeys) throws IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<Map<String, Object>> tables = objectMapper.readValue(new File(AdvisorPath), new TypeReference<List<Map<String, Object>>>() {});
+
+        for (Map<String, Object> table : tables) {
+            String tableName = (String) table.get("name");
+            List<String> columns = (List<String>) table.get("columns");
+            List<String> replicas = (List<String>) table.get("replicas");
+
+            if (replicas != null && !replicas.isEmpty()) {
+                List<String> primaryKey = primaryKeys.getOrDefault(tableName, Collections.emptyList());
+
+                // Part 1: replicas + primaryKey
+                List<String> part1Columns = new ArrayList<>(replicas);
+                part1Columns.addAll(primaryKey);
+                splitTables.put(tableName + "_part1", part1Columns);
+
+                // Part 2: (columns - replicas) + primaryKey
+                List<String> part2Columns = new ArrayList<>(columns);
+                part2Columns.removeAll(replicas);
+                part2Columns.addAll(primaryKey);
+                splitTables.put(tableName + "_part2", part2Columns);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         // String originalSql = "select   ol_o_id, ol_w_id, ol_d_id,sum(ol_amount) as revenue, o_entry_d from customer, new_order, orders, order_line where c_state like 'A%' and c_id = o_c_id and c_w_id = o_w_id and c_d_id = o_d_id and no_w_id = o_w_id and no_d_id = o_d_id and no_o_id = o_id and ol_w_id = o_w_id and ol_d_id = o_d_id and ol_o_id = o_id and o_entry_d > '2024-10-28 17:00:00' group by ol_o_id, ol_w_id, ol_d_id, o_entry_d order by revenue desc, o_entry_d";
         //"select   ol_number,  sum(ol_quantity) as sum_qty,  sum(ol_amount) as sum_amount,  avg(ol_quantity) as avg_qty,  avg(ol_amount) as avg_amount,  count(*) as count_order from order_line where ol_delivery_d > '2024-10-28 17:00:00' group by ol_number order by ol_number";
@@ -424,12 +454,15 @@ public class Main {
         init_table(originalTables, primaryKeys);
 
         Map<String, List<String>> splitTables = new HashMap<>();
+
         splitTables.put("order_line_part1", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity"));
         splitTables.put("order_line_part2", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_amount", "ol_dist_info"));
 
         // String rewrittenSql = rewriteSql(originalSql, originalTables, primaryKeys, splitTables);
         // System.out.println("Rewritten SQL: " + rewrittenSql);
 
+        String AdvisorPath = "/data3/dzh/project/grep/dev/Output/manual_advisor.txt";
+        populateSplitTables(AdvisorPath, splitTables, primaryKeys);
 
         String inputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd.sql";
         String outputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd_rewrite_0319.sql";

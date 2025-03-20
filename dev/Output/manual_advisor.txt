@@ -12,7 +12,6 @@
             "c_street_2",
             "c_city",
             "c_state",
-            "c_zip",
             "c_phone",
             "c_since",
             "c_credit",
@@ -35,7 +34,23 @@
             "c_id",
             "c_d_id",
             "c_w_id",
-            "c_state"
+            "c_first",
+            "c_middle",
+            "c_last",
+            "c_street_1",
+            "c_street_2",
+            "c_city",
+            "c_state",
+            "c_phone",
+            "c_since",
+            "c_credit",
+            "c_credit_lim",
+            "c_discount",
+            "c_balance",
+            "c_ytd_payment",
+            "c_payment_cnt",
+            "c_delivery_cnt",
+            "c_data"
         ],
         "replica_partition_keys": []
     },
@@ -60,8 +75,22 @@
             "d_next_o_id"
         ],
         "partition_keys": [],
-        "replicas": [],
-        "replica_partition_keys": []
+        "replicas": [
+            "d_id",
+            "d_w_id",
+            "d_name",
+            "d_street_1",
+            "d_street_2",
+            "d_city",
+            "d_state",
+            "d_zip",
+            "d_tax",
+            "d_ytd",
+            "d_next_o_id"
+        ],
+        "replica_partition_keys": [
+            "d_w_id"
+        ]
     },
     {
         "name": "history",
@@ -70,10 +99,8 @@
             "h_c_d_id",
             "h_c_w_id",
             "h_d_id",
-            "h_w_id",
             "h_date",
-            "h_amount",
-            "h_data"
+            "h_amount"
         ],
         "partitionable_columns": [
             "h_c_id",
@@ -84,7 +111,14 @@
             "h_date"
         ],
         "partition_keys": [],
-        "replicas": [],
+        "replicas": [
+            "h_c_id",
+            "h_c_d_id",
+            "h_c_w_id",
+            "h_d_id",
+            "h_date",
+            "h_amount"
+        ],
         "replica_partition_keys": []
     },
     {
@@ -102,15 +136,17 @@
         ],
         "partition_keys": [],
         "replicas": [
-          "i_id",
-          "i_data"
+            "i_id",
+            "i_im_id",
+            "i_name",
+            "i_price",
+            "i_data"
         ],
         "replica_partition_keys": []
     },
     {
         "name": "nation",
         "columns": [
-            "n_nationkey",
             "n_name",
             "n_regionkey",
             "n_comment"
@@ -119,10 +155,13 @@
             "n_nationkey",
             "n_regionkey"
         ],
-        "partition_keys": [],
+        "partition_keys": [
+            "n_nationkey"
+        ],
         "replicas": [
-          "n_nationkey",
-          "n_name"
+            "n_name",
+            "n_regionkey",
+            "n_comment"
         ],
         "replica_partition_keys": []
     },
@@ -139,7 +178,11 @@
             "no_w_id"
         ],
         "partition_keys": [],
-        "replicas": [],
+        "replicas": [
+            "no_o_id",
+            "no_d_id",
+            "no_w_id"
+        ],
         "replica_partition_keys": []
     },
     {
@@ -166,18 +209,22 @@
             "ol_quantity",
             "ol_delivery_d"
         ],
-        "partition_keys": [
-            
-        ],
+        "partition_keys": [],
         "replicas": [
             "ol_o_id",
             "ol_d_id",
             "ol_w_id",
+            "ol_number",
             "ol_i_id",
+            "ol_supply_w_id",
             "ol_delivery_d",
-            "ol_amount"
+            "ol_quantity",
+            "ol_amount",
+            "ol_dist_info"
         ],
-        "replica_partition_keys": ["ol_delivery_d"]
+        "replica_partition_keys": [
+            "ol_delivery_d"
+        ]
     },
     {
         "name": "orders",
@@ -188,7 +235,6 @@
             "o_c_id",
             "o_entry_d",
             "o_carrier_id",
-            "o_ol_cnt",
             "o_all_local"
         ],
         "partitionable_columns": [
@@ -202,30 +248,33 @@
             "o_all_local"
         ],
         "partition_keys": [
-            
+            "o_ol_cnt"
         ],
         "replicas": [
-          "o_id", 
-          "o_d_id",
-          "o_w_id",
-          "o_c_id",
-          "o_ol_cnt",
-          "o_entry_d"
+            "o_id",
+            "o_d_id",
+            "o_w_id",
+            "o_c_id",
+            "o_entry_d",
+            "o_carrier_id",
+            "o_all_local"
         ],
-        "replica_partition_keys": ["o_entry_d"]
+        "replica_partition_keys": [
+            "o_entry_d"
+        ]
     },
     {
         "name": "region",
         "columns": [
-            "r_regionkey",
-            "r_name",
             "r_comment"
         ],
         "partitionable_columns": [
             "r_regionkey"
         ],
         "partition_keys": [],
-        "replicas": [],
+        "replicas": [
+            "r_comment"
+        ],
         "replica_partition_keys": []
     },
     {
@@ -256,12 +305,15 @@
             "s_order_cnt",
             "s_remote_cnt"
         ],
-        "partition_keys": [
-            "s_ytd"
-        ],
+        "partition_keys": [],
         "replicas": [
             "s_i_id",
-            "s_w_id"
+            "s_w_id",
+            "s_quantity",
+            "s_ytd",
+            "s_order_cnt",
+            "s_remote_cnt",
+            "s_data"
         ],
         "replica_partition_keys": []
     },
@@ -282,6 +334,13 @@
         ],
         "partition_keys": [],
         "replicas": [
+            "s_suppkey",
+            "s_name",
+            "s_address",
+            "s_nationkey",
+            "s_phone",
+            "s_acctbal",
+            "s_comment"
         ],
         "replica_partition_keys": []
     },
@@ -303,6 +362,15 @@
         ],
         "partition_keys": [],
         "replicas": [
+            "w_id",
+            "w_name",
+            "w_street_1",
+            "w_street_2",
+            "w_city",
+            "w_state",
+            "w_zip",
+            "w_tax",
+            "w_ytd"
         ],
         "replica_partition_keys": []
     }
