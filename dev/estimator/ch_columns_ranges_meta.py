@@ -120,7 +120,7 @@ class Orders_columns:
         self.name = "orders"
         self.columns = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
         self.partitionable_columns = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
-        self.primary_keys = ["o_id"]
+        self.primary_keys = ["o_id", "o_d_id", "o_w_id"]
         self.columns_size =  [4, 4, 4, 4, 8, 4, 4, 4]
         self.partition_keys = []
         self.replicas = []
@@ -204,7 +204,7 @@ class History_columns:
         self.name = "history"
         self.columns = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date", "h_amount", "h_data"]
         self.columns_size =  [4, 4, 4, 4, 4, 8, 3, 49]
-        self.primary_keys = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id"]
+        self.primary_keys = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date"]
         self.partitionable_columns = ["h_c_id", "h_c_d_id", "h_c_w_id", "h_d_id", "h_w_id", "h_date"]
         self.partition_keys = []
         self.replicas = []
