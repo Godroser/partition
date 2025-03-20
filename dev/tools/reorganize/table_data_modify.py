@@ -103,7 +103,7 @@ def split_table_sql(table_name, replica_columns, partition_keys, replica_partiti
         file.write(sub_table2_sql)
         file.write("\n")
 
-    return sub_table2_sql, sub_table1_sql
+    return sub_table1_sql, sub_table2_sql
 
 def split_table_data(table_name, replica_columns):
     input_dir = "/data3/dzh/CH-data/ch"
@@ -268,8 +268,8 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
     
     if replica_columns:
         # 实现分表的建表语句, 加上分区的创建语句
-        # part1_sql是有列存的表, part2_sql是没有有列存的表
-        part2_sql, part1_sql = split_table_sql(table, replica_columns, partition_keys, replica_partition_keys)
+        # part1_sql是没有列存的表, part2_sql是有列存的表
+        part1_sql, part2_sql = split_table_sql(table, replica_columns, partition_keys, replica_partition_keys)
 
         # print("part1_sql, part2_sql:", part1_sql, part2_sql)
         # 生成分表的.sql数据文件
@@ -303,9 +303,9 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 print("Table {}_part2 is created!".format(table))                
 
                 # 设置副本
-                set_replica_sql = f"ALTER TABLE `ch_test`.`{table}_part1` SET TIFLASH REPLICA 1;"
+                set_replica_sql = f"ALTER TABLE `ch_test`.`{table}_part2` SET TIFLASH REPLICA 1;"
                 cur.execute(set_replica_sql)
-                print("Table {}_part1 replica is created!".format(table))
+                print("Table {}_part2 replica is created!".format(table))
 
         # load table_part data
         for file in sql_files:
@@ -386,7 +386,8 @@ if __name__ == "__main__":
     # 修改tables顺序
     # tables = [table_info['name'] for table_info in candidate]
     # tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
-    tables = ['order_line', 'orders']
+    # tables = ['order_line', 'orders']
+    tables = ['customer', 'district', 'item', 'new_order', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier']
 
     # 记录candidate里的replicas, partition_keys, replica_partition_keys
     replica_columns_dict = {table_info['name']: table_info['replicas'] for table_info in candidate}

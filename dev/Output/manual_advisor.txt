@@ -12,6 +12,7 @@
             "c_street_2",
             "c_city",
             "c_state",
+            "c_zip",
             "c_phone",
             "c_since",
             "c_credit",
@@ -99,8 +100,10 @@
             "h_c_d_id",
             "h_c_w_id",
             "h_d_id",
+            "h_w_id",
             "h_date",
-            "h_amount"
+            "h_amount",
+            "h_data"
         ],
         "partitionable_columns": [
             "h_c_id",
@@ -149,6 +152,7 @@
         "columns": [
             "n_name",
             "n_regionkey",
+            "n_nationkey",
             "n_comment"
         ],
         "partitionable_columns": [
@@ -235,7 +239,8 @@
             "o_c_id",
             "o_entry_d",
             "o_carrier_id",
-            "o_all_local"
+            "o_all_local",
+            "o_ol_cnt"
         ],
         "partitionable_columns": [
             "o_id",
@@ -266,6 +271,8 @@
     {
         "name": "region",
         "columns": [
+            "r_regionkey",
+            "r_name",
             "r_comment"
         ],
         "partitionable_columns": [
