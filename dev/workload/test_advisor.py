@@ -21,7 +21,7 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
       "port": config.TIDB_PORT,
       "user": config.TIDB_USER,
       "password": config.TIDB_PASSWORD,
-      "database": "ch_test", #config.TIDB_DB_NAME,
+      "database": "ch_bak", #config.TIDB_DB_NAME,
       "autocommit": autocommit,
       # mysql-connector-python will use C extension by default,
       # to make this example work on all platforms more easily,
@@ -63,7 +63,7 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
-    self.sql_file_path = 'workloadd_rewrite.sql'
+    self.sql_file_path = 'workloadd.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
     self.sql_date_mid = '2024-10-28 17:00:00'
@@ -143,4 +143,5 @@ def generate_ap(max_qry_cnt):
     print(wl_stats.query_lat[i])   
 
 if __name__ == '__main__':
+  # connection自定义测试的数据库
   generate_ap(100)

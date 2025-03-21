@@ -98,27 +98,93 @@ public class Main {
         }
     }
 
-    // 提取列名和表名
-    public static Set<String> extractIdentifierSql(String originalSql, Map<String, List<String>> originalTable, Map<String, List<String>> primaryKey, Map<String, List<String>> splitTables) throws Exception {
+    // // 提取列名和表名
+    // public static Set<String> extractIdentifierSql(String originalSql, Map<String, List<String>> originalTable, Map<String, List<String>> primaryKey, Map<String, List<String>> splitTables) throws Exception {
+
+    //     // 解析 SQL
+    //     SqlParser parser = SqlParser.create(originalSql);
+    //     SqlNode sqlNode = parser.parseQuery();
+
+    //     // 创建Identifier集合
+    //     Set<String> identifier_set = new HashSet<>(); 
+
+    //     // 自定义一个访问器来遍历语法树
+    //     SqlBasicVisitor<Void> visitor = new SqlBasicVisitor<Void>() {
+    //         @Override
+    //         public Void visit(SqlCall call) {
+    //             // System.out.println("Node type: " + call.getClass().getSimpleName());
+    //             // System.out.println("Operator: " + call.getOperator().getName());
+    //             // System.out.println("Operands: " + call.getOperandList());
+    //             // 递归访问子节点
+    //             for (SqlNode operand : call.getOperandList()) {
+    //                 if (operand != null) {
+    //                     System.out.println("operand: " + operand.toString());
+    //                 }
+                    
+    //                 if (operand instanceof SqlIdentifier){
+    //                     System.out.println("SqlIdentifier: " + operand);
+    //                     identifier_set.add(operand.toString());
+    //                 }
+    //                 if (operand != null) {
+    //                     operand.accept(this);
+    //                 }
+    //             }
+    //             return null;
+    //         }
+
+    //         @Override
+    //         public Void visit(SqlIdentifier identifier) {
+    //             // System.out.println("SqlIdentifier: " + identifier);
+    //             identifier_set.add(identifier.toString()); // 记录列名
+    //             return null;
+    //         }            
+    //     }; 
+
+    //     // 调用 accept 方法进行访问
+    //     sqlNode.accept(visitor);      
+
+    //     return identifier_set;
+    // }  
+
+    // 提取列名和表名，同时识别表的别名
+    public static Set<String> extractIdentifierSql(String originalSql, Map<String, List<String>> originalTable, Map<String, List<String>> primaryKey, Map<String, List<String>> splitTables, Map<String, List<String>> tableAliasMap) throws Exception {
 
         // 解析 SQL
         SqlParser parser = SqlParser.create(originalSql);
         SqlNode sqlNode = parser.parseQuery();
 
-        // 创建Identifier集合
-        Set<String> identifier_set = new HashSet<>(); 
+        // 创建 Identifier 集合
+        Set<String> identifier_set = new HashSet<>();
 
         // 自定义一个访问器来遍历语法树
         SqlBasicVisitor<Void> visitor = new SqlBasicVisitor<Void>() {
             @Override
             public Void visit(SqlCall call) {
-                // System.out.println("Node type: " + call.getClass().getSimpleName());
-                // System.out.println("Operator: " + call.getOperator().getName());
-                // System.out.println("Operands: " + call.getOperandList());
                 // 递归访问子节点
                 for (SqlNode operand : call.getOperandList()) {
-                    // System.out.println(operand.toString());
-                    if (operand instanceof SqlIdentifier){
+                    if (operand != null) {
+                        // System.out.println("operand: " + operand.toString());
+                    }
+
+                    // 检查是否是表和别名的形式
+                    if (operand instanceof SqlBasicCall) {
+                        SqlBasicCall basicCall = (SqlBasicCall) operand;
+                        if ("AS".equalsIgnoreCase(basicCall.getOperator().getName()) && basicCall.getOperandList().size() == 2) {
+                            SqlNode tableNode = basicCall.getOperandList().get(0);
+                            SqlNode aliasNode = basicCall.getOperandList().get(1);
+
+                            if (tableNode instanceof SqlIdentifier && aliasNode instanceof SqlIdentifier) {
+                                String tableName = ((SqlIdentifier) tableNode).toString();
+                                String aliasName = ((SqlIdentifier) aliasNode).toString();
+
+                                // 将表名和别名加入 Map
+                                tableAliasMap.computeIfAbsent(tableName, k -> new ArrayList<>()).add(aliasName);
+                                // System.out.println("Found alias: " + tableName + " AS " + aliasName);
+                            }
+                        }
+                    }
+
+                    if (operand instanceof SqlIdentifier) {
                         // System.out.println("SqlIdentifier: " + operand);
                         identifier_set.add(operand.toString());
                     }
@@ -131,17 +197,19 @@ public class Main {
 
             @Override
             public Void visit(SqlIdentifier identifier) {
-                // System.out.println("SqlIdentifier: " + identifier);
                 identifier_set.add(identifier.toString()); // 记录列名
                 return null;
-            }            
-        }; 
+            }
+        };
 
         // 调用 accept 方法进行访问
-        sqlNode.accept(visitor);      
+        sqlNode.accept(visitor);
+
+        // System.out.println("identifier_set: " + identifier_set);
+        // System.out.println("tableAliasMap: " + tableAliasMap);
 
         return identifier_set;
-    }  
+    }
 
     public static boolean containsIgnoreCase(Collection<String> collection, String target) {
         for (String item : collection) {
@@ -276,9 +344,13 @@ public class Main {
     }
 
     public static String rewriteSql(String originalSql, Map<String, List<String>> originalTables, Map<String, List<String>> primaryKeys, Map<String, List<String>> splitTables) throws Exception {
+        // 创建表到别名的 Map
+        Map<String, List<String>> tableAliasMap = new HashMap<>();
+
         // 提取列名和表名
-        Set<String> identifierSet = extractIdentifierSql(originalSql, originalTables, primaryKeys, splitTables);
-        System.out.println("identifier_set: " + identifierSet);
+        Set<String> identifierSet = extractIdentifierSql(originalSql, originalTables, primaryKeys, splitTables, tableAliasMap);
+        // System.out.println("identifier_set: " + identifierSet);
+        System.out.println("tableAliasMap: " + tableAliasMap);
 
         // 找到 column 到 splitTable 的 Map
         Map<String, Set<String>> columnTableMap = findColumnsInTables(identifierSet, originalTables, primaryKeys, splitTables);
@@ -349,42 +421,87 @@ public class Main {
                     StringBuilder joinCondition = new StringBuilder();
                     for (int i = 0; i < primaryKeyColumns.size(); i++) {
                         if (i > 0) joinCondition.append(" AND ");
-                        joinCondition.append(splitTable1).append(".").append(primaryKeyColumns.get(i)).append(" = ").append(splitTable2).append(".").append(primaryKeyColumns.get(i));
+                        // 如果有别名, joinCondition使用别名
+                        if (containsKeyIgnoreCase(tableAliasMap, table)) {
+                            joinCondition.append(tableAliasMap.get(table.toUpperCase()).get(0)).append(".").append(primaryKeyColumns.get(i)).append(" = ").append(splitTable2).append(".").append(primaryKeyColumns.get(i));
+                        } else {
+                            joinCondition.append(splitTable1).append(".").append(primaryKeyColumns.get(i)).append(" = ").append(splitTable2).append(".").append(primaryKeyColumns.get(i));
+                        }
                     }
                     joinClauses.put(Arrays.asList(splitTable1, splitTable2), joinCondition);
                 }
             }
         }
+        // System.out.println("joinClauses: " + joinClauses);
 
         // 5. 替换原 SQL 中的列名
         for (String column : columnTableMap.keySet()) {
-            Set<String> splitTablesValueSet = columnTableMap.get(column);
-            if (splitTablesValueSet.size() == 1) {  // 只对应一个子表
-                String splitTable = splitTablesValueSet.iterator().next();
-
-                // 列名替换的时候有一个表别名的问题, 如果原始sql中有表的别名, 那么新sql中的列名需要加上表的别名
-                // 如果splitTable是part2, 如果前面有表的别名就不替换了(新sql里别名相当于是part2的别名), 如果splitTable是part1, 需要连同column前面的表的别名一起替换
-                if (splitTable.endsWith("_part2")) {
-                    originalSql = replaceIgnoreCaseColumn(originalSql, column, splitTable + "." + column);
-                }
-                else if (splitTable.endsWith("_part1")) {
-                    originalSql = replaceIgnoreCaseWithPrefix(originalSql, column, splitTable + "." + column);
-                }
-                else {
-                    System.out.println("Invalid splitTable: " + splitTable);
-                }
-                
-            } else if (splitTablesValueSet.size() > 1) { // 对应多个子表
-                for (String splitTable : splitTablesValueSet) { //这里的splitTable默认是part2
-                    originalSql = replaceIgnoreCaseColumn(originalSql, column, splitTable + "." + column);
+            // 获取列所在的原表
+            String originalTable = "";
+            for (Map.Entry<String, List<String>> entry : originalTables.entrySet()) {
+                String tableName = entry.getKey();
+                List<String> columns = entry.getValue();
+        
+                // 检查列是否属于当前表
+                if (columns.stream().anyMatch(c -> c.equalsIgnoreCase(column))) {
+                    originalTable = tableName; // 返回找到的原表名
                     break;
-                    // if (originalSql.contains(splitTable + "." + column)) {
-                    //     originalSql = replaceIgnoreCase(originalSql, column, splitTable + "." + column);
-                    //     break;
-                    // }
                 }
-                // System.out.println("splitTablesValueSet.size() > 1 originalSql: " + originalSql);
-            } 
+            }  
+            // 获取原表对应的分表
+            Set<String> splitTablesValueSet = tableToSplitTablesMap.get(originalTable); 
+
+            // 列名替换的时候有一个表别名的问题, 如果原始sql中有表的别名, 那么新sql中的列名需要加上表的别名
+            // 如果只涉及一个分表或者没有分表，就不用替换了直接用原来的别名；如果涉及两个分表, 如果这个列在table_part2就不替换了, 如果这个列在table_part1, 就替换成table_part1.column  
+
+            // 不涉及分表或只涉及一个分表
+            if (splitTablesValueSet.size() == 1) {  
+                continue; // 无需替换
+            }
+            // 如果column是主键, 任何一个不替换
+            if (primaryKeys.values().stream().anyMatch(pk -> pk.stream().anyMatch(f -> f.equalsIgnoreCase(column)))) {
+                continue;
+            }
+
+            // 获取列所在的分表
+            splitTablesValueSet = columnTableMap.get(column);
+            for (String splitTable : splitTablesValueSet) {
+                if (splitTable.endsWith("_part2")) {  // 列在 table_part2
+                    // 检测列的前面是否有表的别名
+                    String regex = "(?i)(\\b\\w+\\.)?" + column + "\\b";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(originalSql);
+
+                    StringBuffer result = new StringBuffer();
+                    while (matcher.find()) {
+                        String prefix = matcher.group(1); // 获取前缀（如果存在）
+                        if (prefix != null) {
+                            matcher.appendReplacement(result, matcher.group()); // 保持原样
+                        } else {
+                            matcher.appendReplacement(result, splitTable + "." + column); // 替换成 table_part2.列名
+                        }
+                    }
+                    matcher.appendTail(result);
+                    originalSql = result.toString();
+                } else if (splitTable.endsWith("_part1")) {  // 列在 table_part1
+                    // 检测列的前面是否有表的别名
+                    String regex = "(?i)(\\b\\w+\\.)?" + column + "\\b";
+                    Pattern pattern = Pattern.compile(regex);
+                    Matcher matcher = pattern.matcher(originalSql);
+
+                    StringBuffer result = new StringBuffer();
+                    while (matcher.find()) {
+                        String prefix = matcher.group(1); // 获取前缀（如果存在）
+                        if (prefix != null) {
+                            matcher.appendReplacement(result, splitTable + "." + column); // 连同别名一起替换
+                        } else {
+                            matcher.appendReplacement(result, splitTable + "." + column); // 替换成 table_part1.列名
+                        }
+                    }
+                    matcher.appendTail(result);
+                    originalSql = result.toString();
+                }
+            }
         }
 
         // 6. 添加 JOIN ON 字段
@@ -394,8 +511,9 @@ public class Main {
             String splitTable2 = tables.get(1);
             if (originalSql.toUpperCase().contains("WHERE")) {
                 originalSql = originalSql.replaceFirst("(?i)WHERE", " JOIN " + splitTable2 + " ON " + joinCondition + " WHERE");
-            } else {
-                originalSql += " JOIN " + splitTable2 + " ON " + joinCondition;
+            } else if (originalSql.toUpperCase().contains("GROUP"))
+            {
+                originalSql = originalSql.replaceFirst("(?i)GROUP", " JOIN " + splitTable2 + " ON " + joinCondition + " GROUP");
             }
         }
 
@@ -448,7 +566,7 @@ public class Main {
                 if (!sql.trim().isEmpty()) {
                     try {
                         String rewrittenSql = rewriteSql(sql, originalTables, primaryKeys, splitTables);
-                        writer.write(rewrittenSql);
+                        writer.write(rewrittenSql + ";");
                         writer.newLine();
                     } catch (Exception e) {
                         System.err.println("Error rewriting SQL: " + sql);
@@ -488,7 +606,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        String originalSql = "SELECT o.o_ol_cnt, COUNT(*) AS order_count FROM orders o JOIN order_line ol ON o.o_id = ol.ol_o_id AND o.o_w_id = ol.ol_w_id AND o.o_d_id = ol.ol_d_id AND ol.ol_delivery_d >= o.o_entry_d WHERE o.o_entry_d >= '2024-10-28 17:00:00' AND o.o_entry_d < '2025-10-23 17:00:00' GROUP BY o.o_ol_cnt ORDER BY o.o_ol_cnt";
+        String originalSql = "SELECT orders.o_ol_cnt, SUM(CASE WHEN orders.o_carrier_id = 1 OR orders.o_carrier_id = 2 THEN 1 ELSE 0 END) AS high_line_count, SUM(CASE WHEN orders.o_carrier_id <> 1 AND orders.o_carrier_id <> 2 THEN 1 ELSE 0 END) AS low_line_count FROM orders JOIN order_line ON order_line.ol_w_id = orders.o_w_id AND order_line.ol_d_id = orders.o_d_id AND order_line.ol_o_id = orders.o_id WHERE orders.o_entry_d <= order_line.ol_delivery_d AND order_line.ol_delivery_d < '2025-10-23 17:00:00' GROUP BY orders.o_ol_cnt ORDER BY     orders.o_ol_cnt";
         // "select   ol_o_id, ol_w_id, ol_d_id,sum(ol_amount) as revenue, o_entry_d from customer, new_order, orders, order_line where c_state like 'A%' and c_id = o_c_id and c_w_id = o_w_id and c_d_id = o_d_id and no_w_id = o_w_id and no_d_id = o_d_id and no_o_id = o_id and ol_w_id = o_w_id and ol_d_id = o_d_id and ol_o_id = o_id and o_entry_d > '2024-10-28 17:00:00' group by ol_o_id, ol_w_id, ol_d_id, o_entry_d order by revenue desc, o_entry_d";
         //"select   ol_number,  sum(ol_quantity) as sum_qty,  sum(ol_amount) as sum_amount,  avg(ol_quantity) as avg_qty,  avg(ol_amount) as avg_amount,  count(*) as count_order from order_line where ol_delivery_d > '2024-10-28 17:00:00' group by ol_number order by ol_number";
         // "select   ol_o_id, ol_w_id, ol_d_id,sum(ol_amount) as revenue, o_entry_d from customer, new_order, orders, order_line where c_state like 'A%' and c_id = o_c_id and c_w_id = o_w_id and c_d_id = o_d_id and no_w_id = o_w_id and no_d_id = o_d_id and no_o_id = o_id and ol_w_id = o_w_id and ol_d_id = o_d_id and ol_o_id = o_id and o_entry_d > '2024-10-28 17:00:00' group by ol_o_id, ol_w_id, ol_d_id, o_entry_d order by revenue desc, o_entry_d";
@@ -511,7 +629,7 @@ public class Main {
 
 
         // String inputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd.sql";
-        // String outputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd_rewrite_0319.sql";
+        // String outputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd_rewrite_0321.sql";
         // processSqlFile(inputFilePath, outputFilePath, originalTables, primaryKeys, splitTables);
     }
 }
