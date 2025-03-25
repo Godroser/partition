@@ -33,7 +33,8 @@ tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑�
            workload_analyzer.py 是根据负载分析表的每一个列的重要性, 数值越大越重要, 越应该被选成replica, 在possible action中的位置越靠前
            workloadd.sql 是之前能跑的sql文件
            workloadd_rewrite.sql 是经过sql重写后的文件
-           test.py 是单独测试22条sql的文件
+           test_advisor.py 是单独测试22条sql的文件
+           /sql_rewrite 是sql重写的代码, 使用maven管理java项目, Main.java是入口文件
 analyzer.py 是解析sql的谓词 join等条件的
 CH-connector.py 连接tidb的脚本
 clustering.py VGAE的聚类

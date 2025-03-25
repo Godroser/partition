@@ -77,7 +77,7 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
-    self.sql_file_path = 'workload.sql'
+    self.sql_file_path = 'workloadd.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
     self.sql_date_mid = '2024-10-28 17:00:00'
@@ -780,13 +780,13 @@ def generate_tp(max_txn_cnt):
   time_format = '%Y-%m-%d %H:%M:%S'
 
   end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
-  time.sleep(3)  ##not sure the imte interval
-  while True:
-    end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
-    if end_count_tmp == end_count:
-      break
-    else:
-      end_count = end_count_tmp
+  # time.sleep(3)  ##not sure the imte interval
+  # while True:
+  #   end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
+  #   if end_count_tmp == end_count:
+  #     break
+  #   else:
+  #     end_count = end_count_tmp
   start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
   end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
   print(start_sync_time)
@@ -945,27 +945,27 @@ def test_ap(max_qry_cnt):
       sql_script = file.read()
       sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
 
-  sqls[0] = sqls[0].format(wl_param.sql_date_mid)
-  sqls[2] = sqls[2].format(wl_param.sql_date_mid)
-  sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
-  sqls[4] = sqls[4].format(wl_param.sql_date_mid)
-  sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
-  sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
-  sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  # sqls[0] = sqls[0].format(wl_param.sql_date_mid)
+  # sqls[2] = sqls[2].format(wl_param.sql_date_mid)
+  # sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[4] = sqls[4].format(wl_param.sql_date_mid)
+  # sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  # sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
   
-  sqls[9] = sqls[9].format(wl_param.sql_date_mid)
+  # sqls[9] = sqls[9].format(wl_param.sql_date_mid)
   
-  sqls[11] = sqls[11].format(wl_param.sql_date_max)
+  # sqls[11] = sqls[11].format(wl_param.sql_date_max)
 
-  sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
-  sqls[14] = sqls[14].format(wl_param.sql_date_mid)
+  # sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[14] = sqls[14].format(wl_param.sql_date_mid)
   
-  sqls[19] = sqls[19].format(wl_param.sql_date_mid)
+  # sqls[19] = sqls[19].format(wl_param.sql_date_mid)
 
 
-  with open('workloadd.sql', 'w', encoding='utf-8') as file:
-    for sql in sqls:
-      file.write(sql + '\n')     
+  # with open('workloadd.sql', 'w', encoding='utf-8') as file:
+  #   for sql in sqls:
+  #     file.write(sql + '\n')     
 
   while True:  
     with get_connection(autocommit=False) as connection:
@@ -1008,13 +1008,13 @@ if __name__ == '__main__':
   #tp_wl_generator = TP_Workload_Genrator(4)
 
   #tp_wl_generator.generate_new_order()
-  #tp_wl_generator.generate_payment()
+  # tp_wl_generator.generate_payment()
   #tp_wl_generator.generate_order_status()
   #tp_wl_generator.generate_delivery()
   #tp_wl_generator.generate_stock_level()
   
   #generate_tp(10)
   # generate_ap(200)
-  # generate_workload(100, -1)
+  # generate_workload(100, 1)
 
-  test_ap(200)
+  test_ap(100)

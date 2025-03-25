@@ -53,8 +53,8 @@ def load_data(table):
   result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
   # search for matching data files
-  data_dir = "/data3/dzh/CH-data"
-  prefix = "tpcc." + table + "."
+  data_dir = "/data3/dzh/CH-data/ch"
+  prefix = "ch_bak." + table + "."
   extension = ".sql"
   matching_files = []
   try:
@@ -105,8 +105,7 @@ if __name__ == "__main__":
     `c_ytd_payment` decimal(12,2) DEFAULT NULL,
     `c_payment_cnt` int(11) DEFAULT NULL,
     `c_delivery_cnt` int(11) DEFAULT NULL,
-    `c_data` varchar(500) DEFAULT NULL,
-    KEY `idx_customer` (`c_w_id`,`c_d_id`,`c_last`,`c_first`)
+    `c_data` varchar(500) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   """
 
@@ -135,9 +134,7 @@ if __name__ == "__main__":
     `h_w_id` int(11) NOT NULL,
     `h_date` datetime DEFAULT NULL,
     `h_amount` decimal(6,2) DEFAULT NULL,
-    `h_data` varchar(24) DEFAULT NULL,
-    KEY `idx_h_w_id` (`h_w_id`),
-    KEY `idx_h_c_w_id` (`h_c_w_id`)
+    `h_data` varchar(24) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
   """
 
@@ -278,4 +275,16 @@ if __name__ == "__main__":
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin  
   """
 
-  repartition_table_and_load_data('warehouse', sql_warehouse)
+  # repartition_table_and_load_data('warehouse', sql_warehouse)
+  # load_data('warehouse')
+  # load_data('district')
+  # load_data('customer')
+  # load_data('history')
+  # load_data('item')
+  # load_data('nation')
+  # load_data('new_order')
+  load_data('order_line')
+  load_data('orders')
+  # load_data('region')
+  # load_data('stock')
+  # load_data('supplier')
