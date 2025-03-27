@@ -1,2 +1,3 @@
 dev/log/
 dev/tools/reorganize/data/
+dev/workload/sql_rewrite/calcite-sql-rewrite/target

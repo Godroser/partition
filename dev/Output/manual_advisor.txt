@@ -253,7 +253,6 @@
             "o_all_local"
         ],
         "partition_keys": [
-            "o_ol_cnt"
         ],
         "replicas": [
             "o_id",
@@ -262,6 +261,7 @@
             "o_c_id",
             "o_entry_d",
             "o_carrier_id",
+            "o_ol_cnt",
             "o_all_local"
         ],
         "replica_partition_keys": [

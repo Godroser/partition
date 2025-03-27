@@ -15,7 +15,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.regex.*;
 
-public class Main {
+
+public class Pelton {
     public static void printSqlNodeStructure(SqlNode node, int level) {
         if (node == null) return;
     
@@ -607,9 +608,6 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         // String originalSql = "SELECT orders.o_ol_cnt, SUM(CASE WHEN orders.o_carrier_id = 1 OR orders.o_carrier_id = 2 THEN 1 ELSE 0 END) AS high_line_count, SUM(CASE WHEN orders.o_carrier_id <> 1 AND orders.o_carrier_id <> 2 THEN 1 ELSE 0 END) AS low_line_count FROM orders JOIN order_line ON order_line.ol_w_id = orders.o_w_id AND order_line.ol_d_id = orders.o_d_id AND order_line.ol_o_id = orders.o_id WHERE orders.o_entry_d <= order_line.ol_delivery_d AND order_line.ol_delivery_d < '2025-10-23 17:00:00' GROUP BY orders.o_ol_cnt ORDER BY     orders.o_ol_cnt";
-        // "select   ol_o_id, ol_w_id, ol_d_id,sum(ol_amount) as revenue, o_entry_d from customer, new_order, orders, order_line where c_state like 'A%' and c_id = o_c_id and c_w_id = o_w_id and c_d_id = o_d_id and no_w_id = o_w_id and no_d_id = o_d_id and no_o_id = o_id and ol_w_id = o_w_id and ol_d_id = o_d_id and ol_o_id = o_id and o_entry_d > '2024-10-28 17:00:00' group by ol_o_id, ol_w_id, ol_d_id, o_entry_d order by revenue desc, o_entry_d";
-        //"select   ol_number,  sum(ol_quantity) as sum_qty,  sum(ol_amount) as sum_amount,  avg(ol_quantity) as avg_qty,  avg(ol_amount) as avg_amount,  count(*) as count_order from order_line where ol_delivery_d > '2024-10-28 17:00:00' group by ol_number order by ol_number";
-        // "select   ol_o_id, ol_w_id, ol_d_id,sum(ol_amount) as revenue, o_entry_d from customer, new_order, orders, order_line where c_state like 'A%' and c_id = o_c_id and c_w_id = o_w_id and c_d_id = o_d_id and no_w_id = o_w_id and no_d_id = o_d_id and no_o_id = o_id and ol_w_id = o_w_id and ol_d_id = o_d_id and ol_o_id = o_id and o_entry_d > '2024-10-28 17:00:00' group by ol_o_id, ol_w_id, ol_d_id, o_entry_d order by revenue desc, o_entry_d";
         Map<String, List<String>> originalTables = new HashMap<>();
         Map<String, List<String>> primaryKeys = new HashMap<>();
         init_table(originalTables, primaryKeys);
@@ -620,16 +618,36 @@ public class Main {
         // splitTables.put("order_line_part2", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_amount", "ol_dist_info"));
 
         // 添加splitTables信息
-        String AdvisorPath = "/data3/dzh/project/grep/dev/Output/manual_advisor.txt";
-        populateSplitTables(AdvisorPath, splitTables, primaryKeys);
-        // System.out.println("splitTables: " + splitTables);
+        splitTables.put("customer_part2", Arrays.asList("c_id", "c_d_id", "c_w_id", "c_first", "c_middle", "c_street_1", "c_street_2", "c_zip", "c_since", "c_credit", "c_credit_lim", "c_discount", "c_ytd_payment", "c_payment_cnt", "c_delivery_cnt", "c_data"));        
+        splitTables.put("customer_part1", Arrays.asList("c_id", "c_d_id", "c_w_id", "c_last", "c_city", "c_state", "c_phone", "c_balance"));
+        
+        splitTables.put("item_part2", Arrays.asList("i_id", "i_im_id", "i_name", "i_price", "i_data"));
+        splitTables.put("item_part1", Arrays.asList("i_id", "i_im_id"));
+        
+        splitTables.put("orders_part2", Arrays.asList("o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_ol_cnt"));
+        splitTables.put("orders_part1", Arrays.asList("o_id", "o_d_id", "o_w_id", "o_carrier_id", "o_all_local"));
+        
+        splitTables.put("order_line_part2", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount"));
+        splitTables.put("order_line_part1", Arrays.asList("ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_dist_info"));
+
+        splitTables.put("stock_part2", Arrays.asList("s_i_id", "s_w_id", "s_order_cnt"));
+        splitTables.put("stock_part1", Arrays.asList("s_i_id", "s_w_id", "s_quantity", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_ytd", "s_remote_cnt", "s_data"));
+
+        splitTables.put("nation_part2", Arrays.asList("n_nationkey", "n_name", "n_regionkey"));
+        splitTables.put("nation_part1", Arrays.asList("n_nationkey", "n_comment"));
+
+        splitTables.put("supplier_part2", Arrays.asList("s_suppkey", "s_name", "s_nationkey", "s_phone", "s_comment"));
+        splitTables.put("supplier_part1", Arrays.asList("s_suppkey", "s_address", "s_acctbal"));
+
+        splitTables.put("region_part2", Arrays.asList("r_regionkey", "r_name"));
+        splitTables.put("region_part1", Arrays.asList("r_regionkey", "r_comment"));
 
         // String rewrittenSql = rewriteSql(originalSql, originalTables, primaryKeys, splitTables);
         // System.out.println("Rewritten SQL: " + rewrittenSql);
 
 
         String inputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd.sql";
-        String outputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd_rewrite_0325.sql";
+        String outputFilePath = "/data3/dzh/project/grep/dev/workload/workloadd_rewrite_pelton_0325.sql";
         processSqlFile(inputFilePath, outputFilePath, originalTables, primaryKeys, splitTables);
-    }
+    }    
 }
