@@ -522,7 +522,7 @@ def search_table_candidate(table_meta, table_columns, qparams_list, table_idx, c
 
     # 初始状态
     initial_candidate = {
-        "replicas": columns,
+        "replicas": [],
         "partition_keys": [],
         "replica_partition_keys": []
     }
@@ -572,6 +572,14 @@ if __name__ == "__main__":
     table_operator_costs = calculate_table_operator_costs(query_operators_costs, query_operators)
     print("Table operator costs:", table_operator_costs)
 
+    table_candidates = []
     for table_idx in range(len(tables)):
         table_candidate = search_table_candidate(table_meta, table_columns,qparams_list, table_idx, candidates)
+        table_candidates.append(table_candidate)
         print(f"Table {tables[table_idx]['name']}: {table_candidate}")
+
+    # 使用 json.dumps 格式化输出
+    formatted_output = json.dumps(table_candidates, indent=4, ensure_ascii=False)
+    # 将格式化后的输出写入到文件
+    with open('/data3/dzh/project/grep/dev/Output/proteus_advisor.txt', 'w', encoding='utf-8') as f:
+        f.write(formatted_output)    

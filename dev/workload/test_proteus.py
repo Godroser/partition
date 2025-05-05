@@ -22,7 +22,7 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
     "port": config.TIDB_PORT,
     "user": config.TIDB_USER,
     "password": config.TIDB_PASSWORD,
-    "database": "ch_test", #config.TIDB_DB_NAME,
+    "database": "proteus", #config.TIDB_DB_NAME,
     "autocommit": autocommit,
     # mysql-connector-python will use C extension by default,
     # to make this example work on all platforms more easily,
@@ -62,7 +62,7 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
-    self.sql_file_path = 'workloadd_rewrite_0325.sql'
+    self.sql_file_path = '/data3/dzh/project/grep/dev/workload/workloadd_rewrite_proteus_0327.sql'
     # self.sql_file_path = 'workloadd.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
@@ -204,7 +204,7 @@ class TP_Workload_Genrator:
         sql_new_order1 = """
           SET @d_next_o_id =
           (SELECT d_next_o_id 
-          FROM district_part2 
+          FROM district_part1 
           WHERE d_id = {} AND d_w_id = {});
         """.format(d_id, w_id)
         #print(sql_new_order1)
@@ -212,7 +212,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_new_order1)
 
         sql_new_order2="""
-          UPDATE district_part2 
+          UPDATE district_part1 
           SET d_next_o_id = d_next_o_id + 1 
           WHERE d_id = {} AND d_w_id = {};
         """.format(d_id, w_id)
@@ -222,18 +222,17 @@ class TP_Workload_Genrator:
 
 
         #####o_all_local ??
-        sql_new_order3="""
-          INSERT INTO orders_part2 (o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local, o_id, o_d_id, o_w_id)
-          VALUES ({}, NOW(), NULL, 1, {}, @d_next_o_id, {}, {});
-        """.format(c_id, o_ol_cnt, d_id, w_id)
+        sql_new_order3 = """
+          INSERT INTO orders_part1 (o_id, o_d_id, o_w_id, o_c_id)
+          VALUES (@d_next_o_id, {}, {}, {});
+        """.format(d_id, w_id, c_id)
         cur.execute(sql_new_order3) 
 
         sql_new_order3="""
-          INSERT INTO orders_part1  (o_id, o_d_id, o_w_id)
-          VALUES (@d_next_o_id, {}, {});
-        """.format(d_id, w_id, o_ol_cnt)
-        cur.execute(sql_new_order3)         
-
+          INSERT INTO orders_part2 (o_entry_d, o_carrier_id, o_ol_cnt, o_all_local, o_id, o_d_id, o_w_id)
+          VALUES (NOW(), NULL, 1, {}, @d_next_o_id, {}, {});
+        """.format(o_ol_cnt, d_id, w_id)
+        cur.execute(sql_new_order3)        
 
         sql_new_order4="""
           INSERT INTO new_order_part2 (no_o_id, no_d_id, no_w_id)
@@ -276,17 +275,33 @@ class TP_Workload_Genrator:
           if is_local_new_order < o_all_local: ## local warehouse
             sql_new_order7 = """
               UPDATE stock_part2
-              SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1
+              SET s_quantity = {}
               WHERE s_w_id = {} AND s_i_id = {};
-            """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
+            """.format(s_quantity, ol_supply_w_id[i], ol_i_id[i])
+            cur.execute(sql_new_order7)
+
+            sql_new_order7 = """
+              UPDATE stock_part1
+              SET s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1
+              WHERE s_w_id = {} AND s_i_id = {};
+            """.format(ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
+            cur.execute(sql_new_order7)
           else:   ## remote warehouse
             sql_new_order7 = """
               UPDATE stock_part2
-              SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1, s_remote_cnt = s_remote_cnt + 1
+              SET s_quantity = {}
               WHERE s_w_id = {} AND s_i_id = {};
-            """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
+            """.format(s_quantity, ol_supply_w_id[i], ol_i_id[i])
+            cur.execute(sql_new_order7)
+
+            sql_new_order7 = """
+              UPDATE stock_part1
+              SET s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1, s_remote_cnt = s_remote_cnt + 1
+              WHERE s_w_id = {} AND s_i_id = {};
+            """.format(ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
+            cur.execute(sql_new_order7)
           #print(sql_new_order7)
-          cur.execute(sql_new_order7)
+          # cur.execute(sql_new_order7)
 
           sql_new_order8 = """
             SET @i_price =
@@ -304,10 +319,15 @@ class TP_Workload_Genrator:
 
           ol_dist_info = "".join(random.choices(string.ascii_uppercase, k=24))
           sql_new_order10 = """
-          INSERT INTO order_line_part2 (ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info, ol_o_id, ol_d_id, ol_w_id, ol_number)
-          VALUES ({}, {}, NULL, {}, {}, '{}', @d_next_o_id, {}, {}, {});
-          """.format(ol_i_id[i], ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ol_dist_info, d_id, w_id, i+1)
-          #print(sql_new_order10)
+          INSERT INTO order_line_part1 (ol_o_id, ol_d_id, ol_w_id, ol_number, ol_i_id)
+          VALUES (@d_next_o_id, {}, {}, {}, {});
+          """.format(ol_i_id[i], d_id, w_id, i+1, ol_i_id[i])
+          cur.execute(sql_new_order10)
+
+          sql_new_order10 = """
+          INSERT INTO order_line_part2 (ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info, ol_o_id, ol_d_id, ol_w_id, ol_number)
+          VALUES ({}, NULL, {}, {}, '{}', @d_next_o_id, {}, {}, {});
+          """.format(ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ol_dist_info, d_id, w_id, i+1)
           cur.execute(sql_new_order10)
 
 
@@ -433,17 +453,21 @@ class TP_Workload_Genrator:
         cur.execute("start transaction;")   
 
         sql_payment0 = """
-          SELECT c_id, c_balance, c_ytd_payment, c_payment_cnt
-          FROM customer_part2
-          WHERE c_w_id = {}
-            AND c_d_id = {}
-          ORDER BY c_first;
+          SELECT c1.c_id, c1.c_balance, c1.c_ytd_payment, c1.c_payment_cnt
+          FROM customer_part1 c1
+          JOIN customer_part2 c2
+          ON c1.c_id = c2.c_id
+          AND c1.c_w_id = c2.c_w_id
+          AND c1.c_d_id = c2.c_d_id
+          WHERE c1.c_w_id = {}
+            AND c2.c_d_id = {}
+          ORDER BY c2.c_first;
         """.format(c_w_id, c_d_id)
         cur.execute(sql_payment0)
         cur.fetchall()
         
         sql_payment1 = """
-          UPDATE customer_part2
+          UPDATE customer_part1
           SET c_balance = c_balance - {},
               c_ytd_payment = c_ytd_payment + {},
               c_payment_cnt = c_payment_cnt + 1
@@ -455,7 +479,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_payment1)
 
         sql_payment2 = """
-          UPDATE district_part2
+          UPDATE district_part1
           SET d_ytd = d_ytd + {}
           WHERE d_w_id = {}
             AND d_id = {};
@@ -464,7 +488,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_payment2)
 
         sql_payment3 = """
-          UPDATE warehouse_part2
+          UPDATE warehouse_part1
           SET w_ytd = w_ytd + {}
           WHERE w_id = {};
         """.format(payment_amount, w_id)
@@ -477,16 +501,16 @@ class TP_Workload_Genrator:
         h_data = ''.join(random.choices(characters, k=24))
 
         sql_payment4 = """
-          INSERT INTO history_part1 (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_data)
-          VALUES ({}, {}, {}, {}, {}, NOW(), '{}');
-        """.format(c_id, c_d_id, c_w_id, d_id, w_id, h_data)
+          INSERT INTO history_part1 (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
+          VALUES ({}, {}, {}, {}, {}, NOW(), {}, '{}');
+        """.format(c_id, c_d_id, c_w_id, d_id, w_id, payment_amount, h_data)
         #print(sql_payment4)
         cur.execute(sql_payment4)
 
         sql_payment4 = """
-          INSERT INTO history_part2 (h_amount, h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date)
-          VALUES ({}, {}, {}, {}, {}, {}, NOW());
-        """.format(payment_amount, c_id, c_d_id, c_w_id, d_id, w_id)
+          INSERT INTO history_part2 (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date)
+          VALUES ({}, {}, {}, {}, {}, NOW());
+        """.format(c_id, c_d_id, c_w_id, d_id, w_id)
         #print(sql_payment4)
         cur.execute(sql_payment4)        
 
@@ -535,22 +559,30 @@ class TP_Workload_Genrator:
     with get_connection(autocommit=False) as connection:
       with connection.cursor() as cur: 
         cur.execute("start transaction;")   
+        sql_order_status1 = """
+          SELECT c_id, c_balance
+          FROM customer_part1
+          WHERE c_w_id = {}
+            AND c_d_id = {}
+            AND c_id = {};
+        """.format(c_w_id, c_d_id, c_id)
+        cur.execute(sql_order_status1)
+        cur.fetchall()
 
         sql_order_status1 = """
-          SELECT c_id, c_balance, c_first, c_middle, c_last
+          SELECT c_first, c_middle, c_last
           FROM customer_part2
           WHERE c_w_id = {}
             AND c_d_id = {}
             AND c_id = {};
         """.format(c_w_id, c_d_id, c_id)
-        #print(sql_order_status1)
-        cur.execute(sql_order_status1)
+        cur.execute(sql_order_status1)        
         cur.fetchall()
 
         sql_order_status2 = """
           SET @o_id =
           (SELECT o_id
-          FROM orders_part2
+          FROM orders_part1
           WHERE o_w_id = {}
             AND o_d_id = {}
             AND o_c_id = {}
@@ -562,13 +594,22 @@ class TP_Workload_Genrator:
         cur.fetchall()
 
         sql_order_status3 = """
-          SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d
+          SELECT ol_i_id
+          FROM order_line_part1
+          WHERE ol_w_id = {}
+            AND ol_d_id = {}
+            AND ol_o_id = @o_id;
+        """.format(c_w_id, c_d_id)
+        cur.execute(sql_order_status3)
+        cur.fetchall()
+
+        sql_order_status3 = """
+          SELECT ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d
           FROM order_line_part2
           WHERE ol_w_id = {}
             AND ol_d_id = {}
             AND ol_o_id = @o_id;
         """.format(c_w_id, c_d_id)
-        #print(sql_order_status3)
         cur.execute(sql_order_status3)
         cur.fetchall()
 
@@ -652,13 +693,13 @@ class TP_Workload_Genrator:
         cur.execute(sql_delivery4)
 
         sql_delivery5 = """
-          UPDATE customer_part2
+          UPDATE customer_part1
           SET c_balance = c_balance + @total_amount
           WHERE c_w_id = {}
             AND c_d_id = {}
             AND c_id = (
               SELECT o_c_id
-              FROM orders_part2
+              FROM orders_part1
               WHERE o_w_id = {}
                 AND o_d_id = {}
                 AND o_id = @o_id);
@@ -731,7 +772,7 @@ class TP_Workload_Genrator:
 
         sql_stock_level2 = """
           SELECT DISTINCT ol_i_id 
-          FROM order_line_part2 
+          FROM order_line_part1 
           WHERE ol_w_id = {}  
             AND ol_d_id = {} AND ol_o_id IN ({});
         """.format(w_id, d_id, ol_o_id)

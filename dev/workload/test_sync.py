@@ -18,23 +18,60 @@ from collector import sync_metrics_collector
 def get_connection(autocommit: bool = True) -> MySQLConnection:
   config = Config()
   db_conf = {
-    "host": config.TIDB_HOST,
-    "port": config.TIDB_PORT,
-    "user": config.TIDB_USER,
-    "password": config.TIDB_PASSWORD,
-    "database": "ch_test", #config.TIDB_DB_NAME,
-    "autocommit": autocommit,
-    # mysql-connector-python will use C extension by default,
-    # to make this example work on all platforms more easily,
-    # we choose to use pure python implementation.
-    "use_pure": True
+      "host": config.TIDB_HOST,
+      "port": config.TIDB_PORT,
+      "user": config.TIDB_USER,
+      "password": config.TIDB_PASSWORD,
+      "database": config.TIDB_DB_NAME,
+      "autocommit": autocommit,
+      # mysql-connector-python will use C extension by default,
+      # to make this example work on all platforms more easily,
+      # we choose to use pure python implementation.
+      "use_pure": True
   }
 
   if config.ca_path:
-    db_conf["ssl_verify_cert"] = True
-    db_conf["ssl_verify_identity"] = True
-    db_conf["ssl_ca"] = config.ca_path
+      db_conf["ssl_verify_cert"] = True
+      db_conf["ssl_verify_identity"] = True
+      db_conf["ssl_ca"] = config.ca_path
   return mysql.connector.connect(**db_conf)
+
+def get_connection1(autocommit: bool = True) -> MySQLConnection:
+  config = Config()
+  db_conf = {
+      "host": config.TIDB_HOST,
+      "port": config.TIDB_PORT,
+      "user": config.TIDB_USER,
+      "password": config.TIDB_PASSWORD,
+      "database": 'ch_test',
+      "autocommit": autocommit,
+      # mysql-connector-python will use C extension by default,
+      # to make this example work on all platforms more easily,
+      # we choose to use pure python implementation.
+      "use_pure": True
+  }
+
+  if config.ca_path:
+      db_conf["ssl_verify_cert"] = True
+      db_conf["ssl_verify_identity"] = True
+      db_conf["ssl_ca"] = config.ca_path
+  return mysql.connector.connect(**db_conf)
+
+
+
+# tiup自动生成的负载里
+# warehouse_id: 1-4
+# district_id: 1-10
+# customer_id: 1-3000
+# stock_id: 1-100000
+# orders_id: 1-3223
+# order_line_id: 1-3233
+# new_order_id: 2260-3223
+# item_id: 1-100000
+# nation_id: 0-24
+# supplier_id: 1-10000
+# region_id: 0-4
+# 日期相关的目前范围是2024-10-23 17:03:47
 
 class Workload_Parameter:
   def __init__(self):
@@ -62,8 +99,7 @@ class Workload_Parameter:
     self.delivery_ratio = 0.04
     self.stock_level_ratio = 0.04
 
-    self.sql_file_path = 'workloadd_rewrite_0325.sql'
-    # self.sql_file_path = 'workloadd.sql'
+    self.sql_file_path = 'workloadd.sql'
     self.sql_date_min = '2024-10-23 17:00:00'    # used in ap select
     self.sql_date_max = '2025-10-23 17:00:00'
     self.sql_date_mid = '2024-10-28 17:00:00'
@@ -99,78 +135,6 @@ class Workload_Statistics:
 
 wl_stats = Workload_Statistics()
 
-def generate_ap(max_qry_cnt):
-  wl_param = Workload_Parameter()
-  qry_cnt = 0
-
-  with open(wl_param.sql_file_path, 'r') as file:
-    sql_script = file.read()
-    sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
-
-  while True:  
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur: 
-        sql_no = random.randint(1, 22)
-        wl_stats.query_cnt[sql_no-1] += 1
-
-        start_time = time.time()
-        cur.execute(sqls[sql_no-1])
-        print("Query {}".format(sql_no), end=' ')
-        
-        end_time = time.time()
-        cur.fetchall()
-        delay = end_time - start_time
-        print(f"Execution delay: {delay:.6f} seconds")   
-        wl_stats.query_lat_sum[sql_no-1] += delay
-        
-        qry_cnt += 1
-
-        if qry_cnt >= max_qry_cnt:
-          break
-
-## 顺次测试所有query
-def test_ap(max_qry_cnt):
-  wl_param = Workload_Parameter()
-  qry_cnt = 0
-
-  with open(wl_param.sql_file_path, 'r') as file:
-    sql_script = file.read()
-    sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
-
-  while True:  
-    with get_connection(autocommit=False) as connection:
-      with connection.cursor() as cur: 
-        for sql_no in range(1, 23):
-          wl_stats.query_cnt[sql_no-1] += 1
-          
-          start_time = time.time()
-          cur.execute(sqls[sql_no-1])
-          print("Query {}".format(sql_no), end=' ')
-          
-          end_time = time.time()
-          cur.fetchall()
-          delay = end_time - start_time
-          print(f"Execution delay: {delay:.6f} seconds")   
-          wl_stats.query_lat_sum[sql_no-1] += delay
-          
-          qry_cnt += 1
-
-        if qry_cnt >= max_qry_cnt:
-          break
-
-  print("\n")
-  print("Summary:")
-
-  for i in range(22):
-    if wl_stats.query_cnt[i] == 0:
-      wl_stats.query_lat[i] = 0
-    else:
-      wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
-    print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
-
-  for i in range(22):
-    print(wl_stats.query_lat[i])   
-
 
 class TP_Workload_Genrator:
   def __init__(self, warehouse_number):
@@ -204,7 +168,7 @@ class TP_Workload_Genrator:
         sql_new_order1 = """
           SET @d_next_o_id =
           (SELECT d_next_o_id 
-          FROM district_part2 
+          FROM district 
           WHERE d_id = {} AND d_w_id = {});
         """.format(d_id, w_id)
         #print(sql_new_order1)
@@ -212,7 +176,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_new_order1)
 
         sql_new_order2="""
-          UPDATE district_part2 
+          UPDATE district 
           SET d_next_o_id = d_next_o_id + 1 
           WHERE d_id = {} AND d_w_id = {};
         """.format(d_id, w_id)
@@ -223,20 +187,16 @@ class TP_Workload_Genrator:
 
         #####o_all_local ??
         sql_new_order3="""
-          INSERT INTO orders_part2 (o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local, o_id, o_d_id, o_w_id)
-          VALUES ({}, NOW(), NULL, 1, {}, @d_next_o_id, {}, {});
-        """.format(c_id, o_ol_cnt, d_id, w_id)
+          INSERT INTO orders (o_id, o_d_id, o_w_id, o_c_id, o_entry_d, o_carrier_id, o_ol_cnt, o_all_local)
+          VALUES (@d_next_o_id, {}, {}, {}, NOW(), NULL, {}, 1);
+        """.format(d_id, w_id, c_id, o_ol_cnt)
+        #print(sql_new_order3)
+        #print('sql_new_order3')  
         cur.execute(sql_new_order3) 
-
-        sql_new_order3="""
-          INSERT INTO orders_part1  (o_id, o_d_id, o_w_id)
-          VALUES (@d_next_o_id, {}, {});
-        """.format(d_id, w_id, o_ol_cnt)
-        cur.execute(sql_new_order3)         
 
 
         sql_new_order4="""
-          INSERT INTO new_order_part2 (no_o_id, no_d_id, no_w_id)
+          INSERT INTO new_order (no_o_id, no_d_id, no_w_id)
           VALUES (@d_next_o_id, {}, {});
         """.format(d_id, w_id)
         #print(sql_new_order4)
@@ -255,7 +215,7 @@ class TP_Workload_Genrator:
 
         for i in range(o_ol_cnt):
           sql_new_order5 = """    
-            SET @s_quantity = (SELECT s_quantity FROM stock_part2 WHERE s_w_id = {} AND s_i_id = {});
+            SET @s_quantity = (SELECT s_quantity FROM stock WHERE s_w_id = {} AND s_i_id = {});
           """.format(ol_supply_w_id[i], ol_i_id[i])
           #print(sql_new_order5)
           #print('sql_new_order5')  
@@ -275,13 +235,13 @@ class TP_Workload_Genrator:
 
           if is_local_new_order < o_all_local: ## local warehouse
             sql_new_order7 = """
-              UPDATE stock_part2
+              UPDATE stock
               SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1
               WHERE s_w_id = {} AND s_i_id = {};
             """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
           else:   ## remote warehouse
             sql_new_order7 = """
-              UPDATE stock_part2
+              UPDATE stock
               SET s_quantity = {}, s_ytd = s_ytd + {}, s_order_cnt = s_order_cnt + 1, s_remote_cnt = s_remote_cnt + 1
               WHERE s_w_id = {} AND s_i_id = {};
             """.format(s_quantity, ol_quantity[i], ol_supply_w_id[i], ol_i_id[i])
@@ -291,7 +251,7 @@ class TP_Workload_Genrator:
           sql_new_order8 = """
             SET @i_price =
             (SELECT i_price
-            FROM item_part2
+            FROM item
             WHERE i_id = {});   
           """.format(ol_i_id[i])
           #print(sql_new_order8)
@@ -304,9 +264,9 @@ class TP_Workload_Genrator:
 
           ol_dist_info = "".join(random.choices(string.ascii_uppercase, k=24))
           sql_new_order10 = """
-          INSERT INTO order_line_part2 (ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info, ol_o_id, ol_d_id, ol_w_id, ol_number)
-          VALUES ({}, {}, NULL, {}, {}, '{}', @d_next_o_id, {}, {}, {});
-          """.format(ol_i_id[i], ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ol_dist_info, d_id, w_id, i+1)
+          INSERT INTO order_line (ol_o_id, ol_d_id, ol_w_id, ol_number, ol_i_id, ol_supply_w_id, ol_delivery_d, ol_quantity, ol_amount, ol_dist_info)
+          VALUES (@d_next_o_id, {}, {}, {}, {}, {}, NULL, {}, {}, '{}');
+          """.format(d_id, w_id, i+1, ol_i_id[i], ol_supply_w_id[i], ol_quantity[i], i_price * ol_quantity[i], ol_dist_info)
           #print(sql_new_order10)
           cur.execute(sql_new_order10)
 
@@ -434,7 +394,7 @@ class TP_Workload_Genrator:
 
         sql_payment0 = """
           SELECT c_id, c_balance, c_ytd_payment, c_payment_cnt
-          FROM customer_part2
+          FROM customer
           WHERE c_w_id = {}
             AND c_d_id = {}
           ORDER BY c_first;
@@ -443,7 +403,7 @@ class TP_Workload_Genrator:
         cur.fetchall()
         
         sql_payment1 = """
-          UPDATE customer_part2
+          UPDATE customer
           SET c_balance = c_balance - {},
               c_ytd_payment = c_ytd_payment + {},
               c_payment_cnt = c_payment_cnt + 1
@@ -455,7 +415,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_payment1)
 
         sql_payment2 = """
-          UPDATE district_part2
+          UPDATE district
           SET d_ytd = d_ytd + {}
           WHERE d_w_id = {}
             AND d_id = {};
@@ -464,7 +424,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_payment2)
 
         sql_payment3 = """
-          UPDATE warehouse_part2
+          UPDATE warehouse
           SET w_ytd = w_ytd + {}
           WHERE w_id = {};
         """.format(payment_amount, w_id)
@@ -477,18 +437,11 @@ class TP_Workload_Genrator:
         h_data = ''.join(random.choices(characters, k=24))
 
         sql_payment4 = """
-          INSERT INTO history_part1 (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_data)
-          VALUES ({}, {}, {}, {}, {}, NOW(), '{}');
-        """.format(c_id, c_d_id, c_w_id, d_id, w_id, h_data)
+          INSERT INTO history (h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date, h_amount, h_data)
+          VALUES ({}, {}, {}, {}, {}, NOW(), {}, '{}');
+        """.format(c_id, c_d_id, c_w_id, d_id, w_id, payment_amount, h_data)
         #print(sql_payment4)
         cur.execute(sql_payment4)
-
-        sql_payment4 = """
-          INSERT INTO history_part2 (h_amount, h_c_id, h_c_d_id, h_c_w_id, h_d_id, h_w_id, h_date)
-          VALUES ({}, {}, {}, {}, {}, {}, NOW());
-        """.format(payment_amount, c_id, c_d_id, c_w_id, d_id, w_id)
-        #print(sql_payment4)
-        cur.execute(sql_payment4)        
 
         cur.execute("commit;")
         print("Payment Done! Warehouse {}, District {}, Customer {}".format(w_id, d_id, c_id), end=' ')
@@ -538,7 +491,7 @@ class TP_Workload_Genrator:
 
         sql_order_status1 = """
           SELECT c_id, c_balance, c_first, c_middle, c_last
-          FROM customer_part2
+          FROM customer
           WHERE c_w_id = {}
             AND c_d_id = {}
             AND c_id = {};
@@ -550,7 +503,7 @@ class TP_Workload_Genrator:
         sql_order_status2 = """
           SET @o_id =
           (SELECT o_id
-          FROM orders_part2
+          FROM orders
           WHERE o_w_id = {}
             AND o_d_id = {}
             AND o_c_id = {}
@@ -563,7 +516,7 @@ class TP_Workload_Genrator:
 
         sql_order_status3 = """
           SELECT ol_i_id, ol_supply_w_id, ol_quantity, ol_amount, ol_delivery_d
-          FROM order_line_part2
+          FROM order_line
           WHERE ol_w_id = {}
             AND ol_d_id = {}
             AND ol_o_id = @o_id;
@@ -611,7 +564,7 @@ class TP_Workload_Genrator:
         sql_delivery1 = """
           SET @o_id =
           (SELECT o_id 
-          FROM orders_part2
+          FROM orders 
           WHERE o_w_id = {} AND o_d_id = {} AND o_carrier_id IS NULL 
           ORDER BY o_id ASC 
           LIMIT 1);
@@ -621,7 +574,7 @@ class TP_Workload_Genrator:
         
 
         sql_delivery2 = """
-          UPDATE orders_part2
+          UPDATE orders
           SET o_carrier_id = {}
           WHERE o_w_id = {}
             AND o_d_id = {}
@@ -631,7 +584,7 @@ class TP_Workload_Genrator:
         cur.execute(sql_delivery2)
 
         sql_delivery3 = """
-          UPDATE order_line_part2
+          UPDATE order_line
           SET ol_delivery_d = NOW()
           WHERE ol_w_id = {}
             AND ol_d_id = {}
@@ -643,7 +596,7 @@ class TP_Workload_Genrator:
         sql_delivery4 = """
           SET @total_amount =
           (SELECT SUM(ol_amount) AS total_order_amount
-          FROM order_line_part2
+          FROM order_line
           WHERE ol_w_id = {}
             AND ol_d_id = {}
             AND ol_o_id = @o_id);
@@ -652,13 +605,13 @@ class TP_Workload_Genrator:
         cur.execute(sql_delivery4)
 
         sql_delivery5 = """
-          UPDATE customer_part2
+          UPDATE customer
           SET c_balance = c_balance + @total_amount
           WHERE c_w_id = {}
             AND c_d_id = {}
             AND c_id = (
               SELECT o_c_id
-              FROM orders_part2
+              FROM orders
               WHERE o_w_id = {}
                 AND o_d_id = {}
                 AND o_id = @o_id);
@@ -711,7 +664,7 @@ class TP_Workload_Genrator:
 
         sql_stock_level1 = """
           SELECT o_id
-          FROM orders_part2
+          FROM orders
           WHERE o_w_id = {}
             AND o_d_id = {}
           ORDER BY o_id DESC
@@ -731,7 +684,7 @@ class TP_Workload_Genrator:
 
         sql_stock_level2 = """
           SELECT DISTINCT ol_i_id 
-          FROM order_line_part2 
+          FROM order_line 
           WHERE ol_w_id = {}  
             AND ol_d_id = {} AND ol_o_id IN ({});
         """.format(w_id, d_id, ol_o_id)
@@ -751,7 +704,7 @@ class TP_Workload_Genrator:
         else:
           sql_stock_level3 = """
             SELECT COUNT(*)
-            FROM stock_part2
+            FROM stock
             WHERE s_w_id = {}
               AND s_i_id IN ({})
               AND s_quantity < {};
@@ -849,16 +802,79 @@ def generate_tp(max_txn_cnt):
   time_format = '%Y-%m-%d %H:%M:%S'
 
   end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
-
+  # time.sleep(3)  ##not sure the imte interval
+  # while True:
+  #   end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
+  #   if end_count_tmp == end_count:
+  #     break
+  #   else:
+  #     end_count = end_count_tmp
   start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
   end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
-  # print(start_sync_time)
-  # print(end_sync_time)
+  print(start_sync_time)
+  print(end_sync_time)
   sync_time = datetime.strptime(end_sync_time, time_format) - datetime.strptime(start_sync_time, time_format)
-  # print("Sync LATENCY: ", sync_time)
+  print("Sync LATENCY: ", sync_time)
   print("Sync DATA COUNT: ", int(end_count) - int(start_count))
 
-## max_txn_cnt : max cnt of txn and qry; ratio[0,1]: tp ratio
+
+
+
+def generate_ap(max_qry_cnt):
+  wl_param = Workload_Parameter()
+  qry_cnt = 0
+  
+  with open(wl_param.sql_file_path, 'r') as file:
+      sql_script = file.read()
+      sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
+
+  sqls[0] = sqls[0].format(wl_param.sql_date_mid)
+  sqls[2] = sqls[2].format(wl_param.sql_date_mid)
+  sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[4] = sqls[4].format(wl_param.sql_date_mid)
+  sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  
+  sqls[9] = sqls[9].format(wl_param.sql_date_mid)
+  
+  sqls[11] = sqls[11].format(wl_param.sql_date_max)
+
+  sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  sqls[14] = sqls[14].format(wl_param.sql_date_mid)
+  
+  sqls[19] = sqls[19].format(wl_param.sql_date_mid)
+
+
+  # with open('workloadd.sql', 'w', encoding='utf-8') as file:
+  #   for sql in sqls:
+  #     file.write(sql + '\n')     
+
+  while True:  
+    with get_connection1(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        sql_no = random.randint(1, 22)
+        wl_stats.query_cnt[sql_no-1] += 1
+        
+        start_time = time.time()
+        cur.execute(sqls[sql_no-1])
+        print("Query {}".format(sql_no), end=' ')
+        
+        
+        end_time = time.time()
+        cur.fetchall()
+        delay = end_time - start_time
+        print(f"Execution delay: {delay:.6f} seconds")   
+        wl_stats.query_lat_sum[sql_no-1] += delay
+        
+
+    qry_cnt += 1
+    if qry_cnt >= max_qry_cnt:
+      break
+    
+      
+
+
 def generate_workload(max_txn_cnt, ratio):
   txn_cnt = 0
   ## GET SYNC TIME AND SYNC_COUNT
@@ -881,7 +897,13 @@ def generate_workload(max_txn_cnt, ratio):
   time_format = '%Y-%m-%d %H:%M:%S'
 
   end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
-
+  time.sleep(3)
+  while True:
+    end_sync_time, end_count_tmp = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()   
+    if end_count_tmp == end_count:
+      break
+    else:
+      end_count = end_count_tmp
   start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
   end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
   sync_time = datetime.strptime(end_sync_time, time_format) - datetime.strptime(start_sync_time, time_format)
@@ -934,18 +956,14 @@ def generate_workload(max_txn_cnt, ratio):
   print("Sync LATENCY: ", sync_time)
   print("Sync DATA COUNT: ", int(end_count) - int(start_count))
 
-  print("Query Latency:")
   for i in range(22):
     print(wl_stats.query_lat[i])  
-
 
 # 测试事务执行期间的 query 延迟, 这里的tp的并发度是n
 def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
     """
     测试事务执行期间的 query 延迟。
     """
-    start_sync_time, start_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
-
     stop_event = threading.Event()  # 用于通知 query 线程停止
 
     def run_generate_tp():
@@ -975,46 +993,7 @@ def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
         tp_thread.join()
     ap_thread.join()
 
-
-    end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
-
-    start_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(start_sync_time)))
-    end_sync_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(int(end_sync_time)))
-
-    # 定义日期时间格式
-    time_format = '%Y-%m-%d %H:%M:%S'    
-    # print(start_sync_time)
-    # print(end_sync_time)
-    sync_time = datetime.strptime(end_sync_time, time_format) - datetime.strptime(start_sync_time, time_format)
-    print("Sync LATENCY: ", sync_time)
-    print("Sync DATA COUNT: ", int(end_count) - int(start_count))    
-
     # 输出统计信息  
-    if wl_stats.neworder_cnt == 0:
-      wl_stats.neworder_lat = 0
-    else:
-      wl_stats.neworder_lat = wl_stats.neworder_lat_sum / wl_stats.neworder_cnt
-
-    if wl_stats.payment_cnt == 0:
-      wl_stats.payment_lat = 0  
-    else:
-      wl_stats.payment_lat = wl_stats.payment_lat_sum / wl_stats.payment_cnt
-    
-    if wl_stats.orderstatus_cnt == 0:
-      wl_stats.orderstatus_lat = 0
-    else:
-      wl_stats.orderstatus_lat = wl_stats.orderstatus_lat_sum / wl_stats.orderstatus_cnt
-    
-    if wl_stats.delivery_cnt == 0:
-      wl_stats.delivery_lat = 0
-    else:
-      wl_stats.delivery_lat = wl_stats.delivery_lat_sum / wl_stats.delivery_cnt
-    
-    if wl_stats.stocklevel_cnt == 0:
-      wl_stats.stocklevel_lat = 0
-    else:
-      wl_stats.stocklevel_lat = wl_stats.stocklevel_lat_sum / wl_stats.stocklevel_cnt
-
     print("Summary:")
     print("Txn New Order cnt:{}, latency (avg):{:.6f}s".format(wl_stats.neworder_cnt, wl_stats.neworder_lat))
     print("Txn Payment cnt:{}, latency (avg):{:.6f}s".format(wl_stats.payment_cnt, wl_stats.payment_lat))
@@ -1035,12 +1014,89 @@ def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
         print(wl_stats.query_lat[i])
 
 
+def test_ap(max_qry_cnt):
+  wl_param = Workload_Parameter()
+  qry_cnt = 0
+  
+  with open(wl_param.sql_file_path, 'r') as file:
+      sql_script = file.read()
+      sqls = [statement.strip() for statement in sql_script.split(';') if statement.strip()]
+
+  # sqls[0] = sqls[0].format(wl_param.sql_date_mid)
+  # sqls[2] = sqls[2].format(wl_param.sql_date_mid)
+  # sqls[3] = sqls[3].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[4] = sqls[4].format(wl_param.sql_date_mid)
+  # sqls[5] = sqls[5].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  # sqls[6] = sqls[6].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[7] = sqls[7].format(wl_param.sql_date_min, wl_param.sql_date_mid)
+  
+  # sqls[9] = sqls[9].format(wl_param.sql_date_mid)
+  
+  # sqls[11] = sqls[11].format(wl_param.sql_date_max)
+
+  # sqls[13] = sqls[13].format(wl_param.sql_date_mid, wl_param.sql_date_max)
+  # sqls[14] = sqls[14].format(wl_param.sql_date_mid)
+  
+  # sqls[19] = sqls[19].format(wl_param.sql_date_mid)
+
+
+  # with open('workloadd.sql', 'w', encoding='utf-8') as file:
+  #   for sql in sqls:
+  #     file.write(sql + '\n')     
+
+  while True:  
+    with get_connection(autocommit=False) as connection:
+      with connection.cursor() as cur: 
+        for sql_no in range(1, 23):
+          wl_stats.query_cnt[sql_no-1] += 1
+          
+          start_time = time.time()
+          cur.execute(sqls[sql_no-1])
+          print("Query {}".format(sql_no), end=' ')
+          
+          end_time = time.time()
+          cur.fetchall()
+          delay = end_time - start_time
+          print(f"Execution delay: {delay:.6f} seconds")   
+          wl_stats.query_lat_sum[sql_no-1] += delay
+        
+          qry_cnt += 1
+
+        if qry_cnt >= max_qry_cnt:
+          break
+  
+  print("\n")
+  print("Summary:")
+  
+  for i in range(22):
+    if wl_stats.query_cnt[i] == 0:
+      wl_stats.query_lat[i] = 0
+    else:
+      wl_stats.query_lat[i] = wl_stats.query_lat_sum[i] / wl_stats.query_cnt[i]
+    print("Query {} cnt:{}, latency (avg):{:.6f}s".format(i+1, wl_stats.query_cnt[i], wl_stats.query_lat[i]))
+
+  for i in range(22):
+    print(wl_stats.query_lat[i])   
+
 
 
 if __name__ == '__main__':
-  # connection自定义测试的数据库
-  # test_ap(100)
-  # generate_workload(100, 0)
+  #wl_param = Workload_Parameter()
+  #tp_wl_generator = TP_Workload_Genrator(4)
 
-  # 每个线程测试100条txn，1000条sql，txn并发度是10
+  #tp_wl_generator.generate_new_order()
+  # tp_wl_generator.generate_payment()
+  #tp_wl_generator.generate_order_status()
+  #tp_wl_generator.generate_delivery()
+  #tp_wl_generator.generate_stock_level()
+  
+  # generate_tp(10)
+  # generate_ap(200)
+  # generate_workload(100, 1)
+
+  # test_ap(100)    
+
+  # 测试数据同步对ap的性能影响
+  # tp访问数据库是config里的, ap访问的是get_connection1里的
+  # test_sync是有副本的库, test_sync_1是没副本的库
   test_query_latency_with_tp(100, 5000, 10)

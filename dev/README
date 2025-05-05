@@ -28,13 +28,15 @@ tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑�
            repartitioning.py 根据mcts的candidate进行自动重分区的脚本(只有分区)
            reorganize/table_data_modify.py 根据mcts的candidate进行自动重分区分表的脚本(包含分区,replica,分表建表)
            summary_latency_list.py 对ch-benchmark跑出来的延迟结果一键统计
+           /data table_data_modify.py是自动化调整数据库数据分表分区的脚本, table_data_modify_pelton.py是自动化调整pelton数据分表分区的脚本
 /workload  create_table.py 自动建表
            generate_workload.py CH-benchmark的负载测试脚本
            workload_analyzer.py 是根据负载分析表的每一个列的重要性, 数值越大越重要, 越应该被选成replica, 在possible action中的位置越靠前
            workloadd.sql 是之前能跑的sql文件
            workloadd_rewrite.sql 是经过sql重写后的文件
-           test_advisor.py 是单独测试22条sql的文件
-           /sql_rewrite 是sql重写的代码, 使用maven管理java项目, Main.java是入口文件
+           test_advisor.py 是目前用于ch_test和pelton测试22条sql的文件, 其中有ch_test的tp重写, 原版的tp测试在generate_workload.py中
+           /sql_rewrite 是sql重写的代码, 使用maven管理java项目, Main.java是入口文件, Pelton.java是pelton的sql重写文件
+/others    这里面是其他baseline的代码           
 analyzer.py 是解析sql的谓词 join等条件的
 CH-connector.py 连接tidb的脚本
 clustering.py VGAE的聚类
