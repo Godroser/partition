@@ -1,5 +1,14 @@
 import re
 from collections import defaultdict
+import sys
+import os
+import mysql.connector
+from mysql.connector import MySQLConnection
+from mysql.connector.cursor import MySQLCursor
+
+sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
+
+from estimator.ch_columns_ranges_meta import Customer_columns, Warehouse_columns, Supplier_columns, Stock_columns, Region_columns, Orders_columns, Order_line_columns, New_order_columns, Nation_columns, Item_columns, History_columns, District_columns
 
 def parse_workload_joins(file_path="/data3/dzh/project/grep/dev/workload/workloadd.sql"):
     """
@@ -32,28 +41,86 @@ def parse_workload_joins(file_path="/data3/dzh/project/grep/dev/workload/workloa
 
     return join_conditions
 
-def construct_graph_from_conditions(join_conditions):
+def construct_graph(join_conditions):
     """
-    根据Join_Conditions构造无向图。
+    根据Join_Conditions构造无向图, 计算边的重复次数和节点的度数。
 
     :param join_conditions: Join_Conditions列表
-    :return: 图的结构，字典形式 {table: [(connected_table, edge_info)]}
+    :return: 图结构(edges, degrees)
     """
-    graph = defaultdict(list)
+    edges = defaultdict(int)  # 存储边及其重复次数
+    degrees = defaultdict(int)  # 存储节点的度数
 
-    for sql_conditions in join_conditions:
-        for condition in sql_conditions:
-            left_table = condition["tables"]["left"]
-            right_table = condition["tables"]["right"]
-            edge_info = {
-                "tables": condition["tables"],
-                "conditions": condition["conditions"]
-            }
-            # 添加无向边
-            graph[left_table].append((right_table, edge_info))
-            graph[right_table].append((left_table, edge_info))
+    for sql_joins in join_conditions:
+        for join in sql_joins:
+            left_table = join["tables"]["left"]
+            right_table = join["tables"]["right"]
 
-    return graph
+            for condition in join["conditions"]:
+                left_column = condition["left_column"]
+                right_column = condition["right_column"]
+
+                # 构造边，确保边的顺序不影响结果
+                edge = tuple(sorted([(left_table, left_column), (right_table, right_column)]))
+                edges[edge] += 1
+
+                # 更新节点的度数
+                degrees[left_table] += 1
+                degrees[right_table] += 1
+
+    return edges, degrees
+
+def calculate_edge_weights(edges):
+    """
+    计算每条边的权重，权重=cost*次数, cost由边包含的两个表的列的size相加得到。
+
+    :param edges: 边及其重复次数的字典
+    :return: 边及其权重的字典
+    """
+    # 表名到列大小的映射
+    table_columns_map = {
+        "customer": Customer_columns(),
+        "district": District_columns(),
+        "item": Item_columns(),
+        "new_order": New_order_columns(),
+        "orders": Orders_columns(),
+        "order_line": Order_line_columns(),
+        "stock": Stock_columns(),
+        "warehouse": Warehouse_columns(),
+        "history": History_columns(),
+        "nation": Nation_columns(),
+        "supplier": Supplier_columns(),
+        "region": Region_columns(),
+    }
+
+    edge_weights = {}
+
+    for edge, count in edges.items():
+        # 获取边的两个节点
+        (table1, column1), (table2, column2) = edge
+
+        # 获取表的列大小
+        table1_obj = table_columns_map[table1]
+        table2_obj = table_columns_map[table2]
+
+        # 找到列的大小
+        try:
+            size1 = table1_obj.columns_size[table1_obj.columns.index(column1)]
+        except ValueError:  # 如果 column1 不在 table1_obj.columns 中
+            size1 = table2_obj.columns_size[table2_obj.columns.index(column1)]
+        try:
+            size2 = table1_obj.columns_size[table1_obj.columns.index(column2)]
+        except ValueError:  # 如果 column1 不在 table1_obj.columns 中
+            size2 = table2_obj.columns_size[table2_obj.columns.index(column2)]
+
+        # 计算cost和权重
+        cost = size1 + size2
+        weight = cost * count
+
+        edge_weights[edge] = weight
+
+    return edge_weights
+
 
 # [[{}]] 列表代表每个sql, 列表代表每个join条件, {}代表join条件的具体信息
 Join_Conditions = [
@@ -238,8 +305,8 @@ Join_Conditions = [
             "right_column": "ol_d_id"
         },
         {
-            "left_column": "ol_delivery_d",
-            "right_column": "o_entry_d"
+            "left_column": "o_entry_d",
+            "right_column": "ol_delivery_d"
         }
         ]
     }
@@ -304,7 +371,7 @@ Join_Conditions = [
     },
     {
         "tables": {
-        "left": "stock",
+        "left": "supplier",
         "right": "nation"
         },
         "conditions": [
@@ -432,18 +499,6 @@ Join_Conditions = [
     },
     {
         "tables": {
-        "left": "stock",
-        "right": "supplier"
-        },
-        "conditions": [
-        {
-            "left_column": "MOD((s_w_id * s_i_id), 10000)",
-            "right_column": "s_suppkey"
-        }
-        ]
-    },
-    {
-        "tables": {
         "left": "order_line",
         "right": "orders"
         },
@@ -496,7 +551,7 @@ Join_Conditions = [
     },
     {
         "tables": {
-        "left": "order_line",
+        "left": "supplier",
         "right": "nation"
         },
         "conditions": [
@@ -539,7 +594,7 @@ Join_Conditions = [
     },
     {
         "tables": {
-        "left": "stock",
+        "left": "supplier",
         "right": "nation"
         },
         "conditions": [
@@ -644,8 +699,8 @@ Join_Conditions = [
     [
         {
         "tables": {
-            "left": "orders",
-            "right": "order_line"
+            "left": "order_line",
+            "right": "orders"
         },
         "conditions": [
             {
@@ -696,7 +751,7 @@ Join_Conditions = [
         "conditions": [
             {
             "left_column": "ol_i_id",
-            "right_column": "i_i_id"
+            "right_column": "i_id"
             }
         ]
         }
@@ -712,8 +767,8 @@ Join_Conditions = [
         },
         "conditions": [
             {
-            "left_column": "i_i_id",
-            "right_column": "st_s_i_id"
+            "left_column": "i_id",
+            "right_column": "s_i_id"
             }
         ]
         }
@@ -838,9 +893,16 @@ if __name__ == "__main__":
     result = parse_workload_joins()
     for item in result:
         print(item)
-    
-    graph = construct_graph_from_conditions(Join_Conditions)
-    for table, connections in graph.items():
-        print(f"Table: {table}")
-        for connected_table, edge_info in connections:
-            print(f"  Connected to: {connected_table}, Edge Info: {edge_info}")
+    edges, degrees = construct_graph(Join_Conditions)
+    print("Edges with counts:")
+    for edge, count in edges.items():
+        print(f"{edge}: {count}")
+    print("\nDegrees of nodes:")
+    for node, degree in degrees.items():
+        print(f"{node}: {degree}")
+
+
+    edge_weights = calculate_edge_weights(edges)
+    print("Edge weights:")
+    for edge, weight in edge_weights.items():
+        print(f"{edge}: {weight}")
