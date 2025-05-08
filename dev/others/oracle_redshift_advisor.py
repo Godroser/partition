@@ -5,10 +5,12 @@ import os
 import mysql.connector
 from mysql.connector import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
+import random
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
 from estimator.ch_columns_ranges_meta import Customer_columns, Warehouse_columns, Supplier_columns, Stock_columns, Region_columns, Orders_columns, Order_line_columns, New_order_columns, Nation_columns, Item_columns, History_columns, District_columns
+from oracle_redshift_join_conditions import Join_Conditions
 
 def parse_workload_joins(file_path="/data3/dzh/project/grep/dev/workload/workloadd.sql"):
     """
@@ -121,771 +123,91 @@ def calculate_edge_weights(edges):
 
     return edge_weights
 
+def select_edges(edges, degrees):
+    """
+    基于边和权重的输出，迭代选择候选边集。
 
-# [[{}]] 列表代表每个sql, 列表代表每个join条件, {}代表join条件的具体信息
-Join_Conditions = [
-    # 1
-    [],
-    # 2
-    [
-    {
-        "tables": {
-        "left": "item",
-        "right": "stock"
-        },
-        "conditions": [
-        {
-            "left_column": "i_id",
-            "right_column": "s_i_id"
-        }
+    :param edges: 边及其权重的字典
+    :param degrees: 节点的度数字典
+    :return: R中包含的边, 以及每个表对应的边的列
+    """
+    edges = dict(edges)  # 确保可修改
+    initial_edges = edges
+    R1, R2 = set(), set()
+    used_nodes = set()
+    iteration = 1
+
+    while edges:
+        # 找到度数大于1的节点
+        valid_nodes = {node for node, degree in degrees.items() if degree > 1 and node not in used_nodes}
+        if not valid_nodes:
+            break
+
+        # 随机选择一个度数大于1的节点
+        current_node = random.choice(list(valid_nodes))
+
+        # 找到与该节点相连的权重最高的边
+        candidate_edges = [(edge, weight) for edge, weight in edges.items() if current_node in {edge[0][0], edge[1][0]}]
+        if not candidate_edges:
+            continue
+        best_edge = max(candidate_edges, key=lambda x: x[1])[0]
+
+        # 将边加入候选集
+        if iteration % 2 == 1:
+            R1.add(best_edge)
+        else:
+            R2.add(best_edge)
+
+        # 标记节点为已使用，并移除该节点的所有边
+        used_nodes.add(current_node)
+        edges = {edge: weight for edge, weight in edges.items() if current_node not in {edge[0][0], edge[1][0]}}
+
+        iteration += 1
+
+    # 比较R1和R2的权重之和，选择较大的作为R
+    R1_weight = sum(initial_edges[edge] for edge in R1)
+    R2_weight = sum(initial_edges[edge] for edge in R2)
+    R = R1 if R1_weight >= R2_weight else R2
+
+    print("print R:")
+    for edge in R:
+        print(edge)
+
+    # 生成R的表的集合
+    R_tables = set()
+    for edge in R:
+        R_tables.add(edge[0][0])
+        R_tables.add(edge[1][0])
+
+    # 生成R的列的集合
+    R_columns = set()
+    for edge in R:
+        R_columns.add(edge[0][1])
+        R_columns.add(edge[1][1])
+
+    # 对于不在R中的节点，找到与R中节点相连(并且边对应的列在R_columns中)的权重最大的边，加入R
+    remaining_tables = {table for table in degrees.keys() if table not in R_tables}
+    for table in remaining_tables:
+        candidate_edges = [
+            (edge, weight) for edge, weight in initial_edges.items()
+            if (table in {edge[0][0], edge[1][0]}) and
+               (edge[0][1] in R_columns or edge[1][1] in R_columns)
         ]
-    },
-    {
-        "tables": {
-        "left": "stock",
-        "right": "supplier"
-        },
-        "conditions": [
-        {
-            "left_column": "s_w_id",
-            "right_column": "s_suppkey"
-        },
-        {
-            "left_column": "s_i_id",
-            "right_column": "s_suppkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "nation",
-        "right": "region"
-        },
-        "conditions": [
-        {
-            "left_column": "n_regionkey",
-            "right_column": "r_regionkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "stock",
-        "right": "supplier"
-        },
-        "conditions": [
-        {
-            "left_column": "s_w_id",
-            "right_column": "s_suppkey"
-        },
-        {
-            "left_column": "s_i_id",
-            "right_column": "s_suppkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "nation",
-        "right": "region"
-        },
-        "conditions": [
-        {
-            "left_column": "n_regionkey",
-            "right_column": "r_regionkey"
-        }
-        ]
-    }
-    ],
-    # 3
-    [
-    {
-        "tables": {
-        "left": "customer",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-        },
-        {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "new_order"
-        },
-        "conditions": [
-        {
-            "left_column": "o_w_id",
-            "right_column": "no_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "no_d_id"
-        },
-        {
-            "left_column": "o_id",
-            "right_column": "no_o_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "order_line"
-        },
-        "conditions": [
-        {
-            "left_column": "o_w_id",
-            "right_column": "ol_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "ol_d_id"
-        },
-        {
-            "left_column": "o_id",
-            "right_column": "ol_o_id"
-        }
-        ]
-    }
-    ],
-    # 4
-    [
-    {
-        "tables": {
-        "left": "orders",
-        "right": "order_line"
-        },
-        "conditions": [
-        {
-            "left_column": "o_id",
-            "right_column": "ol_o_id"
-        },
-        {
-            "left_column": "o_w_id",
-            "right_column": "ol_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "ol_d_id"
-        },
-        {
-            "left_column": "o_entry_d",
-            "right_column": "ol_delivery_d"
-        }
-        ]
-    }
-    ],
-    # 5
-    [
-    {
-        "tables": {
-        "left": "customer",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-        },
-        {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "order_line"
-        },
-        "conditions": [
-        {
-            "left_column": "o_id",
-            "right_column": "ol_o_id"
-        },
-        {
-            "left_column": "o_w_id",
-            "right_column": "ol_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "ol_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "stock"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_w_id",
-            "right_column": "s_w_id"
-        },
-        {
-            "left_column": "ol_i_id",
-            "right_column": "s_i_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "nation",
-        "right": "region"
-        },
-        "conditions": [
-        {
-            "left_column": "n_regionkey",
-            "right_column": "r_regionkey"
-        }
-        ]
-    }
-    ],
-    # 6
-    [],
-    # 7
-    [
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "stock"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_supply_w_id",
-            "right_column": "s_w_id"
-        },
-        {
-            "left_column": "ol_i_id",
-            "right_column": "s_i_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "ol_d_id",
-            "right_column": "o_d_id"
-        },
-        {
-            "left_column": "ol_o_id",
-            "right_column": "o_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "customer"
-        },
-        "conditions": [
-        {
-            "left_column": "o_c_id",
-            "right_column": "c_id"
-        },
-        {
-            "left_column": "o_w_id",
-            "right_column": "c_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "c_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    }
-    ],
-    # 8
-    [
-    {
-        "tables": {
-        "left": "item",
-        "right": "stock"
-        },
-        "conditions": [
-        {
-            "left_column": "i_id",
-            "right_column": "s_i_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "stock",
-        "right": "order_line"
-        },
-        "conditions": [
-        {
-            "left_column": "s_i_id",
-            "right_column": "ol_i_id"
-        },
-        {
-            "left_column": "s_w_id",
-            "right_column": "ol_supply_w_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "ol_d_id",
-            "right_column": "o_d_id"
-        },
-        {
-            "left_column": "ol_o_id",
-            "right_column": "o_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "customer"
-        },
-        "conditions": [
-        {
-            "left_column": "o_c_id",
-            "right_column": "c_id"
-        },
-        {
-            "left_column": "o_w_id",
-            "right_column": "c_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "c_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "nation",
-        "right": "region"
-        },
-        "conditions": [
-        {
-            "left_column": "n_regionkey",
-            "right_column": "r_regionkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "nation",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "n_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    }
-    ],
-    # 9
-    [
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "stock"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_i_id",
-            "right_column": "s_i_id"
-        },
-        {
-            "left_column": "ol_supply_w_id",
-            "right_column": "s_w_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "supplier",
-        "right": "nation"
-        },
-        "conditions": [
-        {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "ol_d_id",
-            "right_column": "o_d_id"
-        },
-        {
-            "left_column": "ol_o_id",
-            "right_column": "o_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "order_line",
-        "right": "item"
-        },
-        "conditions": [
-        {
-            "left_column": "ol_i_id",
-            "right_column": "i_id"
-        }
-        ]
-    }
-    ],
-    # 10
-    [
-    {
-        "tables": {
-        "left": "customer",
-        "right": "orders"
-        },
-        "conditions": [
-        {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-        },
-        {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-        },
-        {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-        }
-        ]
-    },
-    {
-        "tables": {
-        "left": "orders",
-        "right": "order_line"
-        },
-        "conditions": [
-        {
-            "left_column": "o_w_id",
-            "right_column": "ol_w_id"
-        },
-        {
-            "left_column": "o_d_id",
-            "right_column": "ol_d_id"
-        },
-        {
-            "left_column": "o_id",
-            "right_column": "ol_o_id"
-        }
-        ]
-    }
-    ],
-    # 11
-    [
-        {
-        "tables": {
-            "left": "supplier",
-            "right": "nation"
-        },
-        "conditions": [
-            {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-            }
-        ]
-        }
-    ],
-    # 12
-    [
-        {
-        "tables": {
-            "left": "order_line",
-            "right": "orders"
-        },
-        "conditions": [
-            {
-            "left_column": "ol_w_id",
-            "right_column": "o_w_id"
-            },
-            {
-            "left_column": "ol_d_id",
-            "right_column": "o_d_id"
-            },
-            {
-            "left_column": "ol_o_id",
-            "right_column": "o_id"
-            }
-        ]
-        }
-    ],
-    # 13
-    [
-        {
-        "tables": {
-            "left": "customer",
-            "right": "orders"
-        },
-        "conditions": [
-            {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-            },
-            {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-            },
-            {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-            }
-        ]
-        }
-    ],
-    # 14
-    [
-        {
-        "tables": {
-            "left": "order_line",
-            "right": "item"
-        },
-        "conditions": [
-            {
-            "left_column": "ol_i_id",
-            "right_column": "i_id"
-            }
-        ]
-        }
-    ],
-    # 15
-    [],
-    # 16
-    [
-        {
-        "tables": {
-            "left": "stock",
-            "right": "item"
-        },
-        "conditions": [
-            {
-            "left_column": "i_id",
-            "right_column": "s_i_id"
-            }
-        ]
-        }
-    ],
-    # 17
-    [],
-    # 18
-    [
-        {
-        "tables": {
-            "left": "customer",
-            "right": "orders"
-        },
-        "conditions": [
-            {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-            },
-            {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-            },
-            {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-            }
-        ]
-        },
-        {
-        "tables": {
-            "left": "orders",
-            "right": "order_line"
-        },
-        "conditions": [
-            {
-            "left_column": "o_w_id",
-            "right_column": "ol_w_id"
-            },
-            {
-            "left_column": "o_d_id",
-            "right_column": "ol_d_id"
-            },
-            {
-            "left_column": "o_id",
-            "right_column": "ol_o_id"
-            }
-        ]
-        }
-    ],
-    # 19
-    [
-        {
-        "tables": {
-            "left": "order_line",
-            "right": "item"
-        },
-        "conditions": [
-            {
-            "left_column": "ol_i_id",
-            "right_column": "i_id"
-            }
-        ]
-        }
-    ],
-    # 20
-    [
-        {
-        "tables": {
-            "left": "supplier",
-            "right": "nation"
-        },
-        "conditions": [
-            {
-            "left_column": "s_nationkey",
-            "right_column": "n_nationkey"
-            }
-        ]
-        }
-    ],
-    # 21
-    [
-        {
-        "tables": {
-            "left": "customer",
-            "right": "orders"
-        },
-        "conditions": [
-            {
-            "left_column": "c_id",
-            "right_column": "o_c_id"
-            },
-            {
-            "left_column": "c_w_id",
-            "right_column": "o_w_id"
-            },
-            {
-            "left_column": "c_d_id",
-            "right_column": "o_d_id"
-            }
-        ]
-        },
-        {
-        "tables": {
-            "left": "order_line",
-            "right": "item"
-        },
-        "conditions": [
-            {
-            "left_column": "ol_i_id",
-            "right_column": "i_id"
-            }
-        ]
-        }
-    ],
-    # 22
-    []
-]
+        if candidate_edges:
+            best_edge = max(candidate_edges, key=lambda x: x[1])[0]
+            R.add(best_edge)
+            R_tables.add(best_edge[0][0])
+            R_tables.add(best_edge[1][0])
+            R_columns.add(best_edge[0][1])
+            R_columns.add(best_edge[1][1])
+
+    # 输出R中包含的边，以及每个表对应的边的列
+    table_columns = defaultdict(list)
+    for edge in R:
+        table_columns[edge[0][0]].append(edge[0][1])
+        table_columns[edge[1][0]].append(edge[1][1])
+
+    return R, table_columns
 
 
 # 示例调用
@@ -906,3 +228,26 @@ if __name__ == "__main__":
     print("Edge weights:")
     for edge, weight in edge_weights.items():
         print(f"{edge}: {weight}")
+
+    R, table_columns = select_edges(edge_weights, degrees)
+
+    print("Selected edges in R:")
+    for edge in R:
+        print(edge)
+
+    print("\nTable columns in R:")
+    for table, columns in table_columns.items():
+        print(f"{table}: {columns}")
+
+# Table columns in R:
+# nation: ['n_nationkey']
+# order_line: ['ol_i_id']
+# stock: ['s_i_id']
+# supplier: ['s_nationkey']
+# item: ['i_id']
+# orders: ['o_w_id']
+
+# table column store:
+# order_line
+# orders
+# customer
