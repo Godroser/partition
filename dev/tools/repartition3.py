@@ -189,7 +189,13 @@ if __name__ == "__main__":
     `ol_quantity` int(11) DEFAULT NULL,
     `ol_amount` decimal(6,2) DEFAULT NULL,
     `ol_dist_info` char(24) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin     
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin   
+
+    PARTITION BY RANGE COLUMNS(`ol_delivery_d`)
+    (PARTITION `order_line_p0` VALUES LESS THAN ('2024-10-27 04:36:37'),
+    PARTITION `order_line_p1` VALUES LESS THAN ('2024-10-30 16:09:27'),
+    PARTITION `order_line_p2` VALUES LESS THAN ('2024-11-03 03:42:17'),
+    PARTITION `order_line_p3` VALUES LESS THAN (MAXVALUE))       
   """
 
   sql_orders = """
@@ -201,8 +207,7 @@ if __name__ == "__main__":
     `o_entry_d` datetime DEFAULT NULL,
     `o_carrier_id` int(11) DEFAULT NULL,
     `o_ol_cnt` int(11) DEFAULT NULL,
-    `o_all_local` int(11) DEFAULT NULL,
-    KEY `idx_order` (`o_w_id`,`o_d_id`,`o_c_id`,`o_id`)
+    `o_all_local` int(11) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin
   """
 
@@ -270,21 +275,32 @@ if __name__ == "__main__":
       `w_state` char(2) DEFAULT NULL,
       `w_zip` char(9) DEFAULT NULL,
       `w_tax` decimal(4,4) DEFAULT NULL,
-      `w_ytd` decimal(12,2) DEFAULT NULL,
-      PRIMARY KEY (`w_id`) /*T![clustered_index] CLUSTERED */
+      `w_ytd` decimal(12,2) DEFAULT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin  
   """
 
-  # repartition_table_and_load_data('warehouse', sql_warehouse)
-  load_data('warehouse')
-  load_data('district')
-  load_data('customer')
-  load_data('history')
-  load_data('item')
-  load_data('nation')
-  load_data('new_order')
-  load_data('order_line')
-  load_data('orders')
-  load_data('region')
-  load_data('stock')
-  load_data('supplier')
+  repartition_table_and_load_data('warehouse', sql_warehouse)
+  repartition_table_and_load_data('district', sql_district) 
+  repartition_table_and_load_data('history', sql_history)
+  repartition_table_and_load_data('customer', sql_customer)
+  repartition_table_and_load_data('item', sql_item)
+  repartition_table_and_load_data('nation', sql_nation)
+  repartition_table_and_load_data('new_order', sql_new_order)
+  repartition_table_and_load_data('order_line', sql_order_line)
+  repartition_table_and_load_data('orders', sql_orders)
+  repartition_table_and_load_data('region', sql_region)
+  repartition_table_and_load_data('stock', sql_stock)
+  repartition_table_and_load_data('supplier', sql_supplier)
+
+  # load_data('warehouse')
+  # load_data('district')
+  # load_data('customer')
+  # load_data('history')
+  # load_data('item')
+  # load_data('nation')
+  # load_data('new_order')
+  # load_data('order_line')
+  # load_data('orders')
+  # load_data('region')
+  # load_data('stock')
+  # load_data('supplier')

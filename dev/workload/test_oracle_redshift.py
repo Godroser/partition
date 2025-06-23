@@ -47,7 +47,7 @@ class Workload_Parameter:
     self.max_nation = 24
     self.max_supplier_id = 10000
     self.max_region_id = 4
-    self.max_ol_cnt = 10 # max item cnt in an order
+    self.max_ol_cnt = 1 # max item cnt in an order
     self.max_ol_quantity = 10 #max item quatity in an order
     self.max_carrier_id = 10 # max carrier id in delivery txn
     self.max_stock_cnt = 5 # max order cnt in Stock-Level txn
@@ -206,7 +206,7 @@ class TP_Workload_Genrator:
           FROM district 
           WHERE d_id = {} AND d_w_id = {});
         """.format(d_id, w_id)
-        #print(sql_new_order1)
+        # print(sql_new_order1)
         #print('sql_new_order1')  
         cur.execute(sql_new_order1)
 
@@ -723,7 +723,7 @@ class TP_Workload_Genrator:
           WHERE ol_w_id = {}  
             AND ol_d_id = {} AND ol_o_id IN ({});
         """.format(w_id, d_id, ol_o_id)
-        #print(sql_stock_level2)
+        # print(sql_stock_level2)
         cur.execute(sql_stock_level2)
         
         
@@ -1025,11 +1025,143 @@ def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
 
 
 
+class TPBenchmark:
+    def __init__(self, num_clients, duration_seconds):
+        self.num_clients = num_clients
+        self.duration_seconds = duration_seconds
+        self.stop_event = threading.Event()
+        self.latency_stats = {
+            'new_order': [],
+            'payment': [],
+            'order_status': [],
+            'delivery': [],
+            'stock_level': []
+        }
+        self.txn_counts = {
+            'new_order': 0,
+            'payment': 0,
+            'order_status': 0,
+            'delivery': 0,
+            'stock_level': 0
+        }
+        self.lock = threading.Lock()
+
+    def run_client(self, client_id):
+        wl_param = Workload_Parameter()
+        tp_wl_generator = TP_Workload_Genrator(wl_param.max_w_id)
+        
+        while not self.stop_event.is_set():
+            seed = random.random()
+            start_time = time.time()
+            
+            if seed <= wl_param.new_order_ratio:
+                tp_wl_generator.generate_new_order()
+                txn_type = 'new_order'
+            elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio:
+                tp_wl_generator.generate_payment()
+                txn_type = 'payment'
+            elif seed <= wl_param.new_order_ratio + wl_param.payment_ratio + wl_param.order_status_ratio:
+                tp_wl_generator.generate_order_status()
+                txn_type = 'order_status'
+            elif seed <= 1 - wl_param.delivery_ratio:
+                tp_wl_generator.generate_delivery()
+                txn_type = 'delivery'
+            else:
+                tp_wl_generator.generate_stock_level()
+                txn_type = 'stock_level'
+            
+            end_time = time.time()
+            latency = end_time - start_time
+            
+            with self.lock:
+                self.latency_stats[txn_type].append(latency)
+                self.txn_counts[txn_type] += 1
+
+    def calculate_percentile(self, latencies, percentile):
+        if not latencies:
+            return 0
+        latencies.sort()
+        index = int(len(latencies) * percentile / 100)
+        return latencies[index]
+
+    def run_benchmark(self):
+        threads = []
+        for i in range(self.num_clients):
+            thread = threading.Thread(target=self.run_client, args=(i,))
+            threads.append(thread)
+            thread.start()
+
+        time.sleep(self.duration_seconds)
+        self.stop_event.set()
+
+        for thread in threads:
+            thread.join()
+
+        # Calculate statistics
+        total_txns = sum(self.txn_counts.values())
+        tps = total_txns / self.duration_seconds
+
+        results = {
+            'tps': tps,
+            'txn_counts': self.txn_counts,
+            'latency_stats': {}
+        }
+
+        for txn_type in self.latency_stats:
+            latencies = self.latency_stats[txn_type]
+            if latencies:
+                avg_latency = sum(latencies) / len(latencies)
+                p50_latency = self.calculate_percentile(latencies, 50)
+                p95_latency = self.calculate_percentile(latencies, 95)
+                
+                results['latency_stats'][txn_type] = {
+                    'avg': avg_latency,
+                    'p50': p50_latency,
+                    'p95': p95_latency
+                }
+
+        return results
+
+def run_tp_benchmark(num_clients=10, duration_seconds=60):
+    """
+    运行TP事务压测
+    
+    Args:
+        num_clients: 并发客户端数量
+        duration_seconds: 压测持续时间（秒）
+    
+    Returns:
+        包含压测结果的字典
+    """
+    benchmark = TPBenchmark(num_clients, duration_seconds)
+    results = benchmark.run_benchmark()
+    
+    # 打印结果
+    print("\n=== TP Benchmark Results ===")
+    print(f"Total TPS: {results['tps']:.2f}")
+    print("\nTransaction Counts:")
+    for txn_type, count in results['txn_counts'].items():
+        print(f"{txn_type}: {count}")
+    
+    print("\nLatency Statistics (seconds):")
+    for txn_type, stats in results['latency_stats'].items():
+        print(f"\n{txn_type}:")
+        print(f"  Average: {stats['avg']:.6f}")
+        print(f"  50th percentile: {stats['p50']:.6f}")
+        print(f"  95th percentile: {stats['p95']:.6f}")
+    
+    return results
+
+
 
 if __name__ == '__main__':
   # connection自定义测试的数据库
   # test_ap(100)
-  # generate_workload(100, 0)
+  # generate_workload(100, 1)
 
   # 每个线程测试100条txn，1000条sql，txn并发度是10
-  test_query_latency_with_tp(100, 5000, 10)
+  test_query_latency_with_tp(100, 1000, 1)
+
+  # 运行压测：10个客户端，持续60秒
+  # results = run_tp_benchmark(num_clients=20, duration_seconds=60)
+  # print(results)      

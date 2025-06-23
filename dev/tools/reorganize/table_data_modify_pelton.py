@@ -23,7 +23,7 @@ def get_connection(autocommit: bool = True) -> MySQLConnection:
         "port": config.TIDB_PORT,
         "user": config.TIDB_USER,
         "password": config.TIDB_PASSWORD,
-        "database": 'pelton', #指定测试库
+        "database": '50pelton', #指定测试库
         "autocommit": autocommit,
         # mysql-connector-python will use C extension by default,
         # to make this example work on all platforms more easily,
@@ -95,7 +95,7 @@ def split_table_sql(table_name, replica_columns, partition_keys, replica_partiti
         sub_table2_sql = comnbine_repartition_sql([sub_table2_sql],generate_partition_sql([table_name], [replica_partition_keys]))[0]   
     # print("sub_table1_sql, sub_table2_sql", sub_table1_sql, sub_table2_sql)
 
-    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/"
+    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/50pelton"
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, f"{table_name}.schema.sql"), 'w') as file:    
         file.write(sub_table1_sql)
@@ -106,8 +106,8 @@ def split_table_sql(table_name, replica_columns, partition_keys, replica_partiti
     return sub_table1_sql, sub_table2_sql
 
 def split_table_data(table_name, replica_columns):
-    input_dir = "/data3/dzh/CH-data/ch"
-    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
+    input_dir = "/data3/dzh/CH-data/50ch"
+    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/50pelton"
     os.makedirs(output_dir, exist_ok=True)
 
     # 获取主键
@@ -119,7 +119,7 @@ def split_table_data(table_name, replica_columns):
     replica_columns_without_primary_keys_indices = [table_to_class[table_name]().columns.index(key) for key in replica_columns_without_primary_keys]
 
     # 查找对应的 .sql 文件
-    sql_files = [f for f in os.listdir(input_dir) if f.startswith(f"ch_bak.{table_name}.") and f.endswith(".sql")]
+    sql_files = [f for f in os.listdir(input_dir) if f.startswith(f"50ch.{table_name}.") and f.endswith(".sql")]
 
     # 生成的.sql文件名
     files = []
@@ -262,8 +262,8 @@ def get_replica_column_indices(table_name, replica_columns):
 
 # 指定table和replica_columns partition_keys, 自动创建两个子表,实现分区创建,实现副本, 并且导入对应数据
 def modify_table_data(table, replica_columns, partition_keys, replica_partition_keys):
-    input_dir = "/data3/dzh/CH-data/ch"
-    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
+    input_dir = "/data3/dzh/CH-data/50ch"
+    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/50pelton"
     os.makedirs(data_dir, exist_ok=True)
     
     if replica_columns:
@@ -278,13 +278,13 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
         # execute create two table_parts sql
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:     
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}'.format(table))
                     print("Drop table {};".format(table))
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
@@ -293,7 +293,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 cur.execute(part1_sql)
                 print("Table {}_part1 is created!".format(table))     
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part2;'.format(table))
@@ -303,24 +303,24 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 print("Table {}_part2 is created!".format(table))                
 
                 # 设置副本
-                set_replica_sql = f"ALTER TABLE `pelton`.`{table}_part2` SET TIFLASH REPLICA 1;"
+                set_replica_sql = f"ALTER TABLE `50pelton`.`{table}_part2` SET TIFLASH REPLICA 1;"
                 cur.execute(set_replica_sql)
                 print("Table {}_part2 replica is created!".format(table))
 
-        # load table_part data
-        for file in sql_files:
-            # command = "mysql -h {} -u {} -P {} {} < {}/{}".format(config.TIDB_HOST, config.TIDB_USER, config.TIDB_PORT, config.TIDB_DB_NAME, data_dir, file)
-            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'pelton', data_dir, file)
-            print(command)
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            #print(result)
-            # 判断命令是否成功执行
-            if result.returncode == 0:
-                print("命令执行成功")
-            else:
-                print("命令执行失败")
-                print("错误信息:", result.stderr)            
-        print("Table {} data loaded!".format(table))    
+        # # load table_part data
+        # for file in sql_files:
+        #     # command = "mysql -h {} -u {} -P {} {} < {}/{}".format(config.TIDB_HOST, config.TIDB_USER, config.TIDB_PORT, config.TIDB_DB_NAME, data_dir, file)
+        #     command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'pelton', data_dir, file)
+        #     print(command)
+        #     result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        #     #print(result)
+        #     # 判断命令是否成功执行
+        #     if result.returncode == 0:
+        #         print("命令执行成功")
+        #     else:
+        #         print("命令执行失败")
+        #         print("错误信息:", result.stderr)            
+        # print("Table {} data loaded!".format(table))    
     
     else: 
     # 如果 replica_columns 为空，则直接执行原表SQL
@@ -334,19 +334,19 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
 
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
                     print("Drop table {}_part1;".format(table))
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part2'.format(table))
                     print("Drop table {}_part2;".format(table))                    
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('pelton', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('50pelton', table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}'.format(table))
@@ -355,21 +355,21 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 print("Table {} is created!".format(table)) 
 
         # 查找对应的 .sql 文件
-        sql_files = [f for f in os.listdir(input_dir) if f.startswith(f"ch_bak.{table}.") and f.endswith(".sql")]   
+        sql_files = [f for f in os.listdir(input_dir) if f.startswith(f"50ch.{table}.") and f.endswith(".sql")]   
 
-        # load table_part data
-        for file in sql_files:
-            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'pelton', input_dir, file)
-            print(command)
-            result = subprocess.run(command, shell=True, capture_output=True, text=True)
-            #print(result)
-            # 判断命令是否成功执行
-            if result.returncode == 0:
-                print("命令执行成功")
-            else:
-                print("命令执行失败")
-                print("错误信息:", result.stderr)            
-        print("Table {} data loaded!".format(table))            
+        # # load table_part data
+        # for file in sql_files:
+        #     command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'pelton', input_dir, file)
+        #     print(command)
+        #     result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        #     #print(result)
+        #     # 判断命令是否成功执行
+        #     if result.returncode == 0:
+        #         print("命令执行成功")
+        #     else:
+        #         print("命令执行失败")
+        #         print("错误信息:", result.stderr)            
+        # print("Table {} data loaded!".format(table))            
 
 
 def load_candidate(file_path):
@@ -384,8 +384,8 @@ if __name__ == "__main__":
 
     # 修改tables顺序
     # tables = [table_info['name'] for table_info in candidate]
-    # tables = ['customer', 'district', 'item', 'new_order', 'orders', 'order_line', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier']
-    tables = ['customer']
+    tables = ['district', 'item', 'new_order', 'orders', 'order_line', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier']
+    # tables = ['customer']
 
 
     # 记录candidate里的replicas, partition_keys, replica_partition_keys

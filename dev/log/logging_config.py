@@ -22,7 +22,7 @@ def setup_logging():
                 'class': 'logging.FileHandler',
                 'level': 'DEBUG',
                 'formatter': 'standard',
-                'filename': 'log/advisor.0314_100.log',
+                'filename': 'log/advisor.0623_separated_5000.log',
                 'mode': 'a'
             }
         },

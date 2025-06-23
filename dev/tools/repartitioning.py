@@ -14,20 +14,23 @@ from mysql.connector.cursor import MySQLCursor
 from config import Config
 
 
-def get_connection(autocommit: bool = True) -> MySQLConnection:
+def get_connection(autocommit: bool = True, database:str = None) -> MySQLConnection:
     config = Config()
     db_conf = {
         "host": config.TIDB_HOST,
         "port": config.TIDB_PORT,
         "user": config.TIDB_USER,
         "password": config.TIDB_PASSWORD,
-        "database": config.TIDB_DB_NAME,
+        "database": database,
         "autocommit": autocommit,
         # mysql-connector-python will use C extension by default,
         # to make this example work on all platforms more easily,
         # we choose to use pure python implementation.
         "use_pure": True
     }
+
+    if database is None:
+        db_conf["database"] = config.TIDB_DB_NAME
 
     if config.ca_path:
         db_conf["ssl_verify_cert"] = True
@@ -86,7 +89,7 @@ def generate_partition_sql(tables, partition_keys):
     config = Config()
     partition_sqls = []
 
-    with get_connection() as connection:
+    with get_connection(False, 'ch_bak') as connection:
         for table, keys in zip(tables, partition_keys):
             with connection.cursor() as cur:
                 # 查询得到每个partition_key的范围

@@ -190,6 +190,28 @@ class Node:
                 logging.info(f"child action: {action}")
                 return child_node
         raise Exception("Should never reach here")
+    
+    def expand_naive(self):
+        # 扩展节点
+        actions = self.state.get_possible_actions()
+
+        # 不设置action优先级
+        logging.info(f"get actions: {actions[:10]}")
+
+        #print("expand node depth:", self.depth)
+        #print("actions:", actions)
+        for action in actions:
+            if action not in [child.state.action for child in self.children]:
+                new_state = self.state.take_action(action)
+                child_node = Node(new_state, self, self.depth + 1)  # 更新子节点的深度
+                self.children.append(child_node)
+                #print("take action:", action)
+                # print("append child to node depth:", self.depth)
+                # print("child action:", action)
+                logging.info(f"append child to node depth: {self.depth}")
+                logging.info(f"child action: {action}")
+                return child_node
+        raise Exception("Should never reach here")    
 
     def update(self, reward):
         # 更新节点的访问次数和奖励

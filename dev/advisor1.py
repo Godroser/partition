@@ -597,7 +597,7 @@ if __name__ == "__main__":
         dict_tmp['columns'] = table_column.columns
         dict_tmp['partitionable_columns'] = table_column.partitionable_columns
         dict_tmp['partition_keys'] = table_column.partition_keys
-        dict_tmp['replicas'] = table_column.replicas
+        dict_tmp['replicas'] = table_column.columns ##111
         dict_tmp['replica_partition_keys'] = table_column.replica_partition_keys
         tables.append(dict_tmp)
 
@@ -687,7 +687,7 @@ if __name__ == "__main__":
 
     #*************************独立测试时用的代码*************************
     # 3. 根据分区副本情况更新元数据
-    candidates = [{'name': 'customer', 'partition_keys': ['c_id', 'c_w_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}, {'name': 'order_line', 'partition_keys': ['ol_i_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}]
+    # candidates = [{'name': 'customer', 'partition_keys': ['c_id', 'c_w_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}, {'name': 'order_line', 'partition_keys': ['ol_i_id'], 'replicas': ['col3'], 'replica_partition_keys': ['col3']}]
 
     # tables[0]['partition_keys'] = ['c_id']
     # tables[1]['partition_keys'] = ['d_id']
@@ -697,24 +697,24 @@ if __name__ == "__main__":
     # tables[5]['partition_keys'] = ['no_o_id']
     # tables[6]['partition_keys'] = ['ol_d_id']
     # tables[6]['replica_partition_keys'] = ['ol_delivery_d']
-    tables[7]['replica_partition_keys'] = ['o_entry_d']  
+    # tables[7]['replica_partition_keys'] = ['o_entry_d']  
     # tables[9]['replica_partition_keys'] = ['s_i_id']   
 
-    tables[0]['replicas'] = ['c_data']
+    # tables[0]['replicas'] = ['c_data']
     # tables[1]['replicas'] = ['d_state', 'd_ytd']
     # tables[2]['replicas'] = ['h_d_id']
-    tables[3]['replicas'] = ['i_id', 'i_im_id', 'i_data']
-    tables[4]['replicas'] = ['n_nationkey']
+    # tables[3]['replicas'] = ['i_id', 'i_im_id', 'i_data']
+    # tables[4]['replicas'] = ['n_nationkey']
     # tables[5]['replicas'] = ['no_w_id']
-    tables[6]['replicas'] = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"]
+    # tables[6]['replicas'] = ["ol_o_id", "ol_d_id", "ol_w_id", "ol_number", "ol_i_id", "ol_supply_w_id", "ol_delivery_d", "ol_quantity", "ol_amount", "ol_dist_info"]
     # tables[6]['replica_partition_keys'] = ['ol_delivery_d']
-    tables[7]['replicas'] = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
-    tables[9]['replicas'] = ["s_i_id", "s_w_id", "s_quantity", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_ytd", "s_order_cnt", "s_remote_cnt", "s_data"]
+    # tables[7]['replicas'] = ["o_id", "o_d_id", "o_w_id", "o_c_id", "o_entry_d", "o_carrier_id", "o_ol_cnt", "o_all_local"]
+    # tables[9]['replicas'] = ["s_i_id", "s_w_id", "s_quantity", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_ytd", "s_order_cnt", "s_remote_cnt", "s_data"]
     # tables[9]['replicas'] = ['s_data']
-    tables[10]['replicas'] = ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"]
+    # tables[10]['replicas'] = ["s_suppkey", "s_name", "s_address", "s_nationkey", "s_phone", "s_acctbal", "s_comment"]
     # tables[10]['replicas'] = ['s_nationkey']
     # tables[11]['replicas'] = ['w_tax']
-    tables[11]['replicas'] = ["w_id", "w_name", "w_street_1", "w_street_2", "w_city", "w_state", "w_zip", "w_tax", "w_ytd"]
+    # tables[11]['replicas'] = ["w_id", "w_name", "w_street_1", "w_street_2", "w_city", "w_state", "w_zip", "w_tax", "w_ytd"]
 
 
 
@@ -738,8 +738,10 @@ if __name__ == "__main__":
 
     cost = 0
     for i in range(22):
-        cost += calculate_query_cost(i, qparams_list)
-        print("Cost {} reward: {}".format(i+1, cost))
+        cost_i = calculate_query_cost(i, qparams_list)
+        cost += cost_i
+        # print("Cost {} reward: {}".format(i+1, cost))
+        print(cost_i)
     cost = normalize_reward(cost)
     print("Reward: ", cost)
 
@@ -770,25 +772,25 @@ if __name__ == "__main__":
     cost += (removed_replcas_reward/10)
     print("Reward add sync: ", cost)
 
-    # print(calculate_q1(engine, qparams_list[0]))
-    # print(calculate_q2(engine, qparams_list[1]))
-    # print(calculate_q3(engine, qparams_list[2]))
-    # print(calculate_q4(engine, qparams_list[3]))
-    # print(calculate_q5(engine, qparams_list[4]))
-    # print(calculate_q6(engine, qparams_list[5]))
-    # print(calculate_q7(engine, qparams_list[6]))
-    # print(calculate_q8(engine, qparams_list[7]))
-    # print(calculate_q9(engine, qparams_list[8]))  
-    # print(calculate_q10(engine, qparams_list[9]))
-    # print(calculate_q11(engine, qparams_list[10]))
-    # print(calculate_q12(engine, qparams_list[11]))
-    # print(calculate_q13(engine, qparams_list[12]))
-    # print(calculate_q14(engine, qparams_list[13]))
-    # print(calculate_q15(engine, qparams_list[14]))
-    # print(calculate_q16(engine, qparams_list[15]))
-    # print(calculate_q17(engine, qparams_list[16]))    
-    # print(calculate_q18(engine, qparams_list[17]))
-    # print(calculate_q19(engine, qparams_list[18]))
-    # print(calculate_q20(engine, qparams_list[19]))
-    # print(calculate_q21(engine, qparams_list[20]))
-    # print(calculate_q22(engine, qparams_list[21]))
+    print(calculate_q1(engine, qparams_list[0]))
+    print(calculate_q2(engine, qparams_list[1]))
+    print(calculate_q3(engine, qparams_list[2]))
+    print(calculate_q4(engine, qparams_list[3]))
+    print(calculate_q5(engine, qparams_list[4]))
+    print(calculate_q6(engine, qparams_list[5]))
+    print(calculate_q7(engine, qparams_list[6]))
+    print(calculate_q8(engine, qparams_list[7]))
+    print(calculate_q9(engine, qparams_list[8]))  
+    print(calculate_q10(engine, qparams_list[9]))
+    print(calculate_q11(engine, qparams_list[10]))
+    print(calculate_q12(engine, qparams_list[11]))
+    print(calculate_q13(engine, qparams_list[12]))
+    print(calculate_q14(engine, qparams_list[13]))
+    print(calculate_q15(engine, qparams_list[14]))
+    print(calculate_q16(engine, qparams_list[15]))
+    print(calculate_q17(engine, qparams_list[16]))    
+    print(calculate_q18(engine, qparams_list[17]))
+    print(calculate_q19(engine, qparams_list[18]))
+    print(calculate_q20(engine, qparams_list[19]))
+    print(calculate_q21(engine, qparams_list[20]))
+    print(calculate_q22(engine, qparams_list[21]))

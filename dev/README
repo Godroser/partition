@@ -1,4 +1,4 @@
-tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑性能测试的库
+tidb集群测试, ch是跑搜索的库, ch_bak是纯净备用库, ch_test是跑性能测试的库, 其他库对应各种baseline的库, 50ch是大规模数据的库, 相应地其他所有以50ch开头的都是大规模数据下的库.
 /Bayes 包含贝叶斯优化的相关代码
 /collector analyzer.py 是解析sql的谓词 join等条件的
            replica_progresss_collector是收集replica同步状态的

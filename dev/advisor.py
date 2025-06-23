@@ -480,6 +480,7 @@ def parallel_monte_carlo_tree_search(root, iterations, max_depth, num_processes)
 
     return root
 
+
 def reset_table_meta(table_meta):
     #reset keys, partition_cnt, partition_range in table_meta
     table_meta.clear()
@@ -653,7 +654,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=30, max_depth=25)
+    monte_carlo_tree_search(root, iterations=5000, max_depth=25)
     mcts_time = time.time() - start_time
 
     start_time = time.time()
@@ -674,7 +675,7 @@ if __name__ == "__main__":
     # 使用 json.dumps 格式化输出
     formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
     # 将格式化后的输出写入到文件
-    with open('Output/best_advisor.txt', 'w', encoding='utf-8') as f:
+    with open('Output/best_advisor_separated.txt', 'w', encoding='utf-8') as f:
         f.write(formatted_output)
 
     print("最佳收益:", node1.reward / node1.visits)

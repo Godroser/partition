@@ -72,7 +72,7 @@ def calculate_query_cost(qry_idx, qparams_list):
         engine = 'Tikv'
         if table.endswith("_replica"):
             engine = 'Tiflash'           
-
+        # engine = 'Tikv'
 
         rows = getattr(qparams_list[qry_idx], rows_attr, None)
         rowsize = getattr(qparams_list[qry_idx], rowsize_attr, None)
@@ -100,26 +100,26 @@ def calculate_query_cost(qry_idx, qparams_list):
         # print("add op_instance.calculate_cost: ", op_instance.calculate_cost())
 
         # 对于读取了rpelica的情况, 要计算额外的算子开销
-        if table.endswith("_replica"):
-            engine = 'Tiflash'
-            original_table = table.replace("_replica", "")
-            original_rows_attr = f"rows_tablescan_{original_table}"
-            original_rowsize_attr = f"rowsize_tablescan_{original_table}"
+        # if table.endswith("_replica"):
+        #     engine = 'Tiflash'
+        #     original_table = table.replace("_replica", "")
+        #     original_rows_attr = f"rows_tablescan_{original_table}"
+        #     original_rowsize_attr = f"rowsize_tablescan_{original_table}"
 
-            buildRows = getattr(qparams_list[qry_idx], original_rows_attr, None)
-            buildRowSize = getattr(qparams_list[qry_idx], original_rowsize_attr, None)
-            probeRows = rows
-            probeRowSize = rowsize
+        #     buildRows = getattr(qparams_list[qry_idx], original_rows_attr, None)
+        #     buildRowSize = getattr(qparams_list[qry_idx], original_rowsize_attr, None)
+        #     probeRows = rows
+        #     probeRowSize = rowsize
 
-            # 获取原表对应的 primary_keys 数量
-            table_columns_class = globals()[f"{original_table.capitalize()}_columns"]
-            nKeys = len(table_columns_class().primary_keys)
+        #     # 获取原表对应的 primary_keys 数量
+        #     table_columns_class = globals()[f"{original_table.capitalize()}_columns"]
+        #     nKeys = len(table_columns_class().primary_keys)
 
-            hash_join_instance = HashJoin(content, buildRows, 1, buildRowSize, nKeys, probeRows, 1, probeRowSize)
-            hash_join_instance.engine = engine
-            cost += hash_join_instance.calculate_cost()
+        #     hash_join_instance = HashJoin(content, buildRows, 1, buildRowSize, nKeys, probeRows, 1, probeRowSize)
+        #     hash_join_instance.engine = engine
+        #     cost += hash_join_instance.calculate_cost()
 
-            # print("add hash_join_instance.calculate_cost(): ",hash_join_instance.calculate_cost())
+        #     # print("add hash_join_instance.calculate_cost(): ",hash_join_instance.calculate_cost())
             
     return cost
 

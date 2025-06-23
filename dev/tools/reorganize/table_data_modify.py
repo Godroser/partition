@@ -16,20 +16,23 @@ from config import Config
 # 导入主键类
 from estimator.ch_columns_ranges_meta import Customer_columns, Warehouse_columns, Supplier_columns, Stock_columns, Region_columns, Orders_columns, Order_line_columns, New_order_columns, Nation_columns, Item_columns, History_columns, District_columns
 
-def get_connection(autocommit: bool = True) -> MySQLConnection:
+def get_connection(autocommit: bool = True, database:str = None) -> MySQLConnection:
     config = Config()
     db_conf = {
         "host": config.TIDB_HOST,
         "port": config.TIDB_PORT,
         "user": config.TIDB_USER,
         "password": config.TIDB_PASSWORD,
-        "database": 'ch_test', #指定测试库
+        "database": database,
         "autocommit": autocommit,
         # mysql-connector-python will use C extension by default,
         # to make this example work on all platforms more easily,
         # we choose to use pure python implementation.
         "use_pure": True
     }
+
+    if database is None:
+        db_conf["database"] = config.TIDB_DB_NAME
 
     if config.ca_path:
         db_conf["ssl_verify_cert"] = True
@@ -107,7 +110,7 @@ def split_table_sql(table_name, replica_columns, partition_keys, replica_partiti
 
 def split_table_data(table_name, replica_columns):
     input_dir = "/data3/dzh/CH-data/ch"
-    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
+    output_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/ch_separate"
     os.makedirs(output_dir, exist_ok=True)
 
     # 获取主键
@@ -261,12 +264,13 @@ def get_replica_column_indices(table_name, replica_columns):
 
 
 # 指定table和replica_columns partition_keys, 自动创建两个子表,实现分区创建,实现副本, 并且导入对应数据
-def modify_table_data(table, replica_columns, partition_keys, replica_partition_keys):
+def modify_table_data(table, columns, replica_columns, partition_keys, replica_partition_keys):
     input_dir = "/data3/dzh/CH-data/ch"
-    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data"
+    data_dir = "/data3/dzh/project/grep/dev/tools/reorganize/data/ch_separate"
     os.makedirs(data_dir, exist_ok=True)
+    config = Config()
     
-    if replica_columns:
+    if replica_columns != columns:
         # 实现分表的建表语句, 加上分区的创建语句
         # part1_sql是没有列存的表, part2_sql是有列存的表
         part1_sql, part2_sql = split_table_sql(table, replica_columns, partition_keys, replica_partition_keys)
@@ -274,17 +278,17 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
         # print("part1_sql, part2_sql:", part1_sql, part2_sql)
         # 生成分表的.sql数据文件
         sql_files = split_table_data(table, replica_columns)
-    
+
         # execute create two table_parts sql
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:     
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}'.format(table))
                     print("Drop table {};".format(table))
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
@@ -293,7 +297,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 cur.execute(part1_sql)
                 print("Table {}_part1 is created!".format(table))     
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part2;'.format(table))
@@ -303,14 +307,14 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
                 print("Table {}_part2 is created!".format(table))                
 
                 # 设置副本
-                set_replica_sql = f"ALTER TABLE `ch_test`.`{table}_part2` SET TIFLASH REPLICA 1;"
+                set_replica_sql = f"ALTER TABLE `{config.TIDB_DB_NAME}`.`{table}_part2` SET TIFLASH REPLICA 1;"
                 cur.execute(set_replica_sql)
                 print("Table {}_part2 replica is created!".format(table))
 
         # load table_part data
         for file in sql_files:
             # command = "mysql -h {} -u {} -P {} {} < {}/{}".format(config.TIDB_HOST, config.TIDB_USER, config.TIDB_PORT, config.TIDB_DB_NAME, data_dir, file)
-            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'ch_test', data_dir, file)
+            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', config.TIDB_DB_NAME, data_dir, file)
             print(command)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             #print(result)
@@ -323,7 +327,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
         print("Table {} data loaded!".format(table))    
     
     else: 
-    # 如果 replica_columns 为空，则直接执行原表SQL
+    # 如果 replica_columns = columns，则直接执行原表SQL
         original_sql = get_create_table_sql(table)
         if not original_sql:
             raise ValueError(f"No create table SQL found for table {table}")
@@ -334,19 +338,19 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
 
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part1';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part1'.format(table))
                     print("Drop table {}_part1;".format(table))
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}_part2';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}_part2'.format(table))
                     print("Drop table {}_part2;".format(table))                    
 
-                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format('ch_test', table))
+                cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = '{}' AND table_name = '{}';".format(config.TIDB_DB_NAME, table))
 
                 if len(cur.fetchall()) > 0:
                     cur.execute('DROP TABLE {}'.format(table))
@@ -359,7 +363,7 @@ def modify_table_data(table, replica_columns, partition_keys, replica_partition_
 
         # load table_part data
         for file in sql_files:
-            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', 'ch_test', input_dir, file)
+            command = "mysql -h {} -u {} -P {} {} < {}/{}".format('10.77.110.144', 'root', '4000', config.TIDB_DB_NAME, input_dir, file)
             print(command)
             result = subprocess.run(command, shell=True, capture_output=True, text=True)
             #print(result)
@@ -380,16 +384,18 @@ def load_candidate(file_path):
 if __name__ == "__main__":
     # 加载candidate
     # candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor copy.txt"
-    candidate_file_path = "/data3/dzh/project/grep/dev/Output/manual_advisor.txt"
+    candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor_separated.txt"
     candidate = load_candidate(candidate_file_path)
 
     # 修改tables顺序
     # tables = [table_info['name'] for table_info in candidate]
     # tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
-    tables = ['orders']
-    # tables = ['customer', 'district', 'item', 'new_order', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier']
+    # tables = ['orders']
+    # tables = ['customer', 'district', 'item', 'new_order', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier', 'orders', 'order_line']
+    tables = ['customer', 'district', 'item', 'history', 'nation']
 
     # 记录candidate里的replicas, partition_keys, replica_partition_keys
+    columns_dict = {table_info['name']: table_info['columns'] for table_info in candidate}
     replica_columns_dict = {table_info['name']: table_info['replicas'] for table_info in candidate}
     #replica_columns_dict = {'customer': [], 'warehouse': ['w_ytd']}
     partition_keys_dict = {table_info['name']: table_info['partition_keys'] for table_info in candidate}
@@ -397,10 +403,15 @@ if __name__ == "__main__":
     
 
     for table in tables:
+        columns = columns_dict[table]
         replica_columns = replica_columns_dict[table]
         partition_keys = partition_keys_dict[table]
         replica_partition_keys = replica_partition_keys_dict[table]
 
+        if columns != replica_columns:
+            print("NONOOOOOOOOOOOOOOOOOOO")
+        else:
+            print(replica_columns)
         # 创建子表, 实现分区, 设置副本, 导入数据
-        # 不需要修改config.py, 写死成ch_test数据库
-        modify_table_data(table, replica_columns, partition_keys, replica_partition_keys)
+        # 需要修改config.py
+        modify_table_data(table, columns, replica_columns, partition_keys, replica_partition_keys)
