@@ -384,15 +384,15 @@ def load_candidate(file_path):
 if __name__ == "__main__":
     # 加载candidate
     # candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor copy.txt"
-    candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor_separated.txt"
+    candidate_file_path = "/data3/dzh/project/grep/dev/Output/best_advisor_separated1.txt"
     candidate = load_candidate(candidate_file_path)
 
     # 修改tables顺序
-    # tables = [table_info['name'] for table_info in candidate]
+    tables = [table_info['name'] for table_info in candidate]
     # tables = ['orders', 'region', 'stock', 'supplier', 'warehouse']
     # tables = ['orders']
     # tables = ['customer', 'district', 'item', 'new_order', 'stock', 'warehouse', 'history', 'nation', 'region', 'supplier', 'orders', 'order_line']
-    tables = ['customer', 'district', 'item', 'history', 'nation']
+    # tables = ['customer', 'district', 'item', 'history', 'nation']
 
     # 记录candidate里的replicas, partition_keys, replica_partition_keys
     columns_dict = {table_info['name']: table_info['columns'] for table_info in candidate}
@@ -413,5 +413,5 @@ if __name__ == "__main__":
         else:
             print(replica_columns)
         # 创建子表, 实现分区, 设置副本, 导入数据
-        # 需要修改config.py
+        # 需要修改config.py, db_name是要导入数据的库
         modify_table_data(table, columns, replica_columns, partition_keys, replica_partition_keys)

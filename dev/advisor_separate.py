@@ -317,31 +317,31 @@ def calculate_reward(table_columns, table_meta, candidates):
     reset_table_meta(table_meta)
     reward = normalize_reward(reward)
 
-    # 评估减少的replica的列带来的reward, size大小 + tp_column_usage频率
-    removed_replcas_reward = 0
-    columns_size = 0
-    for candidate in candidates:
-        table_name = candidate['name']
-        replicas = candidate['replicas']
-        table_column = next((tc for tc in table_columns if tc.name == table_name), None)
+    # # 评估减少的replica的列带来的reward, size大小 + tp_column_usage频率
+    # removed_replcas_reward = 0
+    # columns_size = 0
+    # for candidate in candidates:
+    #     table_name = candidate['name']
+    #     replicas = candidate['replicas']
+    #     table_column = next((tc for tc in table_columns if tc.name == table_name), None)
 
-        if table_name not in tp_column_usage:
-            continue
+    #     if table_name not in tp_column_usage:
+    #         continue
 
-        if table_column:
-            missing_columns = set(table_column.columns) - set(replicas)
-            for missing_column in missing_columns:  # usage * size
-                if missing_column in tp_column_usage[table_name]:
-                    tp_usage = tp_column_usage[table_name][missing_column]
-                    column_size = table_column.columns_size[table_column.columns.index(missing_column)]
-                    removed_replcas_reward += column_size * tp_usage
+    #     if table_column:
+    #         missing_columns = set(table_column.columns) - set(replicas)
+    #         for missing_column in missing_columns:  # usage * size
+    #             if missing_column in tp_column_usage[table_name]:
+    #                 tp_usage = tp_column_usage[table_name][missing_column]
+    #                 column_size = table_column.columns_size[table_column.columns.index(missing_column)]
+    #                 removed_replcas_reward += column_size * tp_usage
 
-            missing_columns_size = sum(table_column.columns_size[table_column.columns.index(col)] for col in missing_columns)
-            columns_size += missing_columns_size
-            # logging.info(f"Table: {table_name}, Missing Columns: {missing_columns}, Total Size: {missing_columns_size}")
-    logging.info(f"Total Missing Column Size: {columns_size}")
-    logging.info(f"Total Removed Replica Reward: {removed_replcas_reward}")
-    reward += (removed_replcas_reward)
+    #         missing_columns_size = sum(table_column.columns_size[table_column.columns.index(col)] for col in missing_columns)
+    #         columns_size += missing_columns_size
+    #         # logging.info(f"Table: {table_name}, Missing Columns: {missing_columns}, Total Size: {missing_columns_size}")
+    # logging.info(f"Total Missing Column Size: {columns_size}")
+    # logging.info(f"Total Removed Replica Reward: {removed_replcas_reward}")
+    # reward += (removed_replcas_reward)
 
     return reward    
 
