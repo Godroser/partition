@@ -4,9 +4,11 @@
 
 <p align="center">
   <a href="#1-setup">Setup</a> •
-  <a href="#2-configuration">Configurations</a> •
-  <a href="#3-run">Run</a> •
-  <a href="#4-citation">Citation</a> •
+  <a href="#2-unit-tests">Unit Tests</a> •
+  <a href="#3-model-training">Model Training</a> •
+  <a href="#4-web-application">Web Application</a> •  
+  <a href="#5-practices">Practices</a> •  
+  <a href="#citation">Citation</a> •
 </p>
 
 Jasper is a joint adaptive storage framework for HTAP systems. Jasper jointly optimizes *horizontal and vertical partitioning* along with *selective column store* configuration. We propose *MCTS-HTAP*, a workload-aware search algorithm that integrates with a lightweight, data synchronization aware *evaluation model* to estimate both query execution time and synchronization overhead. Moreover, Jasper supports incremental configuration updates, allowing the system to adapt to workload changes without significant performance disruption.
@@ -39,7 +41,7 @@ self.TIDB_PASSWORD=''
 self.TIDB_DB_NAME=''
 ```
 
-## 3. Run
+## 2. Run
 
 ### Test Jasper
 
@@ -61,7 +63,74 @@ Step 2: Run the search script with evaluation model.
 python advisor.py
 ```
 
-## 4. Citation
+## 1. Setup
+
+### DB Cluster
+
+Implementing a distributed database (cluster) is actually a tricky stuff. And we recommend you to implement GreenPlum, which is open-source and much more stable than some classic distributed databases like PG-XL. You can refer to our [install_db_cluster.md](install_db_cluster.md) for implementation instructions.
+
+### Packages
+
+```bash
+pip install -r requirements.txt
+```
+
+## 2. Unit Tests
+
+### Partition-Key Selection
+
+Step 1: Change the settings within ./api/services/partition/config.py.
+
+Step 2: Run the test script that selects partition keys withhout evaluation feedback.
+
+```bash
+python test_partition_key_selection.py
+```
+
+### Selected-Key Evaluation
+
+Step 1: Change the settings within ./api/services/partition/config.py.
+
+Step 2: Run the test script that estimate the performance under selected partitioning keys.
+
+```bash
+python test_partition_key_evaluation.py
+```
+
+## 3. Model Training
+
+### Self-supervised Training 
+
+```bash
+python train_partition_models.py
+```
+
+### Supervised Training
+
+TBD
+
+## 4. Web Application
+
+### Backend
+
+```bash
+python app.py
+```
+
+### Frontend
+
+```bash
+cd   web/
+npm install
+npm run dev
+```
+
+## 5. Practices
+
+Check out the subset of queries and partiton results (only those that are publicly available) within *./practices*.
+
+
+## Citation
 
 If you use Grep in your research, please cite:
 

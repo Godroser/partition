@@ -253,23 +253,43 @@ def update_rowsize(table_columns, candidates):
 
 # 计算候选的reward
 # candidates是每个表的分区和副本设置
-def calculate_reward(table_columns, table_meta, candidates):
+def calculate_reward(table_columns, table_meta, candidates, timing_dict=None):
     # 根据分区副本情况更新元数据    
+    if timing_dict is not None:
+        t_update_meta_start = time.perf_counter()
     logging.info("Start Update meta data")
     update_meta(table_columns, table_meta, candidates)
+    if timing_dict is not None:
+        t_update_meta_end = time.perf_counter()
+        timing_dict['update_meta'] += t_update_meta_end - t_update_meta_start
     logging.info("Finish Update meta data")
 
     # 更新每个Qcard类的rowSize
+    if timing_dict is not None:
+        t_update_rowsize_start = time.perf_counter()
     qcard_list = update_rowsize(table_columns, candidates)
+    if timing_dict is not None:
+        t_update_rowsize_end = time.perf_counter()
+        timing_dict['update_rowsize'] += t_update_rowsize_end - t_update_rowsize_start
     logging.info("Finish Update rowsize")
 
     # get Qcard 判断是否要读表的replica, 获取每个query扫描对应表的card
+    if timing_dict is not None:
+        t_get_qcard_start = time.perf_counter()
     get_qcard(table_meta, qcard_list, candidates)
+    if timing_dict is not None:
+        t_get_qcard_end = time.perf_counter()
+        timing_dict['get_qcard'] += t_get_qcard_end - t_get_qcard_start
     # qcard_list = get_qcard(customer_meta, district_meta, history_meta, item_meta, nation_meta, new_order_meta, order_line_meta, orders_meta, region_meta, stock_meta, supplier_meta, warehouse_meta)
     logging.info("Finish Get Qcard")
 
     # update Qparams 将qcard复制到qparams
+    if timing_dict is not None:
+        t_update_qparams_start = time.perf_counter()
     qparams_list = update_qparams_with_qcard(qcard_list)
+    if timing_dict is not None:
+        t_update_qparams_end = time.perf_counter()
+        timing_dict['update_qparams_with_qcard'] += t_update_qparams_end - t_update_qparams_start
 
     # calculate query cost
     engine = 'Tiflash'
@@ -345,7 +365,7 @@ def calculate_reward(table_columns, table_meta, candidates):
 
     return reward    
 
-def simulate(state, depth, max_depth=10):
+def simulate(state, depth, max_depth=10, timing_dict=None):
     # 随机模拟直到终止状态
     state_simu = copy.deepcopy(state)
 
@@ -365,7 +385,7 @@ def simulate(state, depth, max_depth=10):
         state_simu = state_simu.take_action(action)
         depth += 1      
         logging.info(action)
-    return calculate_reward(table_columns, table_meta, state_simu.tables)
+    return calculate_reward(table_columns, table_meta, state_simu.tables, timing_dict=timing_dict)
 
 def normalize_reward(reward):
     # 归一化
@@ -373,7 +393,18 @@ def normalize_reward(reward):
     return (N - reward) / 10000000.0
 
 def monte_carlo_tree_search(root, iterations, max_depth):
+    # 新增：记录各部分总耗时
+    total_timing = {
+        'search_round': 0.0,
+        'calculate_reward': 0.0,
+        'update_meta': 0.0,
+        'update_rowsize': 0.0,
+        'get_qcard': 0.0,
+        'update_qparams_with_qcard': 0.0,
+    }
+    
     for i in range(iterations):
+        t_round_start = time.perf_counter()
         print(i)
         node = root
         reward = 0
@@ -384,6 +415,8 @@ def monte_carlo_tree_search(root, iterations, max_depth):
                 break
             node = node.best_child()          
         if not node.state.get_possible_actions():
+            t_round_end = time.perf_counter()
+            total_timing['search_round'] += t_round_end - t_round_start
             continue
 
         # 扩展
@@ -391,7 +424,21 @@ def monte_carlo_tree_search(root, iterations, max_depth):
             node = node.expand_naive()
 
         # 模拟
-        reward = simulate(node.state, node.depth, max_depth)
+        t_calculate_reward_start = time.perf_counter()
+        timing_dict = {
+            'update_meta': 0.0,
+            'update_rowsize': 0.0,
+            'get_qcard': 0.0,
+            'update_qparams_with_qcard': 0.0,
+        }
+        reward = simulate(node.state, node.depth, max_depth, timing_dict=timing_dict)
+        t_calculate_reward_end = time.perf_counter()
+        total_timing['calculate_reward'] += t_calculate_reward_end - t_calculate_reward_start
+        total_timing['update_meta'] += timing_dict['update_meta']
+        total_timing['update_rowsize'] += timing_dict['update_rowsize']
+        total_timing['get_qcard'] += timing_dict['get_qcard']
+        total_timing['update_qparams_with_qcard'] += timing_dict['update_qparams_with_qcard']
+        
         # print("Reward: ", reward)
         logging.info(f"Reward: {reward}")
         # print("*****************************")
@@ -401,6 +448,17 @@ def monte_carlo_tree_search(root, iterations, max_depth):
         while node is not None:
             node.update(reward)
             node = node.parent
+        t_round_end = time.perf_counter()
+        total_timing['search_round'] += t_round_end - t_round_start
+
+    # 搜索完成后输出各部分总耗时
+    logging.info("==== MCTS各部分总耗时（秒） ====")
+    logging.info(f"总搜索轮次耗时: {total_timing['search_round']:.6f}")
+    logging.info(f"总calculate_reward耗时: {total_timing['calculate_reward']:.6f}")
+    logging.info(f"总update_meta耗时: {total_timing['update_meta']:.6f}")
+    logging.info(f"总update_rowsize耗时: {total_timing['update_rowsize']:.6f}")
+    logging.info(f"总get_qcard耗时: {total_timing['get_qcard']:.6f}")
+    logging.info(f"总update_qparams_with_qcard耗时: {total_timing['update_qparams_with_qcard']:.6f}")
 
 def expand_root(root, max_depth):
     # 扩展根节点
@@ -418,7 +476,13 @@ def expand_root(root, max_depth):
 
     # 计算reward
     for child_node in child_nodes:
-        reward = simulate(child_node.state, child_node.depth, max_depth)
+        timing_dict = {
+            'update_meta': 0.0,
+            'update_rowsize': 0.0,
+            'get_qcard': 0.0,
+            'update_qparams_with_qcard': 0.0,
+        }
+        reward = simulate(child_node.state, child_node.depth, max_depth, timing_dict=timing_dict)
     
         # 反向传播
         while child_node is not None:
@@ -654,7 +718,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     #parallel_monte_carlo_tree_search(root, iterations=1000, max_depth=10, num_processes=3)
-    monte_carlo_tree_search(root, iterations=3000, max_depth=25)
+    monte_carlo_tree_search(root, iterations=4500, max_depth=30)
     mcts_time = time.time() - start_time
 
     start_time = time.time()
@@ -675,7 +739,7 @@ if __name__ == "__main__":
     # 使用 json.dumps 格式化输出
     formatted_output = json.dumps(node1.state.tables, indent=4, ensure_ascii=False)
     # 将格式化后的输出写入到文件
-    with open('Output/no_weight_advisor.txt', 'w', encoding='utf-8') as f:
+    with open('Output/no_weight_advisor_0627_4500.txt', 'w', encoding='utf-8') as f:
         f.write(formatted_output)
 
     print("最佳收益:", node1.reward / node1.visits)

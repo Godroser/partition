@@ -977,7 +977,7 @@ def generate_workload(max_txn_cnt, ratio):
 
 
 # 测试事务执行期间的 query 延迟, 这里的tp的并发度是n
-def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
+def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n, m):
     """
     测试事务执行期间的 query 延迟。
     """
@@ -1000,17 +1000,19 @@ def test_query_latency_with_tp(max_txn_cnt, max_qry_cnt, n):
     # 开辟线程执行事务生成
     tp_threads = [threading.Thread(target=run_generate_tp) for _ in range(n)]
     # 开辟线程执行 query 生成
-    ap_thread = threading.Thread(target=run_generate_ap)
+    ap_threads = [threading.Thread(target=run_generate_ap) for _ in range(m)]
 
     # 启动线程
     for tp_thread in tp_threads:
         tp_thread.start()
-    ap_thread.start()
+    for ap_thread in ap_threads:
+        ap_thread.start()
 
     # 等待线程完成
     for tp_thread in tp_threads:
         tp_thread.join()
-    ap_thread.join()
+    for ap_thread in ap_threads:
+        ap_thread.join()
 
 
     end_sync_time, end_count = sync_metrics_collector.direct_get_tiflash_syncing_data_freshness_count()
@@ -1206,8 +1208,8 @@ if __name__ == '__main__':
   # test_ap(100)
   # generate_workload(100, 0)
 
-  # 每个线程测试100条txn，1000条sql，txn并发度是10
-  test_query_latency_with_tp(100, 1000, 1)
+  # 每个线程测试100条txn，1000条sql，txn并发度是10, ap并发度是5
+  test_query_latency_with_tp(30, 1000, 20, 5)
 
   # 运行压测：10个客户端，持续60秒
   # results = run_tp_benchmark(num_clients=20, duration_seconds=60)

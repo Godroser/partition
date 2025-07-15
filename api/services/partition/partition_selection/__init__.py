@@ -1,2 +1,0 @@
-from .selection_model import Column2Graph
-from .selection_model import partitioning_model

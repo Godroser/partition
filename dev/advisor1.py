@@ -772,6 +772,7 @@ if __name__ == "__main__":
     cost += (removed_replcas_reward/10)
     print("Reward add sync: ", cost)
 
+    start_time = time.perf_counter()
     print(calculate_q1(engine, qparams_list[0]))
     print(calculate_q2(engine, qparams_list[1]))
     print(calculate_q3(engine, qparams_list[2]))
@@ -788,9 +789,20 @@ if __name__ == "__main__":
     print(calculate_q14(engine, qparams_list[13]))
     print(calculate_q15(engine, qparams_list[14]))
     print(calculate_q16(engine, qparams_list[15]))
-    print(calculate_q17(engine, qparams_list[16]))    
+    print(calculate_q17(engine, qparams_list[16])) 
+
+    start_time1 = time.perf_counter()
     print(calculate_q18(engine, qparams_list[17]))
+    end_time1 = time.perf_counter()
+    print(f"Time for q18: {end_time1 - start_time1:.10f} seconds")
+
+    start_time2 = time.perf_counter()
     print(calculate_q19(engine, qparams_list[18]))
+    end_time2 = time.perf_counter()
+    print(f"Time for q19: {end_time2 - start_time2:.10f} seconds")
+    
     print(calculate_q20(engine, qparams_list[19]))
     print(calculate_q21(engine, qparams_list[20]))
     print(calculate_q22(engine, qparams_list[21]))
+    end_time = time.perf_counter()
+    print(f"Total time: {end_time - start_time:.10f} seconds")

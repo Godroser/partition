@@ -1,5 +1,6 @@
 import sys
 import os
+from datetime import datetime
 
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 
@@ -41,8 +42,19 @@ class Customer_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "c_id": [1, 3000],
+            "c_d_id": [1, 10],
+            "c_w_id": [1, 4],
+            "c_payment_cnt": [1, 5]
+        }
 
     def get_keys_ranges(self, keys):
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]
+        """
         with get_connection(autocommit=False) as connection:
             with connection.cursor() as cur:   
                 ranges = []
@@ -51,7 +63,8 @@ class Customer_columns:
                     min_val, max_val = cur.fetchone()
                     ranges.append([min_val, max_val])
         return ranges
-    
+        """
+
 class District_columns:
     def __init__(self):
         self.name = "district"
@@ -62,16 +75,25 @@ class District_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "d_id": [1, 10],
+            "d_w_id": [1, 4],
+            "d_next_o_id": [3105, 3151]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM district;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM district;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Item_columns:
     def __init__(self):
@@ -83,16 +105,24 @@ class Item_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "i_id": [1, 100000],
+            "i_im_id": [1, 10000]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM item;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM item;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class New_order_columns:
     def __init__(self):
@@ -104,16 +134,25 @@ class New_order_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "no_o_id": [2207, 3150],
+            "no_d_id": [1, 10],
+            "no_w_id": [1, 4]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM new_order;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM new_order;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Orders_columns:
     def __init__(self):
@@ -125,16 +164,30 @@ class Orders_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "o_id": [1, 3150],
+            "o_d_id": [1, 10],
+            "o_w_id": [1, 4],
+            "o_c_id": [1, 3000],
+            "o_entry_d": [datetime(2024, 10, 23, 17, 3, 47), datetime(2024, 11, 6, 15, 15, 3)],
+            "o_carrier_id": [1, 10],
+            "o_ol_cnt": [1, 15],
+            "o_all_local": [0, 1]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM orders;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM orders;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Order_line_columns:
     def __init__(self):
@@ -146,16 +199,30 @@ class Order_line_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "ol_o_id": [1, 3150],
+            "ol_d_id": [1, 10],
+            "ol_w_id": [1, 4],
+            "ol_number": [1, 15],
+            "ol_i_id": [1, 100000],
+            "ol_supply_w_id": [1, 4],
+            "ol_quantity": [1, 10],
+            "ol_delivery_d": [datetime(2024, 10, 23, 17, 3, 47), datetime(2024, 11, 6, 15, 15, 3)]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM order_line;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM order_line;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Stock_columns:
     def __init__(self):
@@ -167,16 +234,27 @@ class Stock_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "s_i_id": [1, 100000],
+            "s_w_id": [1, 4],
+            "s_ytd": [0, 96],
+            "s_order_cnt": [0, 18],
+            "s_remote_cnt": [0, 2]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM stock;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM stock;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Warehouse_columns:
     def __init__(self):
@@ -188,16 +266,23 @@ class Warehouse_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "w_id": [1, 4]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM warehouse;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges    
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM warehouse;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges    
     
 class History_columns:
     def __init__(self):
@@ -209,16 +294,28 @@ class History_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "h_c_id": [1, 3000],
+            "h_c_d_id": [1, 10],
+            "h_c_w_id": [1, 4],
+            "h_d_id": [1, 10],
+            "h_w_id": [1, 4],
+            "h_date": [datetime(2024, 10, 23, 17, 3, 47), datetime(2024, 11, 1, 15, 15, 5)]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM history;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM history;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Nation_columns:
     def __init__(self):
@@ -230,16 +327,24 @@ class Nation_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "n_nationkey": [0, 24],
+            "n_regionkey": [0, 4]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM nation;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM nation;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
     
 class Supplier_columns:
     def __init__(self):
@@ -251,16 +356,24 @@ class Supplier_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "s_suppkey": [1, 10000],
+            "s_nationkey": [0, 24]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM supplier;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM supplier;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges
 
 class Region_columns:
     def __init__(self):
@@ -272,16 +385,23 @@ class Region_columns:
         self.partition_keys = []
         self.replicas = []
         self.replica_partition_keys = []
+        self.keys_ranges = {
+            "r_regionkey": [0, 4]
+        }
 
     def get_keys_ranges(self, keys):
-        with get_connection(autocommit=False) as connection:
-            with connection.cursor() as cur:   
-                ranges = []
-                for key in keys:
-                    cur.execute(f"SELECT MIN({key}), MAX({key}) FROM region;")
-                    min_val, max_val = cur.fetchone()
-                    ranges.append([min_val, max_val])
-        return ranges   
+        for key in keys:
+            if key not in self.partitionable_columns:
+                raise ValueError(f"Key '{key}' is not in partitionable_columns: {self.partitionable_columns}")
+        return [self.keys_ranges[key] for key in keys]        
+        # with get_connection(autocommit=False) as connection:
+        #     with connection.cursor() as cur:   
+        #         ranges = []
+        #         for key in keys:
+        #             cur.execute(f"SELECT MIN({key}), MAX({key}) FROM region;")
+        #             min_val, max_val = cur.fetchone()
+        #             ranges.append([min_val, max_val])
+        # return ranges   
 
 if __name__ == "__main__":
     customer_columns = Customer_columns()
