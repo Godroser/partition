@@ -107,3 +107,4 @@ if __name__ == "__main__":
     normalized_usage, zero_values, zero_values_num, _ = normalize_column_usage(final_usage)
     print(normalized_usage)
     print("Zero values after normalization:", zero_values)
+    print("Zero values num:", zero_values_num)

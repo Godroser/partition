@@ -1,3 +1,4 @@
+-- 2526854492
 CREATE TABLE `github_events` (
   `id` bigint(20) NOT NULL DEFAULT '0',
   `type` varchar(29) NOT NULL DEFAULT 'Event',
@@ -65,6 +66,7 @@ CREATE TABLE `github_events` (
  PARTITION `team_add_event` VALUES IN ('TeamAddEvent'),
  PARTITION `fork_apply_event` VALUES IN ('ForkApplyEvent'));
 
+-- 223146967
 CREATE TABLE `github_repos` (
   `repo_id` int(11) NOT NULL,
   `repo_name` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -91,6 +93,7 @@ CREATE TABLE `github_repos` (
   KEY `index_fullname_on_github_repos` (`repo_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 95738728
 CREATE TABLE `github_users` (
   `id` int(11) NOT NULL,
   `login` varchar(255) NOT NULL,

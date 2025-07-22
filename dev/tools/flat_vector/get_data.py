@@ -7,6 +7,7 @@ import os
 sys.path.append(os.path.expanduser("/data3/dzh/project/grep/dev"))
 from config import Config
 import csv
+import time
 
 def get_connection(autocommit: bool = True) -> MySQLConnection:
     config = Config()  # 假设您有一个Config类提供配置
@@ -166,8 +167,9 @@ if __name__ == "__main__":
     # print(f"Execution Time: {exec_time} ms")
 
 	# 多个sql的测试并写入csv
-    sql_file = "../../workload/workloadd_train.sql"
-    csv_file = "sql_features_with_time_train.csv"
+    # start_time = time.time()
+    sql_file = "../../workload/workloadd.sql"
+    csv_file = "sql_features_with_time111.csv"
     with open(sql_file, "r", encoding="utf-8") as f:
         sql_content = f.read()
     sql_list = [s.strip() for s in sql_content.split(';') if s.strip()]
@@ -192,3 +194,5 @@ if __name__ == "__main__":
                     print(f"{k}: {v}")
             except Exception as e:
                 print(f"Error extracting features or execution time: {e}")
+    # elapsed = time.time() - start_time
+    # print(f"Total time to extract features for {len(sql_list)} SQLs: {elapsed:.6f} seconds")

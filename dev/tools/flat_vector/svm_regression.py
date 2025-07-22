@@ -2,6 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVR
 from sklearn.metrics import r2_score
+import time
 
 # 1. Load data
 csv_file = 'sql_features_with_time.csv'
@@ -24,7 +25,10 @@ score = r2_score(y_test, y_pred)
 print(f'SVR R^2 score (accuracy) on test set: {score:.4f}')
 
 # 6. Predict on all data and compute ranking loss
+start_time = time.time()
 all_pred = svr.predict(X)
+predict_time = time.time() - start_time
+print(f'Prediction on all data took {predict_time:.6f} seconds')
 
 # Compute pairwise ranking loss manually
 def pairwise_ranking_loss(y_true, y_pred):
