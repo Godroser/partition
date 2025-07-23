@@ -1,4 +1,4 @@
-# Table 2: Cost Function of Operators
+# Table 1: Cost Function of Operators
 
 The execution overhead of operators on different store is calculated using different Factor parameters.
 
